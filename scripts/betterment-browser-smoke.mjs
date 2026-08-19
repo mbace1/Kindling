@@ -41,22 +41,25 @@ try {
   await pushups.click();
   await page.getByText("Optional · go further", { exact: true }).waitFor();
   assert.equal(await page.getByRole("heading", { name: "1 / 5 tended" }).count(), 1, "base goal adds one Fire point");
-  assert.ok((await page.locator("body").innerText()).includes("20\nFlames"), "base goal shows 20 Flames");
-  assert.ok((await page.locator("body").innerText()).includes("20 Bond XP"), "base goal grows active companion Bond");
+  const afterBase = await page.locator("body").innerText();
+  assert.match(afterBase, /20\s+Flames/, "base goal shows 20 Flames");
+  assert.match(afterBase, /20 Bond XP/, "base goal grows active companion Bond");
 
   await page.getByRole("button", { name: /Feeling good\? Reach 20 push-ups total/ }).click();
   await page.getByText(/One more tier: reach 30 push-ups total/).waitFor();
   assert.equal(await page.getByRole("heading", { name: "1 / 5 tended" }).count(), 1, "Tier II does not add Fire");
-  assert.ok((await page.locator("body").innerText()).includes("40\nFlames"), "Tier II added 20 Flames");
-  assert.ok((await page.locator("body").innerText()).includes("60 Bond XP"), "Tier II added 40 Bond XP");
+  const afterTier2 = await page.locator("body").innerText();
+  assert.match(afterTier2, /40\s+Flames/, "Tier II added 20 Flames");
+  assert.match(afterTier2, /60 Bond XP/, "Tier II added 40 Bond XP");
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert.ok(overflow <= 0, `mobile page overflows horizontally by ${overflow}px`);
 
   await page.getByRole("button", { name: "Walk" }).click();
   await page.getByRole("heading", { name: "Send them out" }).waitFor();
-  assert.ok((await page.locator("body").innerText()).includes("60 Flames"), "Journey price is 60 Flames");
-  assert.ok((await page.locator("body").innerText()).includes("90 real-time seconds"), "Journey explains real-time duration");
+  const journeyText = await page.locator("body").innerText();
+  assert.match(journeyText, /60 Flames/, "Journey price is 60 Flames");
+  assert.match(journeyText, /90 real-time seconds/, "Journey explains real-time duration");
 
   await page.getByRole("button", { name: "Today" }).click();
   assert.deepEqual(errors, [], `browser errors: ${errors.join(" | ")}`);
