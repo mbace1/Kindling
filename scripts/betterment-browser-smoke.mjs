@@ -52,6 +52,11 @@ try {
   assert.match(afterTier2, /40\s+Flames/, "Tier II added 20 Flames");
   assert.match(afterTier2, /60 Bond XP/, "Tier II added 40 Bond XP");
 
+  // One more ordinary care action brings the spendable total to exactly the
+  // Journey price and, unlike the bonus tier, advances Fire to 2/5.
+  await page.getByRole("button", { name: /^Drank some water/ }).click();
+  await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
+
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert.ok(overflow <= 0, `mobile page overflows horizontally by ${overflow}px`);
 
@@ -59,9 +64,32 @@ try {
   await page.getByRole("heading", { name: "Send them out" }).waitFor();
   const journeyText = await page.locator("body").innerText();
   assert.match(journeyText, /60 Flames/, "Journey price is 60 Flames");
-  assert.match(journeyText, /90 real-time seconds/, "Journey explains real-time duration");
+  assert.match(journeyText, /about 90 seconds/, "Journey explains its duration");
+
+  await page.getByRole("button", { name: /Birch ruin/ }).click();
+  await page.getByRole("heading", { name: /is on the path\./ }).waitFor();
+  const beforeReload = await page.evaluate(() => {
+    const save = JSON.parse(localStorage.getItem("kindlingState") || "null");
+    return { walk: save?.walk, fuel: save?.fuel, seen: save?.seen };
+  });
+  assert.ok(beforeReload.walk, "Journey is persisted to the save");
+  assert.equal(beforeReload.walk.endsAt - beforeReload.walk.startedAt, 90_000, "Journey duration is exactly 90 seconds");
+  assert.equal(beforeReload.fuel, 0, "Journey spends exactly 60 Flames / 3 legacy fuel");
+  assert.equal(beforeReload.seen, true, "intro dismissal survived hydration");
+
+  // Simulate closing/reopening the app. The UI tab is intentionally ephemeral,
+  // but the journey itself must survive and resume from the same timestamps.
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
+  assert.equal(await page.getByRole("button", { name: "Tend the fire" }).count(), 0, "intro does not return after reload");
+  await page.getByRole("button", { name: "Walk" }).click();
+  await page.getByRole("heading", { name: /is on the path\./ }).waitFor();
+  const afterReload = await page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null")?.walk);
+  assert.equal(afterReload.startedAt, beforeReload.walk.startedAt, "reload does not reroll Journey start");
+  assert.equal(afterReload.endsAt, beforeReload.walk.endsAt, "reload does not reroll Journey finish");
 
   await page.getByRole("button", { name: "Today" }).click();
+  await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
   assert.deepEqual(errors, [], `browser errors: ${errors.join(" | ")}`);
   console.log(JSON.stringify({ ok: true, viewport: "390x844", art: [...requested], screenshot: out }, null, 2));
 } catch (err) {
