@@ -108,6 +108,20 @@ export function AppShell() {
         </div>
       </header>
 
+      {s.hydrated && s.walk ? (
+        <button
+          type="button"
+          onClick={() => s.setTab("journey")}
+          className="mx-4 mb-2 flex min-h-11 items-center gap-2 rounded-md border border-fire/35 bg-coal px-3 text-left text-sm"
+        >
+          <Footprints className="size-4 shrink-0 text-fire" />
+          <span className="flex-1">
+            <span className="font-medium text-bone">{s.companion?.name ?? "Your companion"} is on the path.</span>
+            <span className="ml-2 text-mute">View journey</span>
+          </span>
+        </button>
+      ) : null}
+
       <main className="flex-1">
         {s.hydrated ? <Screen /> : <div className="h-[52vh] animate-pulse bg-stone" />}
       </main>
