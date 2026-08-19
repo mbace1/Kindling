@@ -31,6 +31,8 @@ import {
 } from "./model";
 import { playHit, playTick, unlockAudio } from "./audio";
 
+const WALK_DURATION_MS = 90_000;
+
 type KindlingStore = KindlingSave & {
   hydrated: boolean;
   tab: Tab;
@@ -267,7 +269,8 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     const path = PATHS.find((p) => p.id === pathId);
     if (!path) return "That path is gone.";
     s.fuel -= ERRAND_COST;
-    s.walk = { pathId, startedAt: Date.now(), endsAt: Date.now() + 2200 };
+    const startedAt = Date.now();
+    s.walk = { pathId, startedAt, endsAt: startedAt + WALK_DURATION_MS };
     s.walkedOnce = true;
     s.updatedAt = Date.now();
     persist(s);
