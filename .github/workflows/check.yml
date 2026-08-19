@@ -19,5 +19,7 @@ jobs:
       # declared dependency graph here; lockfile repair stays a separate cleanup.
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npm test
-      - run: npm run typecheck
+      # TanStack generates routeTree.gen during the Vite build. Typecheck after
+      # that generation step so router scaffold noise does not hide game errors.
       - run: npm run build:dev
+      - run: npm run typecheck
