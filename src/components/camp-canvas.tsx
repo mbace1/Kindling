@@ -149,47 +149,53 @@ function drawFire(
   t: number,
   reduced: boolean,
 ) {
-  const flicker = reduced ? 1 : 0.88 + Math.sin(t * 7) * 0.08 + Math.sin(t * 13) * 0.04;
-  const h = 18 + heat * 56 * flicker;
-  const w = 16 + heat * 22;
+  const flicker = reduced ? 1 : 0.92 + Math.sin(t * 7) * 0.06 + Math.sin(t * 13) * 0.03;
+  const h = 14 + heat * 54 * flicker;
+  const w = 12 + heat * 20;
 
-  ctx.fillStyle = "#3a2218";
+  // Keep the stone/log footprint low and dark. The source background already
+  // supplies the large ring; these shapes are only the live coals on top of it.
+  ctx.fillStyle = "rgba(24, 14, 10, 0.72)";
   ctx.beginPath();
-  ctx.ellipse(x, y + 8, 22, 7, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y + 7, 17, 5, 0, 0, Math.PI * 2);
   ctx.fill();
 
   for (let i = 0; i < 5; i++) {
     const on = heat >= (i + 0.15) / 5;
-    ctx.fillStyle = on ? "#c44a1a" : "#2a1812";
-    ctx.fillRect(x - 14 + i * 6, y + 4, 5, 4);
+    ctx.fillStyle = on ? "#b8441b" : "#241510";
+    ctx.fillRect(x - 12 + i * 5, y + 3, 4, 3);
   }
 
   if (heat <= 0.02) {
-    ctx.fillStyle = "rgba(196, 74, 26, 0.45)";
-    ctx.beginPath();
-    ctx.ellipse(x, y + 2, 8, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.fillStyle = "rgba(196, 74, 26, 0.42)";
+    ctx.fillRect(x - 5, y + 1, 10, 2);
     return;
   }
 
-  const grad = ctx.createRadialGradient(x, y, 2, x, y - h * 0.3, h);
-  grad.addColorStop(0, "rgba(232, 224, 212, 0.95)");
-  grad.addColorStop(0.25, "rgba(255, 122, 42, 0.9)");
-  grad.addColorStop(0.7, "rgba(196, 74, 26, 0.45)");
-  grad.addColorStop(1, "rgba(196, 74, 26, 0)");
-  ctx.fillStyle = grad;
-  ctx.beginPath();
-  ctx.moveTo(x - w * 0.15, y + 4);
-  ctx.quadraticCurveTo(x - w, y - h * 0.3, x - 2, y - h);
-  ctx.quadraticCurveTo(x + w * 0.2, y - h * 0.55, x + 4, y - h * 0.85);
-  ctx.quadraticCurveTo(x + w, y - h * 0.25, x + w * 0.2, y + 4);
-  ctx.closePath();
-  ctx.fill();
+  // Glow is atmosphere only. The flame itself is three pointed silhouettes so
+  // even 1/5 reads as FIRE rather than a radial-gradient orange egg.
+  const glow = ctx.createRadialGradient(x, y - h * 0.25, 2, x, y - h * 0.25, h * 1.05);
+  glow.addColorStop(0, `rgba(255, 122, 42, ${0.14 + heat * 0.12})`);
+  glow.addColorStop(1, "rgba(255, 122, 42, 0)");
+  ctx.fillStyle = glow;
+  ctx.fillRect(x - h, y - h * 1.3, h * 2, h * 1.7);
 
-  ctx.fillStyle = "rgba(232, 224, 212, 0.55)";
-  ctx.beginPath();
-  ctx.ellipse(x, y - h * 0.15, 4 + heat * 3, 8 + heat * 10, 0, 0, Math.PI * 2);
-  ctx.fill();
+  const tongue = (cx: number, baseY: number, width: number, height: number, lean: number, color: string) => {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(cx - width * 0.52, baseY);
+    ctx.quadraticCurveTo(cx - width * 0.72, baseY - height * 0.38, cx + lean, baseY - height);
+    ctx.quadraticCurveTo(cx + width * 0.68, baseY - height * 0.36, cx + width * 0.52, baseY);
+    ctx.quadraticCurveTo(cx, baseY - height * 0.08, cx - width * 0.52, baseY);
+    ctx.closePath();
+    ctx.fill();
+  };
+
+  const sway = reduced ? 0 : Math.sin(t * 8.5) * 2;
+  tongue(x - w * 0.18, y + 4, w * 0.7, h * 0.72, -2 + sway, "rgba(177, 55, 20, 0.95)");
+  tongue(x + w * 0.18, y + 4, w * 0.62, h, 2 - sway * 0.6, "rgba(229, 79, 22, 0.97)");
+  tongue(x, y + 3, w * 0.38, h * 0.62, sway * 0.25, "rgba(255, 160, 48, 0.98)");
+  tongue(x + 1, y + 3, w * 0.18, h * 0.38, 0, "rgba(247, 219, 148, 0.96)");
 }
 
 function drawAshMark(ctx: CanvasRenderingContext2D, x: number, y: number, t: number) {
