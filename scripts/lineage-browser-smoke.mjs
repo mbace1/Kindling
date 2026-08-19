@@ -118,8 +118,8 @@ try {
   activePage = warnRun.page;
   failureShot = "artifacts/betterment-warning-failure.png";
   const warningBody = await warnRun.page.locator("body").innerText();
-  assert.match(warningBody, /The fire is fading\./, "one fully missed care-day shows warning state");
-  assert.equal(await warnRun.page.getByText(/became Kindling/).count(), 0, "first missed day does not Kindle");
+  assert.match(warningBody, /the fire is fading\./i, "one fully missed care-day shows warning state");
+  assert.equal(await warnRun.page.getByText(/became Kindling/i).count(), 0, "first missed day does not Kindle");
   assert.deepEqual(warnRun.errors, [], `warning flow browser errors: ${warnRun.errors.join(" | ")}`);
   await warnRun.context.close();
   activePage = null;
