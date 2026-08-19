@@ -85,7 +85,9 @@ export function CampCanvas({ save, tall }: Props) {
         drawAshMark(ctx, fx, fy + 10, t);
       }
 
-      if (save.companion) {
+      // Away means away. The active companion cannot also be visibly sitting at
+      // camp while their Journey or encounter is still running.
+      if (save.companion && !save.walk && !save.combat) {
         // On the warning day they edge closer to the coals; otherwise they keep
         // enough space that both silhouettes read independently at phone size.
         const distance = warn ? 0.11 : 0.18;
@@ -136,7 +138,7 @@ export function CampCanvas({ save, tall }: Props) {
     <canvas
       ref={ref}
       className={tall ? "h-[52vh] min-h-72 w-full" : "h-56 w-full sm:h-72"}
-      aria-label={save.companion ? `${save.companion.name} by the bonfire` : "The bonfire"}
+      aria-label={save.companion && !save.walk && !save.combat ? `${save.companion.name} by the bonfire` : "The bonfire"}
     />
   );
 }
