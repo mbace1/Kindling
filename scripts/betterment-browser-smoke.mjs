@@ -20,8 +20,6 @@ try {
   const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
   assert.ok(response && response.status() < 400, `page status ${response?.status()}`);
 
-  // Intro is deliberately hydration-gated. A fast first tap used to be lost when
-  // hydration landed after the tap and restored `seen:false`.
   await page.getByRole("button", { name: "Tend the fire" }).waitFor();
   await page.getByRole("button", { name: "Tend the fire" }).click();
   await page.getByRole("button", { name: "Tend the fire" }).waitFor({ state: "detached" });
@@ -52,8 +50,6 @@ try {
   assert.match(afterTier2, /40\s+Flames/, "Tier II added 20 Flames");
   assert.match(afterTier2, /60 Bond XP/, "Tier II added 40 Bond XP");
 
-  // One more ordinary care action brings the spendable total to exactly the
-  // Journey price and, unlike the bonus tier, advances Fire to 2/5.
   await page.getByRole("button", { name: /^Drank some water/ }).click();
   await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
 
@@ -77,11 +73,12 @@ try {
   assert.equal(beforeReload.fuel, 0, "Journey spends exactly 60 Flames / 3 legacy fuel");
   assert.equal(beforeReload.seen, true, "intro dismissal survived hydration");
 
-  // Simulate closing/reopening the app. The UI tab is intentionally ephemeral,
-  // but the journey itself must survive and resume from the same timestamps.
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
   assert.equal(await page.getByRole("button", { name: "Tend the fire" }).count(), 0, "intro does not return after reload");
+  assert.equal(await page.getByText(/Ember is on the path\./).count(), 1, "active Journey is visible immediately after reload");
+  assert.match(await page.locator("canvas").getAttribute("aria-label"), /^The bonfire$/, "away companion is not presented as being at camp");
+
   await page.getByRole("button", { name: "Walk" }).click();
   await page.getByRole("heading", { name: /is on the path\./ }).waitFor();
   const afterReload = await page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null")?.walk);
@@ -90,6 +87,7 @@ try {
 
   await page.getByRole("button", { name: "Today" }).click();
   await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
+  assert.equal(await page.getByText(/Ember is on the path\./).count(), 1, "Journey status remains visible from Today");
   assert.deepEqual(errors, [], `browser errors: ${errors.join(" | ")}`);
   console.log(JSON.stringify({ ok: true, viewport: "390x844", art: [...requested], screenshot: out }, null, 2));
 } catch (err) {
