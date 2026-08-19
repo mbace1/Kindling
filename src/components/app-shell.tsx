@@ -6,7 +6,7 @@ import { authEnabled, signOut } from "@/lib/auth/client";
 import { loadCloudSave, writeCloudSave } from "@/lib/kindling/saves";
 import { useKindling } from "@/lib/kindling/store";
 import { startFireLoop, stopFireLoop, unlockAudio } from "@/lib/kindling/audio";
-import { dayKey, type Tab } from "@/lib/kindling/model";
+import { assetSrc, dayKey, type Tab } from "@/lib/kindling/model";
 import { cn } from "@/lib/utils";
 import {
   BreatheModal,
@@ -36,11 +36,6 @@ export function AppShell() {
     useKindling.getState().hydrate();
   }, []);
 
-  // A brand-new player gets the install/birth care-day as grace. If they come
-  // back on a later care-day without ever having completed a first action,
-  // anchor missed-day counting to that birth day. This avoids the old null
-  // `lastKept` loophole (which made Kindling impossible forever) without lying
-  // that the install day was a completed-care streak day.
   useEffect(() => {
     if (!s.hydrated || s.lastKept || !s.companion) return;
     if (s.companion.born === dayKey()) return;
@@ -51,10 +46,6 @@ export function AppShell() {
     useKindling.getState().hydrate(anchored);
   }, [s.hydrated, s.lastKept, s.companion?.id, s.companion?.born]);
 
-  // Return beats happen when the player comes back, not only when they manually
-  // open the Walk tab. If the 90-second timer ended while the app was closed,
-  // resolve it immediately from its departure seed: a find opens the Pack and
-  // an encounter opens Journey/Combat.
   useEffect(() => {
     if (!s.hydrated || !s.walk || s.walk.endsAt > Date.now()) return;
     useKindling.getState().finishWalk();
@@ -112,6 +103,8 @@ export function AppShell() {
             ? JournalScreen
             : TodayScreen;
 
+  const combatBackdrop = Boolean(s.hydrated && s.tab === "journey" && s.combat);
+
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col bg-night text-bone">
       <header className="flex items-center justify-between px-4 pb-2 pt-4">
@@ -156,7 +149,16 @@ export function AppShell() {
         </button>
       ) : null}
 
-      <main className="flex-1">
+      <main
+        className={cn("flex-1", combatBackdrop && "bg-cover bg-center bg-no-repeat")}
+        style={
+          combatBackdrop
+            ? {
+                backgroundImage: `linear-gradient(to bottom, rgba(8,10,15,0.42), rgba(8,10,15,0.92)), url("${assetSrc("art/path.jpg")}")`,
+              }
+            : undefined
+        }
+      >
         {s.hydrated ? <Screen /> : <div className="h-[52vh] animate-pulse bg-stone" />}
       </main>
 
@@ -187,8 +189,6 @@ export function AppShell() {
         })}
       </nav>
 
-      {/* These overlays are save-state UI. Rendering them before hydration creates
-          a race where a first tap can be overwritten by the arriving local save. */}
       {s.hydrated ? (
         <>
           <FirstNote />
