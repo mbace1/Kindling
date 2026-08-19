@@ -51,6 +51,15 @@ export function AppShell() {
     useKindling.getState().hydrate(anchored);
   }, [s.hydrated, s.lastKept, s.companion?.id, s.companion?.born]);
 
+  // Return beats happen when the player comes back, not only when they manually
+  // open the Walk tab. If the 90-second timer ended while the app was closed,
+  // resolve it immediately from its departure seed: a find opens the Pack and
+  // an encounter opens Journey/Combat.
+  useEffect(() => {
+    if (!s.hydrated || !s.walk || s.walk.endsAt > Date.now()) return;
+    useKindling.getState().finishWalk();
+  }, [s.hydrated, s.walk?.startedAt, s.walk?.endsAt]);
+
   useEffect(() => {
     if (!s.hydrated || isPending || !user) return;
     let cancelled = false;
