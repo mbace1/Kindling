@@ -66,8 +66,6 @@ async function seededPage(browser, initial) {
   page.on("pageerror", (e) => errors.push(String(e?.message || e)));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
-  // Nav exists before hydration, so it is not a safe readiness signal. The camp
-  // canvas exists only once the persisted save has become the live store.
   await page.locator("main canvas").waitFor({ state: "visible" });
   return { context, page, errors };
 }
@@ -76,21 +74,18 @@ const browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "
 let activePage = null;
 let failureShot = "artifacts/betterment-lineage-failure.png";
 try {
-  // ── Egg / lineage ────────────────────────────────────────────────
   const ember = companion("ember-a", "ember", "Ember");
   const moss = companion("moss-b", "mossling", "Mossling");
   const eggRun = await seededPage(browser, save({ companion: ember, roster: [ember, moss], unlocked: ["ember", "mossling"] }));
   const { page: eggPage } = eggRun;
   activePage = eggPage;
-  failureShot = "artifacts/betterment-lineage-failure.png";
 
   await eggPage.getByRole("button", { name: "Keep" }).click();
   await eggPage.getByRole("heading", { name: "Ember", exact: true }).waitFor();
   assert.match(await eggPage.locator("body").innerText(), /a tender/, "mature Ember reads as tender");
   assert.match(await eggPage.locator("body").innerText(), /Mossling/, "second mature parent is present");
 
-  const pair = eggPage.getByRole("button", { name: /Ember · Mossling/ });
-  await pair.click();
+  await eggPage.getByRole("button", { name: /Ember · Mossling/ }).click();
   await eggPage.getByText("Ember Egg", { exact: true }).waitFor();
   const afterPair = await eggPage.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
   assert.equal(afterPair.roster.length, 2, "breeding consumes neither parent");
@@ -105,7 +100,8 @@ try {
   await eggPage.getByRole("heading", { name: "5 / 5 tended" }).waitFor();
   await eggPage.getByRole("button", { name: "Keep" }).click();
   await eggPage.getByText("Warm enough to hatch whenever you are ready.").waitFor();
-  assert.match(await eggPage.locator("body").innerText(), /5 \/ 5 ordinary care actions warmed the egg/, "five real care actions fully warm the egg");
+  const warmed = await eggPage.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
+  assert.equal(warmed.kept - warmed.egg.startedKept, 5, "five real care actions fully warm the egg");
 
   await eggPage.getByRole("button", { name: "Hatch" }).click();
   const hatched = await eggPage.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
@@ -118,7 +114,6 @@ try {
   await eggRun.context.close();
   activePage = null;
 
-  // ── First missed day: warning only ──────────────────────────────
   const warnRun = await seededPage(browser, save({ lastKept: keyDaysAgo(2) }));
   activePage = warnRun.page;
   failureShot = "artifacts/betterment-warning-failure.png";
@@ -129,7 +124,6 @@ try {
   await warnRun.context.close();
   activePage = null;
 
-  // ── Never-started save: install day grace, then two misses ─────
   const oldEmber = companion("ember-old", "ember", "Ember", keyDaysAgo(3), 160);
   const kindleRun = await seededPage(browser, save({
     kept: 0,
