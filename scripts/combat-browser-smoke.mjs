@@ -82,7 +82,6 @@ const browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "
 let activePage = null;
 let failureShot = "artifacts/betterment-combat-failure.png";
 try {
-  // Voluntary retreat: available before any action, no wellness loss.
   const retreatCombat = {
     enemy: "mossknight", pathId: "road", playerHp: 26, playerMax: 26,
     enemyHp: 48, enemyMax: 48, telegraph: "strike", log: ["Moss Knight holds the path."], result: null,
@@ -91,7 +90,7 @@ try {
   activePage = retreatRun.page;
   const retreatBefore = await retreatRun.page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
   await retreatRun.page.getByRole("button", { name: /Retreat from the encounter/ }).click();
-  await retreatRun.page.getByRole("heading", { name: "Send them out" }).waitFor();
+  await retreatRun.page.getByRole("heading", { name: "The road keeps opening." }).waitFor();
   const retreatAfter = await retreatRun.page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
   assert.equal(retreatAfter.combat, null, "retreat closes combat immediately");
   assert.deepEqual(wellness(retreatAfter), wellness(retreatBefore), "retreat cannot change wellness, Flames, Bond, or lineage");
@@ -100,7 +99,6 @@ try {
   await retreatRun.context.close();
   activePage = null;
 
-  // Defeat: one incoming Moss Knight strike is enough from 1 HP.
   const loseCombat = {
     enemy: "mossknight", pathId: "road", playerHp: 1, playerMax: 26,
     enemyHp: 48, enemyMax: 48, telegraph: "strike", log: ["Moss Knight holds the path."], result: null,
@@ -123,7 +121,6 @@ try {
   await loseRun.context.close();
   activePage = null;
 
-  // Victory + capture: combat rewards world progress only; wellness stays untouched.
   const winCombat = {
     enemy: "mossling", pathId: "forest", playerHp: 26, playerMax: 26,
     enemyHp: 1, enemyMax: 30, telegraph: "strike", log: ["Mossling holds the path."], result: null,
