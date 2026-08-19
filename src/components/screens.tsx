@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Check,
   Flame,
@@ -9,19 +9,26 @@ import {
 import { CampCanvas } from "@/components/camp-canvas";
 import {
   ERRAND_COST,
+  FLAMES_PER_FUEL,
   FULL_DAY,
   MOODS,
   PATHS,
   PRESET_TASKS,
   SPECIES,
+  assetSrc,
+  bondUnits,
   caredToday,
   consecutiveMissed,
+  eggReady,
+  eggWarmth,
+  flames,
   formatDay,
-  liveStreak,
-  nextStage,
+  nextStageBondXp,
   pairings,
   portraitSrc,
+  progressiveOpportunities,
   stageOf,
+  stageOfCompanion,
   verbLabel,
   warningState,
   warmth,
@@ -31,14 +38,17 @@ import {
 import { useKindling } from "@/lib/kindling/store";
 import { cn } from "@/lib/utils";
 
+const JOURNEY_FLAMES = ERRAND_COST * FLAMES_PER_FUEL;
+
 export function TodayScreen() {
   const s = useKindling();
   const cared = caredToday(s);
+  const fireDone = Math.min(FULL_DAY, cared);
   const heat = warmth(s);
   const warn = warningState(s);
-  const streak = liveStreak(s);
   const stage = stageOf(s);
-  const nxt = nextStage(s);
+  const nextBond = nextStageBondXp(s);
+  const progressive = progressiveOpportunities(s);
 
   return (
     <div>
@@ -47,23 +57,27 @@ export function TodayScreen() {
         <div className="flex items-end justify-between gap-3">
           <div>
             <p className="text-xs uppercase tracking-[0.2em] text-mute">
-              {warn ? "The fire is fading." : heat >= 1 ? "The fire is tended." : "Today"}
+              {warn ? "The fire is fading." : fireDone >= FULL_DAY ? "Fire tended. Enough for today." : "Today"}
             </p>
             <h2 className="font-display text-2xl font-semibold">
-              {cared} / {FULL_DAY} tended
+              {fireDone} / {FULL_DAY} tended
             </h2>
             <p className="text-sm text-mute">
               {s.tasks.length} on your list
-              {streak ? ` · ${streak} day${streak === 1 ? "" : "s"} kept` : ""}
               {s.companion ? ` · ${s.companion.name} is ${stage.name}` : ""}
             </p>
           </div>
           <div className="text-right">
             <p className="flex items-center justify-end gap-1 text-fire">
               <Flame className="size-4" />
-              <span className="font-medium">{s.fuel}</span>
+              <span className="font-medium">{flames(s)}</span>
             </p>
-            <p className="text-xs text-mute">{nxt ? `${nxt.at - s.kept} to ${nxt.name}` : "elder"}</p>
+            <p className="text-xs text-mute">Flames</p>
+            {s.companion ? (
+              <p className="mt-1 text-xs text-mute">
+                {s.companion.bondXp} Bond XP{nextBond ? ` · ${nextBond} to next form` : ""}
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -73,15 +87,16 @@ export function TodayScreen() {
               key={i}
               className={cn(
                 "h-2 flex-1 rounded-full",
-                cared > i ? "bg-fire" : "bg-ash",
+                fireDone > i ? "bg-fire" : "bg-ash",
               )}
             />
           ))}
         </div>
 
-        {cared === 4 && (
-          <p className="text-sm text-mute">Four is a good fire. Five is just a fuller one.</p>
-        )}
+        {fireDone >= FULL_DAY ? (
+          <p className="text-sm text-mute">The fire stays full. Anything else today is optional.</p>
+        ) : null}
+
         {!s.walkedOnce && s.fuel >= ERRAND_COST && s.companion ? (
           <button
             type="button"
@@ -89,7 +104,7 @@ export function TodayScreen() {
             className="w-full rounded-md border border-fire/40 bg-coal px-4 py-3 text-left"
           >
             <p className="font-medium text-fire">The path is open.</p>
-            <p className="text-sm text-mute">Three kindling. Send them out.</p>
+            <p className="text-sm text-mute">{JOURNEY_FLAMES} Flames sends them out for a while.</p>
           </button>
         ) : null}
 
@@ -118,12 +133,35 @@ export function TodayScreen() {
                 </span>
                 <span className="flex-1 text-base font-medium">{task.text}</span>
                 {!s.sheet.paid.includes(task.id) && !on ? (
-                  <span className="text-xs text-mute">+1</span>
+                  <span className="text-xs text-mute">+20 Flames</span>
                 ) : null}
               </button>
             );
           })}
         </section>
+
+        {progressive.length ? (
+          <section className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.18em] text-mute">Optional · go further</p>
+            {progressive.map(({ task, tier }) => (
+              <button
+                key={`${task.id}:${tier.id}`}
+                type="button"
+                onClick={() => s.completeProgressive(task.id)}
+                className="flex min-h-16 w-full items-center justify-between gap-4 rounded-md border border-fire/35 bg-coal px-4 py-3 text-left"
+              >
+                <span>
+                  <span className="block font-medium">{tier.label}</span>
+                  <span className="text-xs text-mute">Only if you want to.</span>
+                </span>
+                <span className="shrink-0 text-right text-xs text-fire">
+                  +{tier.flames} Flames
+                  <br />+{tier.bondXp} Bond
+                </span>
+              </button>
+            ))}
+          </section>
+        ) : null}
 
         <div className="flex gap-2">
           <button
@@ -170,28 +208,38 @@ export function TodayScreen() {
 
 export function JourneyScreen() {
   const s = useKindling();
-  const walking = s.walk && Date.now() < s.walk.endsAt;
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
     if (!s.walk) return;
+    const update = window.setInterval(() => setNow(Date.now()), 1000);
     const wait = Math.max(0, s.walk.endsAt - Date.now());
-    const t = window.setTimeout(() => useKindling.getState().finishWalk(), wait + 40);
-    return () => window.clearTimeout(t);
+    const finish = window.setTimeout(() => useKindling.getState().finishWalk(), wait + 40);
+    return () => {
+      window.clearInterval(update);
+      window.clearTimeout(finish);
+    };
   }, [s.walk]);
 
   if (s.combat) return <CombatScreen />;
 
   if (s.walk) {
     const path = PATHS.find((p) => p.id === s.walk?.pathId);
+    const seconds = Math.max(0, Math.ceil((s.walk.endsAt - now) / 1000));
     return (
-      <div className="relative min-h-[70vh]">
-        <img src="/art/path.jpg" alt="" className="h-64 w-full object-cover sm:h-80" />
+      <div className="relative min-h-[70vh] overflow-hidden">
+        <img
+          src={assetSrc("art/path.jpg")}
+          alt=""
+          className="h-64 w-full scale-105 object-cover sm:h-80"
+          style={{ objectPosition: `${45 + ((90 - seconds) / 90) * 10}% center` }}
+        />
         <div className="absolute inset-x-0 top-40 flex justify-center">
           {s.companion ? (
             <img
               src={portraitSrc(s.companion.species)}
               alt=""
-              className="h-24 w-24 animate-pulse object-contain [image-rendering:pixelated]"
+              className="h-24 w-24 animate-pulse object-contain"
             />
           ) : null}
         </div>
@@ -200,7 +248,9 @@ export function JourneyScreen() {
           <h2 className="font-display text-2xl">
             {s.companion?.name ?? "Someone"} is on the path.
           </h2>
-          <p className="text-sm text-mute">{walking ? "A little farther." : "Coming back."}</p>
+          <p className="text-sm text-mute">
+            {seconds > 0 ? `${seconds}s · the journey continues if you close the app.` : "Coming home."}
+          </p>
         </div>
       </div>
     );
@@ -208,13 +258,13 @@ export function JourneyScreen() {
 
   return (
     <div>
-      <img src="/art/path.jpg" alt="" className="h-44 w-full object-cover sm:h-56" />
+      <img src={assetSrc("art/path.jpg")} alt="" className="h-44 w-full object-cover sm:h-56" />
       <div className="space-y-4 px-4 pb-28 pt-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-mute">Walk</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-mute">Journey</p>
           <h2 className="font-display text-2xl font-semibold">Send them out</h2>
           <p className="text-sm text-mute">
-            A walk costs {ERRAND_COST} kindling. They bring something home, or they meet what lives there.
+            A journey costs {JOURNEY_FLAMES} Flames and takes about 90 seconds. They bring something home, or meet what lives there.
           </p>
         </div>
         <div className="space-y-2">
@@ -232,13 +282,13 @@ export function JourneyScreen() {
               </span>
               <span className="flex items-center gap-1 text-sm text-fire">
                 <Flame className="size-3.5" />
-                {ERRAND_COST}
+                {JOURNEY_FLAMES}
               </span>
             </button>
           ))}
         </div>
         {s.fuel < ERRAND_COST ? (
-          <p className="text-sm text-mute">Tend the fire a little more, then walk.</p>
+          <p className="text-sm text-mute">Tend the fire a little more, then journey.</p>
         ) : null}
       </div>
     </div>
@@ -353,7 +403,7 @@ function Fighter({
         src={src}
         alt=""
         className={cn(
-          "mx-auto h-28 w-28 object-contain [image-rendering:pixelated] transition-transform duration-300",
+          "mx-auto h-28 w-28 object-contain transition-transform duration-300",
           pose === "strike" && (align === "right" ? "-translate-x-2 scale-110" : "translate-x-2 scale-110"),
           pose === "guard" && "scale-x-125",
           pose === "skill" && "scale-110",
@@ -377,6 +427,16 @@ export function CompanionScreen() {
   const s = useKindling();
   const stage = stageOf(s);
   const [name, setName] = useState(s.companion?.name ?? "");
+  const warmthNow = eggWarmth(s);
+  const ready = eggReady(s);
+  const maturePairs = useMemo(
+    () => pairings(s.roster).filter((p) => bondUnits(p.a) >= 18 && bondUnits(p.b) >= 18),
+    [s.roster],
+  );
+
+  useEffect(() => {
+    setName(s.companion?.name ?? "");
+  }, [s.companion?.id, s.companion?.name]);
 
   if (s.awaitingHatch) {
     return (
@@ -419,12 +479,12 @@ export function CompanionScreen() {
         <img
           src={portraitSrc(s.companion.species)}
           alt=""
-          className="h-40 w-40 object-contain [image-rendering:pixelated]"
+          className="h-40 w-40 object-contain"
         />
         <p className="mt-2 text-xs uppercase tracking-[0.2em] text-mute">{SPECIES[s.companion.species].name}</p>
         <h2 className="font-display text-3xl font-semibold">{s.companion.name}</h2>
         <p className="text-sm text-mute">
-          {stage.name} · bond {s.kept} · {s.encounters.wins} paths held
+          {stage.name} · {s.companion.bondXp} Bond XP · {s.encounters.wins} paths held
         </p>
         {s.companion.trait ? (
           <p className="mt-1 text-sm text-fire">Carries {s.companion.trait}</p>
@@ -455,6 +515,31 @@ export function CompanionScreen() {
         {SPECIES[s.companion.species].combat.tendency.replace("-", " ")} · born {formatDay(s.companion.born)}
       </p>
 
+      {s.egg ? (
+        <section className="mt-8 rounded-md border border-fire/35 bg-coal p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-mute">Ember Egg</p>
+          <h3 className="mt-1 font-display text-xl">{SPECIES[s.egg.species].name}</h3>
+          <p className="text-sm text-mute">From {s.egg.parentAName} + {s.egg.parentBName}</p>
+          <div className="mt-3 flex gap-1.5" aria-label={`${warmthNow} of ${s.egg.required} warmth`}>
+            {Array.from({ length: s.egg.required }).map((_, i) => (
+              <span key={i} className={cn("h-2 flex-1 rounded-full", i < warmthNow ? "bg-fire" : "bg-ash")} />
+            ))}
+          </div>
+          <p className="mt-2 text-sm text-mute">
+            {ready ? "Warm enough to hatch whenever you are ready." : `${warmthNow} / ${s.egg.required} ordinary care actions warmed the egg.`}
+          </p>
+          {ready ? (
+            <button
+              type="button"
+              onClick={() => s.hatchEgg()}
+              className="mt-3 min-h-12 w-full rounded-md bg-fire px-4 font-medium text-night"
+            >
+              Hatch
+            </button>
+          ) : null}
+        </section>
+      ) : null}
+
       {s.roster.length > 1 ? (
         <div className="mt-8">
           <h3 className="font-display text-xl">By the fire</h3>
@@ -471,9 +556,11 @@ export function CompanionScreen() {
                   )}
                 >
                   <img src={portraitSrc(m.species)} alt="" className="h-12 w-12 object-contain" />
-                  <span>
+                  <span className="flex-1">
                     <span className="block font-medium">{m.name}</span>
-                    <span className="text-xs text-mute">{SPECIES[m.species].name}</span>
+                    <span className="text-xs text-mute">
+                      {SPECIES[m.species].name} · {stageOfCompanion(m).name} · {m.bondXp} Bond
+                    </span>
                   </span>
                 </button>
               </li>
@@ -482,12 +569,12 @@ export function CompanionScreen() {
         </div>
       ) : null}
 
-      {pairings(s.roster).length > 0 && s.roster.length < 6 ? (
+      {!s.egg && maturePairs.length > 0 && s.roster.length < 6 ? (
         <div className="mt-8">
-          <h3 className="font-display text-xl">Pair</h3>
-          <p className="text-sm text-mute">Two who can leave something in the coals.</p>
+          <h3 className="font-display text-xl">Lineage</h3>
+          <p className="text-sm text-mute">Two tender-or-older companions can leave an egg in the coals.</p>
           <ul className="mt-3 space-y-2">
-            {pairings(s.roster).map((p) => (
+            {maturePairs.map((p) => (
               <li key={p.a.id + p.b.id}>
                 <button
                   type="button"
@@ -497,7 +584,7 @@ export function CompanionScreen() {
                   <span className="text-sm">
                     {p.a.name} · {p.b.name}
                   </span>
-                  <span className="text-xs text-fire">{SPECIES[p.child].name}</span>
+                  <span className="text-xs text-fire">Egg · {SPECIES[p.child].name}</span>
                 </button>
               </li>
             ))}
@@ -505,7 +592,11 @@ export function CompanionScreen() {
         </div>
       ) : null}
 
-      <h3 className="mt-8 font-display text-xl">Lineage</h3>
+      {!s.egg && s.roster.length > 1 && maturePairs.length === 0 ? (
+        <p className="mt-8 text-sm text-mute">Pairing opens when two companions have reached tender.</p>
+      ) : null}
+
+      <h3 className="mt-8 font-display text-xl">Ancestors</h3>
       {s.lineage.length === 0 ? (
         <p className="mt-2 text-sm text-mute">No ancestors yet. The fire has only been kept.</p>
       ) : (
@@ -516,7 +607,7 @@ export function CompanionScreen() {
               <div>
                 <p className="font-medium">{a.name}</p>
                 <p className="text-xs text-mute">
-                  Kindled {formatDay(a.kindledOn)} · {a.stage}
+                  Kindled {formatDay(a.kindledOn)} · {a.stage} · {a.bondXp} Bond XP
                   {a.trait ? ` · ${a.trait}` : ""}
                 </p>
               </div>
@@ -534,7 +625,7 @@ export function PackScreen() {
     return (
       <div className="px-5 py-10">
         <h2 className="font-display text-2xl">Pack</h2>
-        <p className="mt-2 text-sm text-mute">Walks leave small things. The pack is empty for now.</p>
+        <p className="mt-2 text-sm text-mute">Journeys leave small things. The pack is empty for now.</p>
       </div>
     );
   }
@@ -610,7 +701,7 @@ export function KindlingEvent() {
       <div className="max-w-sm space-y-5">
         <p className="text-xs uppercase tracking-[0.28em] text-mute">The fire was not tended.</p>
         <h2 className="font-display text-4xl font-semibold leading-tight">
-          {s.companion.name} became kindling.
+          {s.companion.name} became Kindling.
         </h2>
         <p className="text-sm text-mute">
           {missed} quiet days in a row. They stay in the lineage. The coals can still hatch another.
@@ -629,26 +720,48 @@ export function KindlingEvent() {
 
 export function BreatheModal() {
   const s = useKindling();
-  const [phase, setPhase] = useState<"in" | "hold" | "out">("in");
-  const [tick, setTick] = useState(0);
+  const [phase, setPhase] = useState<"in" | "hold" | "out" | "done">("in");
+  const [round, setRound] = useState(0);
 
   useEffect(() => {
     if (!s.breatheOpen) return;
-    const order: Array<"in" | "hold" | "out"> = ["in", "hold", "out"];
-    let i = 0;
-    const id = window.setInterval(() => {
-      i = (i + 1) % 3;
-      setPhase(order[i]);
-      if (order[i] === "in") {
-        setTick((n) => {
-          const next = n + 1;
-          if (next <= 3) useKindling.getState().countBreath();
-          return next;
-        });
-      }
-    }, 3200);
-    useKindling.getState().countBreath();
-    return () => window.clearInterval(id);
+    setPhase("in");
+    setRound(0);
+    let current: "in" | "hold" | "out" = "in";
+    let completed = 0;
+    let timer = 0;
+    let cancelled = false;
+
+    const duration = { in: 4000, hold: 4000, out: 6000 } as const;
+    const schedule = () => {
+      timer = window.setTimeout(() => {
+        if (cancelled) return;
+        if (current === "in") {
+          current = "hold";
+          setPhase("hold");
+        } else if (current === "hold") {
+          current = "out";
+          setPhase("out");
+        } else {
+          completed += 1;
+          useKindling.getState().countBreath();
+          setRound(completed);
+          if (completed >= 4) {
+            setPhase("done");
+            return;
+          }
+          current = "in";
+          setPhase("in");
+        }
+        schedule();
+      }, duration[current]);
+    };
+
+    schedule();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [s.breatheOpen]);
 
   if (!s.breatheOpen) return null;
@@ -666,13 +779,27 @@ export function BreatheModal() {
       <div className="flex flex-col items-center gap-6">
         <div
           className={cn(
-            "size-40 rounded-full border-2 border-fire/80 bg-coal/40 transition-transform duration-[3000ms] ease-in-out",
-            phase === "in" ? "scale-110" : phase === "hold" ? "scale-110" : "scale-75",
+            "size-40 rounded-full border-2 border-fire/80 bg-coal/40 transition-transform ease-in-out",
+            phase === "in" && "scale-110 duration-[4000ms]",
+            phase === "hold" && "scale-110 duration-[4000ms]",
+            phase === "out" && "scale-75 duration-[6000ms]",
+            phase === "done" && "scale-90 duration-500",
           )}
         />
-        <p className="font-display text-3xl capitalize">{phase === "in" ? "In" : phase === "hold" ? "Hold" : "Out"}</p>
-        <p className="text-sm text-mute">Three rounds tend the fire. More is welcome.</p>
-        <p className="text-xs text-mute">{s.sheet.breaths} this care-day</p>
+        <p className="font-display text-3xl capitalize">
+          {phase === "in" ? "In" : phase === "hold" ? "Hold" : phase === "out" ? "Out" : "Done"}
+        </p>
+        <p className="text-sm text-mute">4 in · 4 hold · 6 out · four rounds.</p>
+        <p className="text-xs text-mute">{round} / 4 completed</p>
+        {phase === "done" ? (
+          <button
+            type="button"
+            onClick={() => s.setBreatheOpen(false)}
+            className="min-h-12 rounded-md bg-fire px-6 font-medium text-night"
+          >
+            Back to the fire
+          </button>
+        ) : null}
       </div>
     </div>
   );
@@ -704,7 +831,10 @@ export function GoalEditor() {
         <ul className="mt-4 space-y-2">
           {s.tasks.map((t) => (
             <li key={t.id} className="flex items-center justify-between rounded-md border border-ash bg-stone px-3 py-2">
-              <span>{t.text}</span>
+              <span>
+                {t.text}
+                {t.progressive ? <span className="ml-2 text-xs text-fire">optional tiers</span> : null}
+              </span>
               <button type="button" onClick={() => s.removeTask(t.id)} className="text-sm text-mute">
                 Remove
               </button>
@@ -739,10 +869,10 @@ export function GoalEditor() {
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => s.addPreset(p.text, p.category)}
+                  onClick={() => s.addPreset(p.text, p.category, p.progressive)}
                   className="rounded-full border border-ash bg-stone px-3 py-2 text-sm"
                 >
-                  {p.text}
+                  {p.text}{p.progressive ? " +" : ""}
                 </button>
               ))}
             </div>
@@ -762,8 +892,7 @@ export function FirstNote() {
         <p className="text-xs uppercase tracking-[0.22em] text-mute">Kindling</p>
         <h2 className="font-display text-3xl font-semibold leading-tight">Five small things. A fire. A monster who stays if you do.</h2>
         <p className="text-sm text-mute">
-          Five small things tend the fire. Three kindling opens a walk. Two fully missed days and they become
-          kindling — not a scolding, a story. Today lives here; sign in if you want it to follow you.
+          Five care points tend the fire. {JOURNEY_FLAMES} Flames opens a journey. Two fully missed care-days and your active monster becomes Kindling — their name stays in the lineage and the coals can begin again.
         </p>
         <button
           type="button"
