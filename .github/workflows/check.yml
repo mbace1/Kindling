@@ -42,6 +42,8 @@ jobs:
         run: node scripts/journey-return-browser-smoke.mjs http://127.0.0.1:8080/
       - name: Mobile lineage and Kindling smoke
         run: node scripts/lineage-browser-smoke.mjs http://127.0.0.1:8080/
+      - name: Mobile combat smoke
+        run: node scripts/combat-browser-smoke.mjs http://127.0.0.1:8080/
       - uses: actions/upload-artifact@v4
         if: always()
         with:
