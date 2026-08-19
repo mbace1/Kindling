@@ -146,6 +146,16 @@ export function AppShell() {
         </button>
       ) : null}
 
+      {s.hydrated && s.combat && !s.combat.result ? (
+        <button
+          type="button"
+          onClick={() => s.leaveCombat()}
+          className="mx-4 mb-2 min-h-11 rounded-md border border-ash bg-stone px-3 text-left text-sm text-mute"
+        >
+          Retreat from the encounter · nothing else is lost
+        </button>
+      ) : null}
+
       <main className="flex-1">
         {s.hydrated ? <Screen /> : <div className="h-[52vh] animate-pulse bg-stone" />}
       </main>
