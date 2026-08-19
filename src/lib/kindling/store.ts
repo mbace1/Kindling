@@ -141,6 +141,24 @@ function pick<T extends object>(s: T): KindlingSave {
 
 const flameCopy = (fuel: number) => `${Math.round(fuel * FLAMES_PER_FUEL)} Flames`;
 
+// A Journey is decided when it leaves, not when the player comes back. We do
+// not need another save field for that: startedAt + pathId are immutable
+// departure facts and therefore form a stable seed across reloads/devices.
+function journeyRoll(pathId: string, startedAt: number, salt: number) {
+  let h = ((startedAt >>> 0) ^ Math.imul(salt + 1, 0x9e3779b1)) >>> 0;
+  for (let i = 0; i < pathId.length; i++) {
+    h ^= pathId.charCodeAt(i);
+    h = Math.imul(h, 0x85ebca6b) >>> 0;
+    h ^= h >>> 13;
+  }
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x7feb352d) >>> 0;
+  h ^= h >>> 15;
+  h = Math.imul(h, 0x846ca68b) >>> 0;
+  h ^= h >>> 16;
+  return (h >>> 0) / 0x1_0000_0000;
+}
+
 export const useKindling = create<KindlingStore>((set, get) => ({
   ...freshSave(),
   hydrated: false,
@@ -307,14 +325,16 @@ export const useKindling = create<KindlingStore>((set, get) => ({
   finishWalk: () => {
     const s = pick(get());
     if (!s.walk) return;
-    const path = PATHS.find((p) => p.id === s.walk?.pathId);
+    const departure = s.walk;
+    const path = PATHS.find((p) => p.id === departure.pathId);
     s.walk = null;
     if (!path) {
       persist(s);
       set(s);
       return;
     }
-    const fight = path.enemy && Math.random() < path.encounter;
+
+    const fight = Boolean(path.enemy) && journeyRoll(path.id, departure.startedAt, 0) < path.encounter;
     if (fight && path.enemy && s.companion) {
       const pc = combatFor(s.companion.species);
       const ec = combatFor(path.enemy);
@@ -329,13 +349,19 @@ export const useKindling = create<KindlingStore>((set, get) => ({
         log: [`${SPECIES[path.enemy].name} holds the path.`],
         result: null,
       };
+      s.updatedAt = Date.now();
       persist(s);
-      set({ ...s, lastToast: "something waits" });
+      set({ ...s, lastToast: "Something waits.", tab: "journey" });
       return;
     }
-    const find = path.finds[Math.floor(Math.random() * path.finds.length)];
+
+    const findIndex = Math.min(
+      path.finds.length - 1,
+      Math.floor(journeyRoll(path.id, departure.startedAt, 1) * path.finds.length),
+    );
+    const find = path.finds[findIndex];
     s.found.unshift({
-      id: "f" + Date.now().toString(36),
+      id: "f" + departure.startedAt.toString(36),
       name: find.name,
       kind: find.kind,
       from: path.id,
@@ -344,7 +370,7 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     journalEntry(s).lines.push(`Brought home ${find.name}.`);
     s.updatedAt = Date.now();
     persist(s);
-    set({ ...s, lastToast: find.name, tab: "pack" });
+    set({ ...s, lastToast: `${s.companion?.name ?? "They"} came home with ${find.name}.`, tab: "pack" });
   },
 
   playerAct: (verb) => {
