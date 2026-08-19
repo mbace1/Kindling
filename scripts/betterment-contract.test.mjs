@@ -4,11 +4,12 @@ import { readFile } from "node:fs/promises";
 
 const read = (p) => readFile(new URL(`../${p}`, import.meta.url), "utf8");
 
-const [model, store, screens, camp] = await Promise.all([
+const [model, store, screens, camp, shell] = await Promise.all([
   read("src/lib/kindling/model.ts"),
   read("src/lib/kindling/store.ts"),
   read("src/components/screens.tsx"),
   read("src/components/camp-canvas.tsx"),
+  read("src/components/app-shell.tsx"),
 ]);
 
 test("five care points is the fixed Fire target", () => {
@@ -76,4 +77,10 @@ test("the approved camp staging keeps the companion left of the fire", () => {
   assert.match(camp, /const cx = fx - w \* distance/);
   assert.match(camp, /assetSrc\("art\/camp\.jpg"\)/);
   assert.doesNotMatch(camp, /load\("\/art\/camp\.jpg"\)/);
+});
+
+test("a companion on a Journey is not also drawn at camp", () => {
+  assert.match(camp, /save\.companion && !save\.walk && !save\.combat/);
+  assert.match(shell, /is on the path\./);
+  assert.match(shell, /View journey/);
 });
