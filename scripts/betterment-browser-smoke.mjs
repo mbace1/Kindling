@@ -57,12 +57,12 @@ try {
   assert.ok(overflow <= 0, `mobile page overflows horizontally by ${overflow}px`);
 
   await page.getByRole("button", { name: "Walk" }).click();
-  await page.getByRole("heading", { name: "Send them out" }).waitFor();
+  await page.getByRole("heading", { name: "The road keeps opening." }).waitFor();
   const journeyText = await page.locator("body").innerText();
   assert.match(journeyText, /60 Flames/, "Journey price is 60 Flames");
   assert.match(journeyText, /about 90 seconds/, "Journey explains its duration");
 
-  await page.getByRole("button", { name: /Birch ruin/ }).click();
+  await page.getByRole("button", { name: "Birch Ruins" }).click();
   await page.getByRole("heading", { name: /is on the path\./ }).waitFor();
   const beforeReload = await page.evaluate(() => {
     const save = JSON.parse(localStorage.getItem("kindlingState") || "null");
