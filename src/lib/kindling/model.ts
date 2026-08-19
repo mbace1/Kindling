@@ -3,6 +3,9 @@ export const SAVE_VERSION = 1;
 export const FULL_DAY = 5;
 export const PAY = { task: 1, mood: 1, breath: 2 } as const;
 export const ERRAND_COST = 3;
+export const FLAMES_PER_FUEL = 20;
+export const BASE_BOND_XP = 20;
+export const EGG_WARMTH_REQUIRED = 5;
 
 export const STAGES = [
   { at: 0, id: "spark", name: "a spark" },
@@ -18,13 +21,21 @@ export type Tab = "today" | "journey" | "companion" | "pack" | "journal";
 export type Mood = "dim" | "quiet" | "steady" | "bright" | "fierce";
 export type CombatVerb = "strike" | "guard" | "skill";
 export type FindKind = "relic" | "memory" | "shard" | "moss" | "ash";
+export type ProgressiveId = "pushups" | "reading" | "walking";
 
-export type Task = { id: string; text: string; custom?: boolean; category?: string };
+export type Task = {
+  id: string;
+  text: string;
+  custom?: boolean;
+  category?: string;
+  progressive?: ProgressiveId;
+};
 
 export type Sheet = {
   date: string;
   done: string[];
   paid: string[];
+  bonus: string[];
   mood: Mood | null;
   breaths: number;
 };
@@ -49,6 +60,7 @@ export type Companion = {
   species: SpeciesId;
   name: string;
   born: string;
+  bondXp: number;
   trait?: string;
 };
 
@@ -58,7 +70,19 @@ export type Ancestor = {
   name: string;
   stage: StageId;
   kept: number;
+  bondXp: number;
   kindledOn: string;
+  trait?: string;
+};
+
+export type EggState = {
+  species: SpeciesId;
+  parentAId: string;
+  parentBId: string;
+  parentAName: string;
+  parentBName: string;
+  startedKept: number;
+  required: number;
   trait?: string;
 };
 
@@ -100,6 +124,7 @@ export type KindlingSave = {
   unlocked: SpeciesId[];
   kindlingPending: boolean;
   awaitingHatch: boolean;
+  egg: EggState | null;
   combat: CombatState | null;
   walk: WalkState | null;
   encounters: { wins: number; losses: number };
@@ -124,6 +149,19 @@ export type Species = {
     tendency: string;
   };
   capturable: boolean;
+};
+
+export type ProgressiveTier = {
+  id: string;
+  label: string;
+  flames: number;
+  bondXp: number;
+};
+
+export type ProgressiveTemplate = {
+  id: ProgressiveId;
+  baseLabel: string;
+  tiers: ProgressiveTier[];
 };
 
 export const SPECIES: Record<SpeciesId, Species> = {
@@ -173,6 +211,33 @@ export const SPECIES: Record<SpeciesId, Species> = {
   },
 };
 
+export const PROGRESSIVE: Record<ProgressiveId, ProgressiveTemplate> = {
+  pushups: {
+    id: "pushups",
+    baseLabel: "Do 10 push-ups",
+    tiers: [
+      { id: "20", label: "Feeling good? Reach 20 push-ups total", flames: 20, bondXp: 40 },
+      { id: "30", label: "One more tier: reach 30 push-ups total", flames: 20, bondXp: 60 },
+    ],
+  },
+  reading: {
+    id: "reading",
+    baseLabel: "Read for 10 minutes",
+    tiers: [
+      { id: "20", label: "Keep going: reach 20 minutes total", flames: 20, bondXp: 40 },
+      { id: "30", label: "One more tier: reach 30 minutes total", flames: 20, bondXp: 60 },
+    ],
+  },
+  walking: {
+    id: "walking",
+    baseLabel: "Walk for 10 minutes",
+    tiers: [
+      { id: "20", label: "Keep walking: reach 20 minutes total", flames: 20, bondXp: 40 },
+      { id: "30", label: "One more tier: reach 30 minutes total", flames: 20, bondXp: 60 },
+    ],
+  },
+};
+
 export const DEFAULT_TASKS: Task[] = [
   { id: "water", text: "Drank some water", category: "body" },
   { id: "outside", text: "Stepped outside", category: "daily" },
@@ -185,12 +250,15 @@ export const DEFAULT_TASKS: Task[] = [
 export const PRESET_TASKS: Task[] = [
   { id: "p-water", text: "Drank some water", category: "body" },
   { id: "p-moved", text: "Moved your body", category: "body" },
+  { id: "p-pushups", text: "Do 10 push-ups", category: "body", progressive: "pushups" },
+  { id: "p-walk10", text: "Walk for 10 minutes", category: "body", progressive: "walking" },
   { id: "p-ate", text: "Ate something real", category: "body" },
   { id: "p-stretch", text: "Stretched", category: "body" },
   { id: "p-teeth", text: "Brushed your teeth", category: "hygiene" },
   { id: "p-face", text: "Washed your face", category: "hygiene" },
   { id: "p-clothes", text: "Changed your clothes", category: "hygiene" },
   { id: "p-still", text: "Sat still a minute", category: "mind" },
+  { id: "p-read10", text: "Read for 10 minutes", category: "mind", progressive: "reading" },
   { id: "p-wrote", text: "Wrote one line", category: "mind" },
   { id: "p-phone", text: "Put the phone down", category: "mind" },
   { id: "p-said", text: "Said something to someone", category: "connection" },
@@ -288,7 +356,7 @@ export function newId(prefix = "k") {
 
 export function freshCompanion(species: SpeciesId, trait?: string): Companion {
   const spec = SPECIES[species];
-  return { id: newId("c"), species, name: spec.name, born: dayKey(), trait };
+  return { id: newId("c"), species, name: spec.name, born: dayKey(), bondXp: 0, trait };
 }
 
 export function freshSave(): KindlingSave {
@@ -297,7 +365,7 @@ export function freshSave(): KindlingSave {
     v: SAVE_VERSION,
     updatedAt: Date.now(),
     tasks: DEFAULT_TASKS.map((t) => ({ ...t })),
-    sheet: { date: dayKey(), done: [], paid: [], mood: null, breaths: 0 },
+    sheet: { date: dayKey(), done: [], paid: [], bonus: [], mood: null, breaths: 0 },
     fuel: 0,
     kept: 0,
     days: 0,
@@ -313,6 +381,7 @@ export function freshSave(): KindlingSave {
     unlocked: ["ember"],
     kindlingPending: false,
     awaitingHatch: false,
+    egg: null,
     combat: null,
     walk: null,
     encounters: { wins: 0, losses: 0 },
@@ -329,20 +398,73 @@ export function warmth(s: KindlingSave) {
   return Math.min(1, caredToday(s) / FULL_DAY);
 }
 
+export function flames(s: Pick<KindlingSave, "fuel">) {
+  return Math.round(s.fuel * FLAMES_PER_FUEL);
+}
+
 export function liveStreak(s: KindlingSave) {
   const today = dayKey();
   if (s.lastKept === today || s.lastKept === prevKey(today)) return s.streak;
   return 0;
 }
 
-export function stageOf(s: KindlingSave) {
+export function bondUnits(companion: Companion | null | undefined) {
+  return Math.floor((companion?.bondXp ?? 0) / BASE_BOND_XP);
+}
+
+export function stageOfCompanion(companion: Companion | null | undefined) {
+  const units = bondUnits(companion);
   let out: (typeof STAGES)[number] = STAGES[0];
-  for (const st of STAGES) if (s.kept >= st.at) out = st;
+  for (const st of STAGES) if (units >= st.at) out = st;
   return out;
 }
 
+export function stageOf(s: KindlingSave) {
+  return stageOfCompanion(s.companion);
+}
+
 export function nextStage(s: KindlingSave) {
-  return STAGES.find((st) => s.kept < st.at) ?? null;
+  const units = bondUnits(s.companion);
+  return STAGES.find((st) => units < st.at) ?? null;
+}
+
+export function nextStageBondXp(s: KindlingSave) {
+  const next = nextStage(s);
+  if (!next || !s.companion) return 0;
+  return Math.max(0, next.at * BASE_BOND_XP - s.companion.bondXp);
+}
+
+export function eggWarmth(s: KindlingSave) {
+  if (!s.egg) return 0;
+  return Math.min(s.egg.required, Math.max(0, s.kept - s.egg.startedKept));
+}
+
+export function eggReady(s: KindlingSave) {
+  return !!s.egg && eggWarmth(s) >= s.egg.required;
+}
+
+export function progressiveFor(task: Task) {
+  if (task.progressive && PROGRESSIVE[task.progressive]) return PROGRESSIVE[task.progressive];
+  const text = task.text.trim().toLowerCase();
+  return Object.values(PROGRESSIVE).find((p) => p.baseLabel.toLowerCase() === text) ?? null;
+}
+
+export function nextProgressiveTier(s: KindlingSave, task: Task) {
+  if (!s.sheet.done.includes(task.id)) return null;
+  const template = progressiveFor(task);
+  if (!template) return null;
+  for (const tier of template.tiers) {
+    const key = `${task.id}:${template.id}:${tier.id}`;
+    if (!s.sheet.bonus.includes(key)) return { template, tier, key };
+  }
+  return null;
+}
+
+export function progressiveOpportunities(s: KindlingSave) {
+  return s.tasks.flatMap((task) => {
+    const next = nextProgressiveTier(s, task);
+    return next ? [{ task, ...next }] : [];
+  });
 }
 
 export function consecutiveMissed(s: KindlingSave) {
@@ -390,15 +512,28 @@ export function journalEntry(s: KindlingSave) {
 export function applyRollover(s: KindlingSave) {
   const today = dayKey();
   if (s.sheet.date !== today) {
-    s.sheet = { date: today, done: [], paid: [], mood: null, breaths: 0 };
+    s.sheet = { date: today, done: [], paid: [], bonus: [], mood: null, breaths: 0 };
   }
   if (s.companion && !s.kindlingPending && !s.awaitingHatch && consecutiveMissed(s) >= 2) {
     s.kindlingPending = true;
   }
-  if (s.walk && s.walk.endsAt < Date.now() - 60_000) {
-    s.walk = null;
-  }
+  // A finished journey is allowed to wait for the player. Do not discard it on
+  // reload: the return is part of the game, and journeys never fail while away.
   return s;
+}
+
+function normalizedCompanion(raw: unknown, fallbackBondXp = 0): Companion | null {
+  if (!raw || typeof raw !== "object") return null;
+  const c = raw as Partial<Companion>;
+  if (!c.id || !c.species || !SPECIES[c.species]) return null;
+  return {
+    id: c.id,
+    species: c.species,
+    name: c.name || SPECIES[c.species].name,
+    born: c.born || dayKey(),
+    bondXp: Number.isFinite(c.bondXp) ? Math.max(0, Number(c.bondXp)) : Math.max(0, fallbackBondXp),
+    trait: c.trait,
+  };
 }
 
 export function normalizeSave(raw: unknown): KindlingSave {
@@ -406,20 +541,47 @@ export function normalizeSave(raw: unknown): KindlingSave {
   if (!raw || typeof raw !== "object") return applyRollover(base);
   const r = raw as Partial<KindlingSave>;
   if (r.v !== SAVE_VERSION) return applyRollover(base);
+
+  const legacyBond = Math.max(0, Number(r.kept || 0) * BASE_BOND_XP);
+  const active = normalizedCompanion(r.companion, legacyBond);
+  const rawRoster = Array.isArray(r.roster) ? r.roster : [];
+  const roster = rawRoster
+    .map((entry) => {
+      const id = (entry as Partial<Companion>)?.id;
+      return normalizedCompanion(entry, active && id === active.id ? active.bondXp : 0);
+    })
+    .filter((c): c is Companion => Boolean(c));
+
+  const rawSheet = r.sheet ?? base.sheet;
+  const sheet: Sheet = {
+    ...base.sheet,
+    ...rawSheet,
+    done: Array.isArray(rawSheet.done) ? rawSheet.done : [],
+    paid: Array.isArray(rawSheet.paid) ? rawSheet.paid : Array.isArray(rawSheet.done) ? [...rawSheet.done] : [],
+    bonus: Array.isArray(rawSheet.bonus) ? rawSheet.bonus : [],
+  };
+
+  const lineage = (Array.isArray(r.lineage) ? r.lineage : []).map((a) => ({
+    ...a,
+    bondXp: Number.isFinite(a.bondXp) ? Math.max(0, Number(a.bondXp)) : Math.max(0, Number(a.kept || 0) * BASE_BOND_XP),
+  }));
+
   const s: KindlingSave = {
     ...base,
     ...r,
     tasks: Array.isArray(r.tasks) && r.tasks.length ? r.tasks : base.tasks,
-    sheet: { ...base.sheet, ...(r.sheet ?? {}) },
+    sheet,
     found: Array.isArray(r.found) ? r.found : [],
     journal: uniqueJournal(Array.isArray(r.journal) ? r.journal : []),
-    lineage: Array.isArray(r.lineage) ? r.lineage : [],
+    companion: active,
+    lineage,
     unlocked: Array.isArray(r.unlocked) && r.unlocked.length ? r.unlocked : ["ember"],
     encounters: { wins: 0, losses: 0, ...(r.encounters ?? {}) },
-    roster: Array.isArray(r.roster) ? r.roster : [],
+    roster,
     walkedOnce: Boolean(r.walkedOnce),
+    egg: r.egg && typeof r.egg === "object" ? { ...r.egg } as EggState : null,
   };
-  if (!Array.isArray(s.sheet.paid)) s.sheet.paid = [...s.sheet.done];
+
   if (!s.companion && !s.awaitingHatch && !s.kindlingPending) {
     s.companion = freshCompanion("ember");
   }
@@ -427,6 +589,21 @@ export function normalizeSave(raw: unknown): KindlingSave {
     s.roster = [s.companion, ...s.roster];
   }
   return applyRollover(s);
+}
+
+function addBondXp(s: KindlingSave, amount: number) {
+  if (!s.companion || amount <= 0) return;
+  s.companion = { ...s.companion, bondXp: Math.max(0, s.companion.bondXp + amount) };
+  s.roster = s.roster.map((c) => (c.id === s.companion?.id ? s.companion : c));
+}
+
+export function grantBonus(s: KindlingSave, key: string, flamesReward: number, bondXpReward: number) {
+  if (s.sheet.bonus.includes(key)) return false;
+  s.sheet.bonus.push(key);
+  s.fuel += flamesReward / FLAMES_PER_FUEL;
+  addBondXp(s, bondXpReward);
+  s.updatedAt = Date.now();
+  return true;
 }
 
 export function payOnce(s: KindlingSave, key: string, pay: number) {
@@ -441,6 +618,7 @@ export function payOnce(s: KindlingSave, key: string, pay: number) {
   }
   s.fuel += pay;
   s.kept += 1;
+  addBondXp(s, BASE_BOND_XP);
   journalEntry(s).kept = caredToday(s);
   s.updatedAt = Date.now();
   return true;
@@ -468,22 +646,27 @@ export function resolveRound(player: CombatVerb, enemy: CombatVerb, pc: Species[
   if (player === "strike" || player === "skill") {
     eDmg = Math.max(1, pAtk - (enemy === "guard" ? Math.ceil(ec.guard / 2) : 0));
     if (player === "skill") eDmg += 1;
+    if (enemy === "guard" && ec.tendency === "counterattacker") pDmg += 2;
   }
   if (enemy === "strike" || enemy === "skill") {
-    pDmg = Math.max(1, eAtk - (player === "guard" ? Math.ceil(pc.guard / 2) : 0));
+    pDmg += Math.max(1, eAtk - (player === "guard" ? Math.ceil(pc.guard / 2) : 0));
     if (enemy === "skill") pDmg += 1;
-    if (player === "guard" && ec.tendency === "counterattacker") pDmg += 2;
   }
   if (player === "guard" && enemy === "strike") pDmg = Math.max(0, pDmg - 2);
   return { pDmg, eDmg };
 }
 
+export function assetSrc(path: string) {
+  const base = (import.meta as ImportMeta & { env?: { BASE_URL?: string } }).env?.BASE_URL ?? "/";
+  return `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
+}
+
 export function spriteSrc(id: SpeciesId) {
-  return `/art/${id}.png`;
+  return assetSrc(`art/${id}.png`);
 }
 
 export function portraitSrc(id: SpeciesId) {
-  return `/art/${id}-portrait.png`;
+  return assetSrc(`art/${id}-portrait.png`);
 }
 
 export function verbLabel(v: CombatVerb) {
