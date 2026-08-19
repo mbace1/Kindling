@@ -139,10 +139,16 @@ export function AppShell() {
         })}
       </nav>
 
-      <FirstNote />
-      <KindlingEvent />
-      <BreatheModal />
-      <GoalEditor />
+      {/* These overlays are save-state UI. Rendering them before hydration creates
+          a race where a first tap can be overwritten by the arriving local save. */}
+      {s.hydrated ? (
+        <>
+          <FirstNote />
+          <KindlingEvent />
+          <BreatheModal />
+          <GoalEditor />
+        </>
+      ) : null}
     </div>
   );
 }
