@@ -38,6 +38,8 @@ jobs:
           exit 1
       - name: Mobile care and Journey smoke
         run: node scripts/betterment-browser-smoke.mjs http://127.0.0.1:8080/ artifacts/betterment-mobile.png
+      - name: Mobile Journey return smoke
+        run: node scripts/journey-return-browser-smoke.mjs http://127.0.0.1:8080/
       - name: Mobile lineage and Kindling smoke
         run: node scripts/lineage-browser-smoke.mjs http://127.0.0.1:8080/
       - uses: actions/upload-artifact@v4
