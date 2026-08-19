@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import {
   ASH_TRAITS,
+  EGG_WARMTH_REQUIRED,
   ERRAND_COST,
+  FLAMES_PER_FUEL,
   PATHS,
   SAVE_KEY,
   SPECIES,
@@ -11,14 +13,18 @@ import {
   type SpeciesId,
   type Tab,
   applyRollover,
+  bondUnits,
   caredToday,
   combatFor,
   consecutiveMissed,
   dayKey,
+  eggReady,
   freshCompanion,
   freshSave,
+  grantBonus,
   journalEntry,
   liveStreak,
+  nextProgressiveTier,
   normalizeSave,
   payOnce,
   PAY,
@@ -42,10 +48,11 @@ type KindlingStore = KindlingSave & {
   hydrate: (incoming?: KindlingSave | null) => void;
   setTab: (tab: Tab) => void;
   toggleTask: (id: string) => void;
+  completeProgressive: (taskId: string) => void;
   setMood: (mood: Mood) => void;
   countBreath: () => void;
-  addTask: (text: string, category?: string) => void;
-  addPreset: (text: string, category?: string) => void;
+  addTask: (text: string, category?: string, progressive?: KindlingSave["tasks"][number]["progressive"]) => void;
+  addPreset: (text: string, category?: string, progressive?: KindlingSave["tasks"][number]["progressive"]) => void;
   removeTask: (id: string) => void;
   note: (line: string) => void;
   setSound: (on: boolean) => void;
@@ -56,6 +63,7 @@ type KindlingStore = KindlingSave & {
   leaveCombat: () => void;
   confirmKindling: () => void;
   hatch: (species: SpeciesId) => void;
+  hatchEgg: () => void;
   rename: (name: string) => void;
   keepEncounter: () => void;
   switchCompanion: (id: string) => void;
@@ -95,6 +103,7 @@ function pick<T extends object>(s: T): KindlingSave {
     unlocked,
     kindlingPending,
     awaitingHatch,
+    egg,
     combat,
     walk,
     encounters,
@@ -121,6 +130,7 @@ function pick<T extends object>(s: T): KindlingSave {
     unlocked,
     kindlingPending,
     awaitingHatch,
+    egg,
     combat,
     walk,
     encounters,
@@ -128,6 +138,8 @@ function pick<T extends object>(s: T): KindlingSave {
     walkedOnce,
   };
 }
+
+const flameCopy = (fuel: number) => `${Math.round(fuel * FLAMES_PER_FUEL)} Flames`;
 
 export const useKindling = create<KindlingStore>((set, get) => ({
   ...freshSave(),
@@ -179,7 +191,20 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     const paid = payOnce(s, id, PAY.task);
     persist(s);
     if (get().sound) playTick();
-    set({ ...s, lastToast: paid ? "+1 kindling" : null });
+    set({ ...s, lastToast: paid ? "+20 Flames · +20 Bond XP" : null });
+  },
+
+  completeProgressive: (taskId) => {
+    const s = pick(get());
+    applyRollover(s);
+    const task = s.tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    const next = nextProgressiveTier(s, task);
+    if (!next) return;
+    if (!grantBonus(s, next.key, next.tier.flames, next.tier.bondXp)) return;
+    persist(s);
+    if (get().sound) playTick();
+    set({ ...s, lastToast: `+${next.tier.flames} Flames · +${next.tier.bondXp} Bond XP` });
   },
 
   setMood: (mood) => {
@@ -189,7 +214,7 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     journalEntry(s).mood = mood;
     const paid = payOnce(s, "mood", PAY.mood);
     persist(s);
-    set({ ...s, lastToast: paid ? "+1 kindling" : "noted" });
+    set({ ...s, lastToast: paid ? "+20 Flames · +20 Bond XP" : "noted" });
   },
 
   countBreath: () => {
@@ -198,24 +223,24 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     s.sheet.breaths += 1;
     const paid = payOnce(s, `breath:${Math.min(3, s.sheet.breaths)}`, PAY.breath);
     persist(s);
-    set({ ...s, lastToast: paid ? "+2 kindling" : "still, anyway" });
+    set({ ...s, lastToast: paid ? "+40 Flames · +20 Bond XP" : "still, anyway" });
   },
 
-  addTask: (text, category) => {
+  addTask: (text, category, progressive) => {
     const s = pick(get());
     const clean = text.trim().slice(0, 46);
     if (!clean || s.tasks.length >= 14) return;
-    s.tasks.push({ id: "c" + Date.now().toString(36), text: clean, custom: true, category });
+    s.tasks.push({ id: "c" + Date.now().toString(36), text: clean, custom: true, category, progressive });
     s.updatedAt = Date.now();
     persist(s);
     set(s);
   },
 
-  addPreset: (text, category) => {
+  addPreset: (text, category, progressive) => {
     const s = pick(get());
     if (s.tasks.length >= 14) return;
     if (s.tasks.some((t) => t.text.toLowerCase() === text.toLowerCase())) return;
-    s.tasks.push({ id: "c" + Date.now().toString(36), text, custom: true, category });
+    s.tasks.push({ id: "c" + Date.now().toString(36), text, custom: true, category, progressive });
     s.updatedAt = Date.now();
     persist(s);
     set(s);
@@ -225,6 +250,7 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     const s = pick(get());
     s.tasks = s.tasks.filter((t) => t.id !== id);
     s.sheet.done = s.sheet.done.filter((d) => d !== id);
+    s.sheet.bonus = s.sheet.bonus.filter((b) => !b.startsWith(`${id}:`));
     journalEntry(s).kept = caredToday(s);
     s.updatedAt = Date.now();
     persist(s);
@@ -265,7 +291,7 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     if (!s.companion) return "No one is here to walk.";
     if (s.combat) return "A fight is still open.";
     if (s.walk) return "Already on a path.";
-    if (s.fuel < ERRAND_COST) return "The fire needs more kindling first.";
+    if (s.fuel < ERRAND_COST) return `The fire needs ${flameCopy(ERRAND_COST)} first.`;
     const path = PATHS.find((p) => p.id === pathId);
     if (!path) return "That path is gone.";
     s.fuel -= ERRAND_COST;
@@ -274,7 +300,7 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     s.walkedOnce = true;
     s.updatedAt = Date.now();
     persist(s);
-    set({ ...s, tab: "journey", lastToast: `−${ERRAND_COST} kindling` });
+    set({ ...s, tab: "journey", lastToast: `−${flameCopy(ERRAND_COST)}` });
     return null;
   },
 
@@ -416,16 +442,41 @@ export const useKindling = create<KindlingStore>((set, get) => ({
 
   breed: (aId, bId) => {
     const s = pick(get());
+    if (s.egg || s.roster.length >= 6) return;
     const a = s.roster.find((m) => m.id === aId);
     const b = s.roster.find((m) => m.id === bId);
-    if (!a || !b || s.roster.length >= 6) return;
+    if (!a || !b || bondUnits(a) < 18 || bondUnits(b) < 18) return;
     const child = offspringOf(a.species, b.species);
     if (!child) return;
-    const born = freshCompanion(child, a.trait ?? b.trait);
-    if (child === "ashling") born.name = "Ashling";
-    s.roster.push(born);
-    if (!s.unlocked.includes(child)) s.unlocked.push(child);
+    const inherited = a.trait ?? b.trait;
+    const trait = Math.random() < 0.12
+      ? ASH_TRAITS[Math.floor(Math.random() * ASH_TRAITS.length)]
+      : inherited;
+    s.egg = {
+      species: child,
+      parentAId: a.id,
+      parentBId: b.id,
+      parentAName: a.name,
+      parentBName: b.name,
+      startedKept: s.kept,
+      required: EGG_WARMTH_REQUIRED,
+      trait,
+    };
     journalEntry(s).lines.push(`${a.name} and ${b.name} left an egg in the coals.`);
+    s.updatedAt = Date.now();
+    persist(s);
+    set({ ...s, lastToast: "An Ember Egg rests in the coals.", tab: "companion" });
+  },
+
+  hatchEgg: () => {
+    const s = pick(get());
+    if (!s.egg || !eggReady(s) || s.roster.length >= 6) return;
+    const egg = s.egg;
+    const born = freshCompanion(egg.species, egg.trait);
+    s.roster.push(born);
+    if (!s.unlocked.includes(egg.species)) s.unlocked.push(egg.species);
+    s.egg = null;
+    journalEntry(s).lines.push(`${born.name} hatched from the coals.`);
     s.updatedAt = Date.now();
     persist(s);
     set({ ...s, lastToast: `${born.name} hatched.`, tab: "companion" });
@@ -442,7 +493,8 @@ export const useKindling = create<KindlingStore>((set, get) => ({
         species: s.companion.species,
         name: s.companion.name,
         stage: st.id,
-        kept: s.kept,
+        kept: bondUnits(s.companion),
+        bondXp: s.companion.bondXp,
         kindledOn: dayKey(),
         trait,
       });
