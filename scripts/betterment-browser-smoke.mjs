@@ -15,10 +15,16 @@ page.on("pageerror", (e) => errors.push(String(e?.message || e)));
 page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
 page.on("response", (r) => { if (r.url().includes("/art/")) requested.add(new URL(r.url()).pathname); });
 
+let failed = null;
 try {
   const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
   assert.ok(response && response.status() < 400, `page status ${response?.status()}`);
+
+  // Intro is deliberately hydration-gated. A fast first tap used to be lost when
+  // hydration landed after the tap and restored `seen:false`.
+  await page.getByRole("button", { name: "Tend the fire" }).waitFor();
   await page.getByRole("button", { name: "Tend the fire" }).click();
+  await page.getByRole("button", { name: "Tend the fire" }).waitFor({ state: "detached" });
   await page.getByRole("heading", { name: "0 / 5 tended" }).waitFor();
 
   assert.equal(await page.locator("canvas").count(), 1, "Today has one composed camp canvas");
@@ -53,10 +59,15 @@ try {
   assert.ok((await page.locator("body").innerText()).includes("90 real-time seconds"), "Journey explains real-time duration");
 
   await page.getByRole("button", { name: "Today" }).click();
-  await page.screenshot({ path: out, fullPage: true });
-
   assert.deepEqual(errors, [], `browser errors: ${errors.join(" | ")}`);
   console.log(JSON.stringify({ ok: true, viewport: "390x844", art: [...requested], screenshot: out }, null, 2));
+} catch (err) {
+  failed = err;
+  const overlays = await page.locator(".fixed.inset-0.z-40").allInnerTexts().catch(() => []);
+  console.error(JSON.stringify({ ok: false, overlays, errors, art: [...requested], error: String(err?.message || err) }, null, 2));
 } finally {
+  await page.screenshot({ path: out, fullPage: true }).catch(() => undefined);
   await browser.close();
 }
+
+if (failed) throw failed;
