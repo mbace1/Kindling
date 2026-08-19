@@ -66,19 +66,26 @@ async function seededPage(browser, initial) {
   page.on("pageerror", (e) => errors.push(String(e?.message || e)));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
+  // Nav exists before hydration, so it is not a safe readiness signal. The camp
+  // canvas exists only once the persisted save has become the live store.
+  await page.locator("main canvas").waitFor({ state: "visible" });
   return { context, page, errors };
 }
 
 const browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
+let activePage = null;
+let failureShot = "artifacts/betterment-lineage-failure.png";
 try {
   // ── Egg / lineage ────────────────────────────────────────────────
   const ember = companion("ember-a", "ember", "Ember");
   const moss = companion("moss-b", "mossling", "Mossling");
   const eggRun = await seededPage(browser, save({ companion: ember, roster: [ember, moss], unlocked: ["ember", "mossling"] }));
   const { page: eggPage } = eggRun;
+  activePage = eggPage;
+  failureShot = "artifacts/betterment-lineage-failure.png";
 
   await eggPage.getByRole("button", { name: "Keep" }).click();
-  await eggPage.getByRole("heading", { name: "Ember" }).waitFor();
+  await eggPage.getByRole("heading", { name: "Ember", exact: true }).waitFor();
   assert.match(await eggPage.locator("body").innerText(), /a tender/, "mature Ember reads as tender");
   assert.match(await eggPage.locator("body").innerText(), /Mossling/, "second mature parent is present");
 
@@ -109,14 +116,18 @@ try {
   await eggPage.screenshot({ path: "artifacts/betterment-lineage.png", fullPage: true });
   assert.deepEqual(eggRun.errors, [], `egg flow browser errors: ${eggRun.errors.join(" | ")}`);
   await eggRun.context.close();
+  activePage = null;
 
   // ── First missed day: warning only ──────────────────────────────
   const warnRun = await seededPage(browser, save({ lastKept: keyDaysAgo(2) }));
+  activePage = warnRun.page;
+  failureShot = "artifacts/betterment-warning-failure.png";
   const warningBody = await warnRun.page.locator("body").innerText();
   assert.match(warningBody, /The fire is fading\./, "one fully missed care-day shows warning state");
   assert.equal(await warnRun.page.getByText(/became Kindling/).count(), 0, "first missed day does not Kindle");
   assert.deepEqual(warnRun.errors, [], `warning flow browser errors: ${warnRun.errors.join(" | ")}`);
   await warnRun.context.close();
+  activePage = null;
 
   // ── Never-started save: install day grace, then two misses ─────
   const oldEmber = companion("ember-old", "ember", "Ember", keyDaysAgo(3), 160);
@@ -131,6 +142,8 @@ try {
     unlocked: ["ember"],
   }));
   const { page: kindlePage } = kindleRun;
+  activePage = kindlePage;
+  failureShot = "artifacts/betterment-kindling-failure.png";
   await kindlePage.getByRole("heading", { name: "Ember became Kindling." }).waitFor();
   const anchored = await kindlePage.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
   assert.equal(anchored.lastKept, oldEmber.born, "never-started save is anchored to birth after install-day grace");
@@ -149,8 +162,12 @@ try {
   assert.equal(restarted.awaitingHatch, false, "restart hatch closes the empty-coals state");
   assert.deepEqual(kindleRun.errors, [], `Kindling flow browser errors: ${kindleRun.errors.join(" | ")}`);
   await kindleRun.context.close();
+  activePage = null;
 
   console.log(JSON.stringify({ ok: true, egg: true, warning: true, kindling: true }, null, 2));
+} catch (err) {
+  await activePage?.screenshot({ path: failureShot, fullPage: true }).catch(() => undefined);
+  throw err;
 } finally {
   await browser.close();
 }
