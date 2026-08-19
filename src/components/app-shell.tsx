@@ -6,7 +6,7 @@ import { authEnabled, signOut } from "@/lib/auth/client";
 import { loadCloudSave, writeCloudSave } from "@/lib/kindling/saves";
 import { useKindling } from "@/lib/kindling/store";
 import { startFireLoop, stopFireLoop, unlockAudio } from "@/lib/kindling/audio";
-import type { Tab } from "@/lib/kindling/model";
+import { dayKey, type Tab } from "@/lib/kindling/model";
 import { cn } from "@/lib/utils";
 import {
   BreatheModal,
@@ -35,6 +35,21 @@ export function AppShell() {
   useEffect(() => {
     useKindling.getState().hydrate();
   }, []);
+
+  // A brand-new player gets the install/birth care-day as grace. If they come
+  // back on a later care-day without ever having completed a first action,
+  // anchor missed-day counting to that birth day. This avoids the old null
+  // `lastKept` loophole (which made Kindling impossible forever) without lying
+  // that the install day was a completed-care streak day.
+  useEffect(() => {
+    if (!s.hydrated || s.lastKept || !s.companion) return;
+    if (s.companion.born === dayKey()) return;
+    const anchored = useKindling.getState().snapshot();
+    if (!anchored.companion) return;
+    anchored.lastKept = anchored.companion.born;
+    anchored.updatedAt = Date.now();
+    useKindling.getState().hydrate(anchored);
+  }, [s.hydrated, s.lastKept, s.companion?.id, s.companion?.born]);
 
   useEffect(() => {
     if (!s.hydrated || isPending || !user) return;
