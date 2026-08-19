@@ -7,7 +7,7 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,7 +23,10 @@ jobs:
       # that generation step so router scaffold noise does not hide game errors.
       - run: npm run build:dev
       - run: npm run typecheck
-      - run: npx playwright install --with-deps chromium
+      # GitHub's Ubuntu image already carries the Chromium runtime libraries used
+      # here. Download the browser only; --with-deps was reinstalling fonts/APT
+      # packages on every art iteration and added ~60s without changing the app.
+      - run: npx playwright install chromium
       - name: Start preview server
         run: |
           npm run dev > /tmp/kindling-dev.log 2>&1 &
