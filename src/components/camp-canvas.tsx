@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { portraitSrc, spriteSrc, warningState, warmth, type KindlingSave, type SpeciesId } from "@/lib/kindling/model";
+import { assetSrc, portraitSrc, spriteSrc, warningState, warmth, type KindlingSave, type SpeciesId } from "@/lib/kindling/model";
 
 type Props = {
   save: KindlingSave;
@@ -33,7 +33,7 @@ export function CampCanvas({ save, tall }: Props) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const camp = load("/art/camp.jpg");
+    const camp = load(assetSrc("art/camp.jpg"));
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0;
     let last = performance.now();
@@ -53,11 +53,14 @@ export function CampCanvas({ save, tall }: Props) {
         canvas.height = Math.floor(h * dpr);
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.imageSmoothingEnabled = false;
 
       ctx.fillStyle = "#0c1016";
       ctx.fillRect(0, 0, w, h);
 
+      // The Grok camp is a detailed painted/crafted source, not the old 320x180
+      // quantised cabinet art. Let the browser scale the background smoothly;
+      // creature frames below keep their own hard silhouette.
+      ctx.imageSmoothingEnabled = true;
       if (camp.complete && camp.naturalWidth) {
         const scale = Math.max(w / camp.naturalWidth, h / camp.naturalHeight);
         const dw = camp.naturalWidth * scale;
@@ -67,11 +70,13 @@ export function CampCanvas({ save, tall }: Props) {
 
       const heat = warmth(save);
       const warn = warningState(save);
-      const fx = w * 0.33;
-      const fy = h * 0.60;
+      // Approved staging: companion on the left, bonfire just to its right,
+      // ruin mass behind them, with the composition opening toward the path.
+      const fx = w * 0.36;
+      const fy = h * 0.61;
 
       if (warn) {
-        ctx.fillStyle = "rgba(12, 16, 22, 0.28)";
+        ctx.fillStyle = "rgba(7, 10, 16, 0.34)";
         ctx.fillRect(0, 0, w, h);
       }
 
@@ -81,9 +86,11 @@ export function CampCanvas({ save, tall }: Props) {
       }
 
       if (save.companion) {
-        const near = warn ? 0.14 : 0.24;
-        const cx = fx + w * near;
-        const cy = fy + h * 0.06;
+        // On the warning day they edge closer to the coals; otherwise they keep
+        // enough space that both silhouettes read independently at phone size.
+        const distance = warn ? 0.11 : 0.18;
+        const cx = fx - w * distance;
+        const cy = fy + h * 0.07;
         drawCompanion(ctx, save.companion.species, cx, cy, t, reduced, heat);
       }
 
@@ -109,6 +116,14 @@ export function CampCanvas({ save, tall }: Props) {
           }
         }
       }
+
+      // Subtle edge falloff keeps the centre-left relationship readable without
+      // painting another object into the source art.
+      const vignette = ctx.createRadialGradient(w * 0.42, h * 0.5, h * 0.2, w * 0.5, h * 0.55, Math.max(w, h) * 0.72);
+      vignette.addColorStop(0, "rgba(0,0,0,0)");
+      vignette.addColorStop(1, "rgba(3,6,10,0.26)");
+      ctx.fillStyle = vignette;
+      ctx.fillRect(0, 0, w, h);
 
       raf = requestAnimationFrame(draw);
     };
@@ -203,6 +218,7 @@ function drawCompanion(
   const bob = reduced ? 0 : Math.sin(t * 2.2) * 2;
   const glow = 0.18 + heat * 0.28;
   ctx.save();
+  ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = "rgba(8, 10, 14, 0.45)";
   ctx.beginPath();
   ctx.ellipse(x, y + 4, size * 0.28, 7, 0, 0, Math.PI * 2);
