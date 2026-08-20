@@ -30,6 +30,10 @@ try {
   await page.waitForTimeout(500);
   assert.ok([...requested].some((p) => p.endsWith("/art/camp.jpg")), "live camp art was requested");
   assert.ok([...requested].some((p) => p.endsWith("/art/ember.png")), "live Ember sprite was requested");
+  const moreCare = page.getByRole("button", { name: /More care/ });
+  assert.equal(await moreCare.count(), 1, "phone Today exposes one compact secondary-care control");
+  assert.equal(await moreCare.getAttribute("aria-expanded"), "false", "secondary care is collapsed by default on phone");
+  assert.equal(await page.getByText("How is it", { exact: true }).count(), 0, "mood controls are not simultaneously exposed above the fold");
 
   await page.getByRole("button", { name: "Edit" }).click();
   await page.getByRole("button", { name: "Do 10 push-ups +" }).click();
