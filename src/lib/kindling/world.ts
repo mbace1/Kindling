@@ -24,8 +24,8 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "White trunks, broken arches, and the first road away from the fire.",
     unlockAfter: null,
     artDirection: "cool birch woodland, broken pale stone, open daylight path",
-    art: "art/path.jpg",
-    crop: "48% center",
+    art: "art/birch-ruins.jpg",
+    crop: "50% center",
   },
   {
     ...source.forest,
