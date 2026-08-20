@@ -7,6 +7,7 @@ import { loadCloudSave, writeCloudSave } from "@/lib/kindling/saves";
 import { useKindling } from "@/lib/kindling/store";
 import { startFireLoop, stopFireLoop, unlockAudio } from "@/lib/kindling/audio";
 import { assetSrc, dayKey, type Tab } from "@/lib/kindling/model";
+import { WORLD_PATHS } from "@/lib/kindling/world";
 import { cn } from "@/lib/utils";
 import { CompanionResponsive } from "@/components/companion-responsive";
 import { JourneyWorldScreen } from "@/components/journey-world-screen";
@@ -103,6 +104,7 @@ export function AppShell() {
             ? JournalScreen
             : TodayResponsive;
 
+  const combatPath = s.combat ? WORLD_PATHS.find((path) => path.id === s.combat?.pathId) : null;
   const combatBackdrop = Boolean(s.hydrated && s.tab === "journey" && s.combat);
 
   return (
@@ -154,7 +156,7 @@ export function AppShell() {
         style={
           combatBackdrop
             ? {
-                backgroundImage: `linear-gradient(to bottom, rgba(8,10,15,0.42), rgba(8,10,15,0.92)), url("${assetSrc("art/path.jpg")}")`,
+                backgroundImage: `linear-gradient(to bottom, rgba(8,10,15,0.42), rgba(8,10,15,0.92)), url("${assetSrc(combatPath?.art ?? "art/path.jpg")}")`,
               }
             : undefined
         }
