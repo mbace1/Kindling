@@ -44,7 +44,7 @@ export function JourneyWorldScreen() {
     return (
       <div className="relative min-h-[70vh] overflow-hidden">
         <img
-          src={assetSrc("art/path.jpg")}
+          src={assetSrc(path?.art ?? "art/path.jpg")}
           alt=""
           className="h-60 w-full scale-105 object-cover sm:h-80"
           style={{ objectPosition: path?.crop ?? "50% center" }}
@@ -52,21 +52,13 @@ export function JourneyWorldScreen() {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-60 bg-gradient-to-b from-night/5 via-transparent to-night sm:h-80" />
         <div className="absolute inset-x-0 top-32 flex justify-center sm:top-40">
           {s.companion ? (
-            <img
-              src={portraitSrc(s.companion.species)}
-              alt=""
-              className="h-20 w-20 animate-pulse object-contain sm:h-24 sm:w-24"
-            />
+            <img src={portraitSrc(s.companion.species)} alt="" className="h-20 w-20 animate-pulse object-contain sm:h-24 sm:w-24" />
           ) : null}
         </div>
         <div className="space-y-2 px-4 py-5 sm:px-5 sm:py-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-mute">
-            Chapter {path?.chapter ?? "?"} · {path?.displayName ?? "The path"}
-          </p>
+          <p className="text-xs uppercase tracking-[0.2em] text-mute">Chapter {path?.chapter ?? "?"} · {path?.displayName ?? "The path"}</p>
           <h2 className="font-display text-2xl">{s.companion?.name ?? "Someone"} is on the path.</h2>
-          <p className="text-sm text-mute">
-            {seconds > 0 ? `${seconds}s · continues if you close the app.` : "Coming home."}
-          </p>
+          <p className="text-sm text-mute">{seconds > 0 ? `${seconds}s · continues if you close the app.` : "Coming home."}</p>
         </div>
       </div>
     );
@@ -74,11 +66,17 @@ export function JourneyWorldScreen() {
 
   const progress = worldProgress(s);
   const oldGate = oldGateVisible(s);
+  const coverPath = [...WORLD_PATHS].reverse().find((path) => pathUnlocked(s, path)) ?? WORLD_PATHS[0];
 
   return (
     <div>
       <div className="relative h-40 overflow-hidden sm:h-52">
-        <img src={assetSrc("art/path.jpg")} alt="" className="h-full w-full object-cover" />
+        <img
+          src={assetSrc(coverPath.art)}
+          alt=""
+          className="h-full w-full object-cover"
+          style={{ objectPosition: coverPath.crop }}
+        />
         <div className="absolute inset-0 bg-gradient-to-b from-night/10 via-transparent to-night" />
         <div className="absolute inset-x-4 bottom-3 sm:bottom-4">
           <p className="text-xs uppercase tracking-[0.2em] text-bone/70">Journey</p>
@@ -88,12 +86,8 @@ export function JourneyWorldScreen() {
 
       <div className="space-y-4 px-4 pb-28 pt-4">
         <div className="rounded-lg border border-ash/80 bg-stone/65 p-3 sm:flex sm:items-start sm:justify-between sm:gap-4 sm:border-0 sm:bg-transparent sm:p-0">
-          <p className="text-sm text-mute">
-            {JOURNEY_FLAMES} Flames · about 90 seconds. Bring something home to open the next region.
-          </p>
-          <p className="mt-2 text-xs text-mute sm:mt-0 sm:shrink-0 sm:text-right">
-            {progress.cleared} / {progress.total} roads known
-          </p>
+          <p className="text-sm text-mute">{JOURNEY_FLAMES} Flames · about 90 seconds. Bring something home to open the next region.</p>
+          <p className="mt-2 text-xs text-mute sm:mt-0 sm:shrink-0 sm:text-right">{progress.cleared} / {progress.total} roads known</p>
         </div>
 
         <div className="space-y-2">
@@ -129,9 +123,7 @@ export function JourneyWorldScreen() {
                 </span>
                 <span className="shrink-0 text-right text-xs">
                   {cleared ? <span className="text-fire">CLEARED</span> : null}
-                  <span className="mt-1 flex items-center justify-end gap-1 text-fire">
-                    <Flame className="size-3.5" /> {JOURNEY_FLAMES}
-                  </span>
+                  <span className="mt-1 flex items-center justify-end gap-1 text-fire"><Flame className="size-3.5" /> {JOURNEY_FLAMES}</span>
                 </span>
               </button>
             );
@@ -142,9 +134,7 @@ export function JourneyWorldScreen() {
               <LockKeyhole className="size-3.5 text-mute" />
               <p className="font-medium">{OLD_GATE.chapter}. {OLD_GATE.displayName}</p>
             </div>
-            <p className="mt-1 hidden text-sm text-mute sm:block">
-              {oldGate ? "The gate is visible beyond Ashwood. It does not open yet." : OLD_GATE.worldBlurb}
-            </p>
+            <p className="mt-1 hidden text-sm text-mute sm:block">{oldGate ? "The gate is visible beyond Ashwood. It does not open yet." : OLD_GATE.worldBlurb}</p>
           </div>
         </div>
 
@@ -164,9 +154,7 @@ function CombatWorldScreen() {
 
   return (
     <div className="min-h-[72vh] px-4 pb-28 pt-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-bone/65">
-        {path ? `Chapter ${path.chapter} · ${path.displayName}` : "On the path"}
-      </p>
+      <p className="text-xs uppercase tracking-[0.2em] text-bone/65">{path ? `Chapter ${path.chapter} · ${path.displayName}` : "On the path"}</p>
       <h2 className="font-display text-3xl font-semibold">{enemy.name}</h2>
       <p className="text-sm text-bone/70">{enemy.blurb}</p>
 
@@ -177,25 +165,18 @@ function CombatWorldScreen() {
 
       {!done ? (
         <div className="mt-3 rounded-md border border-fire/25 bg-night/70 px-3 py-2 text-sm">
-          <span className="text-mute">Intent · </span>
-          <span className="font-medium text-bone">{verbLabel(c.telegraph)}</span>
+          <span className="text-mute">Intent · </span><span className="font-medium text-bone">{verbLabel(c.telegraph)}</span>
         </div>
       ) : (
-        <p className="mt-4 text-sm font-medium text-bone">
-          {c.result === "win" ? "The path opens." : "You walk home. The fire is still there."}
-        </p>
+        <p className="mt-4 text-sm font-medium text-bone">{c.result === "win" ? "The path opens." : "You walk home. The fire is still there."}</p>
       )}
 
-      <ul className="mt-3 space-y-1 text-sm text-bone/65">
-        {c.log.map((line, i) => <li key={i}>{line}</li>)}
-      </ul>
+      <ul className="mt-3 space-y-1 text-sm text-bone/65">{c.log.map((line, i) => <li key={i}>{line}</li>)}</ul>
 
       {done ? (
         <div className="mt-6 space-y-2">
           {c.result === "win" && SPECIES[c.enemy].capturable && s.roster.length < 6 && !s.roster.some((m) => m.species === c.enemy) ? (
-            <button type="button" onClick={() => s.keepEncounter()} className="min-h-12 w-full rounded-md bg-fire px-4 font-medium text-night">
-              Keep them by the fire
-            </button>
+            <button type="button" onClick={() => s.keepEncounter()} className="min-h-12 w-full rounded-md bg-fire px-4 font-medium text-night">Keep them by the fire</button>
           ) : null}
           <button
             type="button"
@@ -212,12 +193,7 @@ function CombatWorldScreen() {
       ) : (
         <div className="mt-6 grid grid-cols-3 gap-2">
           {(["strike", "guard", "skill"] as const).map((verb) => (
-            <button
-              key={verb}
-              type="button"
-              onClick={() => s.playerAct(verb)}
-              className="min-h-14 rounded-md border border-bone/20 bg-night/80 text-sm font-medium uppercase tracking-wide backdrop-blur-[1px]"
-            >
+            <button key={verb} type="button" onClick={() => s.playerAct(verb)} className="min-h-14 rounded-md border border-bone/20 bg-night/80 text-sm font-medium uppercase tracking-wide backdrop-blur-[1px]">
               {verbLabel(verb)}
             </button>
           ))}
@@ -248,9 +224,7 @@ function Fighter({ name, src, hp, max, align, pose }: {
         )}
       />
       <p className="mt-1 truncate text-sm font-medium">{name}</p>
-      <div className="mt-1 h-2 overflow-hidden rounded-full bg-night/80">
-        <div className="h-full bg-fire" style={{ width: `${Math.max(0, (hp / max) * 100)}%` }} />
-      </div>
+      <div className="mt-1 h-2 overflow-hidden rounded-full bg-night/80"><div className="h-full bg-fire" style={{ width: `${Math.max(0, (hp / max) * 100)}%` }} /></div>
       <p className="mt-1 text-xs text-bone/60">{hp} / {max}</p>
     </div>
   );
