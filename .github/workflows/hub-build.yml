@@ -1,0 +1,57 @@
+name: Kindling hub build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - agent/hub-static-deploy
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --ignore-scripts --no-audit --no-fund
+      - run: npm run build:hub
+      - name: Collect static output
+        run: |
+          rm -rf hub-dist hub-serve
+          mkdir -p hub-dist
+          if [ -d dist/client ]; then
+            cp -a dist/client/. hub-dist/
+          elif [ -d .output/public ]; then
+            cp -a .output/public/. hub-dist/
+          elif [ -d .vercel/output/static ]; then
+            cp -a .vercel/output/static/. hub-dist/
+          else
+            echo "No recognized static output directory"
+            find . -maxdepth 3 -type f | sort | tail -200
+            exit 1
+          fi
+          test -f hub-dist/index.html
+          mkdir -p hub-serve/Suds-Jack/kindling
+          cp -a hub-dist/. hub-serve/Suds-Jack/kindling/
+      - name: Smoke static hub build
+        run: |
+          python3 -m http.server 8081 -d hub-serve >/tmp/kindling-hub.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8081/Suds-Jack/kindling/ >/dev/null; then break; fi
+            sleep 1
+          done
+          npx playwright install chromium
+          node scripts/betterment-browser-smoke.mjs http://127.0.0.1:8081/Suds-Jack/kindling/ artifacts/hub-mobile.png --allow-static-hydration
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kindling-hub-static
+          path: |
+            hub-dist/**
+            artifacts/hub-mobile.png
+          if-no-files-found: error

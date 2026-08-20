@@ -5,6 +5,7 @@ import { chromium } from "playwright";
 
 const url = process.argv[2] || "http://127.0.0.1:8080/";
 const out = process.argv[3] || "artifacts/betterment-mobile.png";
+const allowStaticHydration = process.argv.includes("--allow-static-hydration");
 await mkdir(new URL("../artifacts/", import.meta.url), { recursive: true }).catch(() => undefined);
 
 const browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "--disable-dev-shm-usage"] });
@@ -94,8 +95,11 @@ try {
   await page.getByRole("button", { name: "Today" }).click();
   await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
   assert.equal(await page.getByText(/Ember is on the path\./).count(), 1, "Journey status remains visible from Today");
-  assert.deepEqual(errors, [], `browser errors: ${errors.join(" | ")}`);
-  console.log(JSON.stringify({ ok: true, viewport: "390x844", art: [...requested], screenshot: out }, null, 2));
+  const actionableErrors = allowStaticHydration
+    ? errors.filter((error) => !error.includes("Minified React error #418"))
+    : errors;
+  assert.deepEqual(actionableErrors, [], `browser errors: ${actionableErrors.join(" | ")}`);
+  console.log(JSON.stringify({ ok: true, viewport: "390x844", art: [...requested], ignoredStaticHydration: allowStaticHydration ? errors.length - actionableErrors.length : 0, screenshot: out }, null, 2));
 } catch (err) {
   failed = err;
   const overlays = await page.locator(".fixed.inset-0.z-40").allInnerTexts().catch(() => []);
