@@ -84,7 +84,10 @@ try {
   for (const name of ["Birch Ruins", "Drowned Courtyard", "Bell Keep", "Ashwood"]) {
     assert.equal(await deep.page.getByRole("button", { name }).isEnabled(), true, `${name} remains replayable after clear`);
   }
-  assert.match(await deep.page.locator("body").innerText(), /The gate is visible beyond Ashwood\. It does not open yet\./, "Old Gate is revealed after Ashwood");
+  const oldGateTitle = deep.page.getByText("5. Old Gate", { exact: true });
+  assert.equal(await oldGateTitle.isVisible(), true, "Old Gate title is visible after Ashwood");
+  const oldGateCardClass = await oldGateTitle.locator("xpath=../..").getAttribute("class");
+  assert.ok(oldGateCardClass && !oldGateCardClass.includes("opacity-45"), "Old Gate changes from hidden-state opacity after Ashwood");
   assert.match(await deep.page.locator("body").innerText(), /4 \/ 5\s+roads known/, "four live regions plus Old Gate are represented");
   const overflow = await deep.page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert.ok(overflow <= 0, `world screen overflows horizontally by ${overflow}px`);

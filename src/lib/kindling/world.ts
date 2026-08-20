@@ -8,13 +8,14 @@ export type WorldPath = (typeof PATHS)[number] & {
   worldBlurb: string;
   unlockAfter: string | null;
   artDirection: string;
+  art: string;
   crop: string;
 };
 
 // Keep the legacy route ids for save compatibility. The ordered world names are
-// the player-facing canon. Runtime art stays on the checked-in path image until
-// each region receives its own committed environment; no missing image path is
-// ever referenced by the game.
+// the player-facing canon. Each region owns a runtime art slot. Until a region
+// receives its own committed environment file, that slot deliberately points at
+// the checked-in path fallback so the game never references a missing asset.
 export const WORLD_PATHS: WorldPath[] = [
   {
     ...source.ruin,
@@ -23,6 +24,7 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "White trunks, broken arches, and the first road away from the fire.",
     unlockAfter: null,
     artDirection: "cool birch woodland, broken pale stone, open daylight path",
+    art: "art/path.jpg",
     crop: "48% center",
   },
   {
@@ -32,6 +34,7 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "Roots have split the old court. Water sits where people once did.",
     unlockAfter: "ruin",
     artDirection: "wet courtyard, roots and moss, shallow water, overgrown masonry",
+    art: "art/path.jpg",
     crop: "54% center",
   },
   {
@@ -41,6 +44,7 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "A road of old banners climbs toward a bell that no one rings.",
     unlockAfter: "forest",
     artDirection: "ruined keep approach, hanging banners, tower silhouette, windy high path",
+    art: "art/path.jpg",
     crop: "60% center",
   },
   {
@@ -50,6 +54,7 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "Black trees, pale ground, and warmth trapped under the dust.",
     unlockAfter: "road",
     artDirection: "burnt woodland, ash ground, ember traces, open dead-tree path",
+    art: "art/path.jpg",
     crop: "42% center",
   },
 ];
@@ -61,6 +66,7 @@ export const OLD_GATE = {
   worldBlurb: "Beyond Ashwood, something older closes the road.",
   unlockAfter: "ash",
   artDirection: "monumental ancient gate, distant warm slit of light, forest ending at stone",
+  art: "art/path.jpg",
 } as const;
 
 export function pathCleared(s: Pick<KindlingSave, "found">, pathId: string) {

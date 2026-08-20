@@ -30,8 +30,12 @@ try {
   await page.waitForTimeout(500);
   assert.ok([...requested].some((p) => p.endsWith("/art/camp.jpg")), "live camp art was requested");
   assert.ok([...requested].some((p) => p.endsWith("/art/ember.png")), "live Ember sprite was requested");
+  const moreCare = page.getByRole("button", { name: /More care/ });
+  assert.equal(await moreCare.count(), 1, "phone Today exposes one compact secondary-care control");
+  assert.equal(await moreCare.getAttribute("aria-expanded"), "false", "secondary care is collapsed by default on phone");
+  assert.equal(await page.getByText("How is it", { exact: true }).isVisible(), false, "mood controls are not simultaneously visible on phone");
 
-  await page.getByRole("button", { name: "Edit the list" }).click();
+  await page.getByRole("button", { name: "Edit" }).click();
   await page.getByRole("button", { name: "Do 10 push-ups +" }).click();
   await page.getByRole("button", { name: "Close" }).click();
 
@@ -41,14 +45,16 @@ try {
   assert.equal(await page.getByRole("heading", { name: "1 / 5 tended" }).count(), 1, "base goal adds one Fire point");
   const afterBase = await page.locator("body").innerText();
   assert.match(afterBase, /20\s+Flames/, "base goal shows 20 Flames");
-  assert.match(afterBase, /20 Bond XP/, "base goal grows active companion Bond");
+  const savedAfterBase = await page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
+  assert.equal(savedAfterBase.companion?.bondXp, 20, "base goal grows active companion Bond by 20 XP");
 
   await page.getByRole("button", { name: /Feeling good\? Reach 20 push-ups total/ }).click();
   await page.getByText(/One more tier: reach 30 push-ups total/).waitFor();
   assert.equal(await page.getByRole("heading", { name: "1 / 5 tended" }).count(), 1, "Tier II does not add Fire");
   const afterTier2 = await page.locator("body").innerText();
   assert.match(afterTier2, /40\s+Flames/, "Tier II added 20 Flames");
-  assert.match(afterTier2, /60 Bond XP/, "Tier II added 40 Bond XP");
+  const savedAfterTier2 = await page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
+  assert.equal(savedAfterTier2.companion?.bondXp, 60, "Tier II adds 40 Bond XP even when Bond details are collapsed");
 
   await page.getByRole("button", { name: /^Drank some water/ }).click();
   await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
