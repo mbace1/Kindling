@@ -9,6 +9,7 @@ import { startFireLoop, stopFireLoop, unlockAudio } from "@/lib/kindling/audio";
 import { assetSrc, dayKey, type Tab } from "@/lib/kindling/model";
 import { cn } from "@/lib/utils";
 import { JourneyWorldScreen } from "@/components/journey-world-screen";
+import { TodayResponsive } from "@/components/today-responsive";
 import {
   BreatheModal,
   CompanionScreen,
@@ -17,7 +18,6 @@ import {
   JournalScreen,
   KindlingEvent,
   PackScreen,
-  TodayScreen,
 } from "@/components/screens";
 
 const NAV: { id: Tab; label: string; icon: typeof Home }[] = [
@@ -101,7 +101,7 @@ export function AppShell() {
           ? PackScreen
           : s.tab === "journal"
             ? JournalScreen
-            : TodayScreen;
+            : TodayResponsive;
 
   const combatBackdrop = Boolean(s.hydrated && s.tab === "journey" && s.combat);
 
