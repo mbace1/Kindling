@@ -8,11 +8,11 @@ import { useKindling } from "@/lib/kindling/store";
 import { startFireLoop, stopFireLoop, unlockAudio } from "@/lib/kindling/audio";
 import { assetSrc, dayKey, type Tab } from "@/lib/kindling/model";
 import { cn } from "@/lib/utils";
+import { CompanionResponsive } from "@/components/companion-responsive";
 import { JourneyWorldScreen } from "@/components/journey-world-screen";
 import { TodayResponsive } from "@/components/today-responsive";
 import {
   BreatheModal,
-  CompanionScreen,
   FirstNote,
   GoalEditor,
   JournalScreen,
@@ -96,7 +96,7 @@ export function AppShell() {
     s.tab === "journey"
       ? JourneyWorldScreen
       : s.tab === "companion"
-        ? CompanionScreen
+        ? CompanionResponsive
         : s.tab === "pack"
           ? PackScreen
           : s.tab === "journal"
