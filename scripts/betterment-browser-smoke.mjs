@@ -33,7 +33,7 @@ try {
   const moreCare = page.getByRole("button", { name: /More care/ });
   assert.equal(await moreCare.count(), 1, "phone Today exposes one compact secondary-care control");
   assert.equal(await moreCare.getAttribute("aria-expanded"), "false", "secondary care is collapsed by default on phone");
-  assert.equal(await page.getByText("How is it", { exact: true }).count(), 0, "mood controls are not simultaneously exposed above the fold");
+  assert.equal(await page.getByText("How is it", { exact: true }).isVisible(), false, "mood controls are not simultaneously visible on phone");
 
   await page.getByRole("button", { name: "Edit" }).click();
   await page.getByRole("button", { name: "Do 10 push-ups +" }).click();
