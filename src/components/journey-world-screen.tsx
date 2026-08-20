@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const JOURNEY_FLAMES = ERRAND_COST * FLAMES_PER_FUEL;
+const JOURNEY_SECONDS = 90;
 
 export function JourneyWorldScreen() {
   const s = useKindling();
@@ -41,18 +42,25 @@ export function JourneyWorldScreen() {
   if (s.walk) {
     const path = WORLD_PATHS.find((p) => p.id === s.walk?.pathId);
     const seconds = Math.max(0, Math.ceil((s.walk.endsAt - now) / 1000));
+    const travel = Math.max(0, Math.min(1, (JOURNEY_SECONDS - seconds) / JOURNEY_SECONDS));
+    const left = 10 + travel * 72;
     return (
       <div className="relative min-h-[70vh] overflow-hidden">
-        <img
-          src={assetSrc(path?.art ?? "art/path.jpg")}
-          alt=""
-          className="h-60 w-full scale-105 object-cover sm:h-80"
-          style={{ objectPosition: path?.crop ?? "50% center" }}
-        />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-60 bg-gradient-to-b from-night/5 via-transparent to-night sm:h-80" />
-        <div className="absolute inset-x-0 top-32 flex justify-center sm:top-40">
+        <div className="relative h-60 overflow-hidden sm:h-80">
+          <img
+            src={assetSrc(path?.art ?? "art/path.jpg")}
+            alt=""
+            className="h-full w-full scale-105 object-cover"
+            style={{ objectPosition: path?.crop ?? "50% center" }}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-night/5 via-transparent to-night" />
           {s.companion ? (
-            <img src={portraitSrc(s.companion.species)} alt="" className="h-20 w-20 animate-pulse object-contain sm:h-24 sm:w-24" />
+            <img
+              src={portraitSrc(s.companion.species)}
+              alt=""
+              className="absolute bottom-8 h-20 w-20 -translate-x-1/2 object-contain transition-[left] duration-700 ease-linear sm:bottom-10 sm:h-24 sm:w-24"
+              style={{ left: `${left}%` }}
+            />
           ) : null}
         </div>
         <div className="space-y-2 px-4 py-5 sm:px-5 sm:py-6">
@@ -71,12 +79,7 @@ export function JourneyWorldScreen() {
   return (
     <div>
       <div className="relative h-40 overflow-hidden sm:h-52">
-        <img
-          src={assetSrc(coverPath.art)}
-          alt=""
-          className="h-full w-full object-cover"
-          style={{ objectPosition: coverPath.crop }}
-        />
+        <img src={assetSrc(coverPath.art)} alt="" className="h-full w-full object-cover" style={{ objectPosition: coverPath.crop }} />
         <div className="absolute inset-0 bg-gradient-to-b from-night/10 via-transparent to-night" />
         <div className="absolute inset-x-4 bottom-3 sm:bottom-4">
           <p className="text-xs uppercase tracking-[0.2em] text-bone/70">Journey</p>
@@ -164,9 +167,7 @@ function CombatWorldScreen() {
       </div>
 
       {!done ? (
-        <div className="mt-3 rounded-md border border-fire/25 bg-night/70 px-3 py-2 text-sm">
-          <span className="text-mute">Intent · </span><span className="font-medium text-bone">{verbLabel(c.telegraph)}</span>
-        </div>
+        <div className="mt-3 rounded-md border border-fire/25 bg-night/70 px-3 py-2 text-sm"><span className="text-mute">Intent · </span><span className="font-medium text-bone">{verbLabel(c.telegraph)}</span></div>
       ) : (
         <p className="mt-4 text-sm font-medium text-bone">{c.result === "win" ? "The path opens." : "You walk home. The fire is still there."}</p>
       )}
@@ -193,9 +194,7 @@ function CombatWorldScreen() {
       ) : (
         <div className="mt-6 grid grid-cols-3 gap-2">
           {(["strike", "guard", "skill"] as const).map((verb) => (
-            <button key={verb} type="button" onClick={() => s.playerAct(verb)} className="min-h-14 rounded-md border border-bone/20 bg-night/80 text-sm font-medium uppercase tracking-wide backdrop-blur-[1px]">
-              {verbLabel(verb)}
-            </button>
+            <button key={verb} type="button" onClick={() => s.playerAct(verb)} className="min-h-14 rounded-md border border-bone/20 bg-night/80 text-sm font-medium uppercase tracking-wide backdrop-blur-[1px]">{verbLabel(verb)}</button>
           ))}
         </div>
       )}
