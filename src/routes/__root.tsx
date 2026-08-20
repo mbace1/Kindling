@@ -7,6 +7,9 @@ const APP_NAME = "Kindling";
 const host = import.meta.env.VITE_PUBLIC_HOSTNAME;
 const ogImage = host ? `https://${host}/og.jpg` : undefined;
 const xBanner = host ? `https://${host}/x-banner.jpg` : undefined;
+const hubStatic = import.meta.env.VITE_HUB_STATIC === "true";
+const base = import.meta.env.BASE_URL ?? "/";
+const atBase = (path: string) => `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 
 export const Route = createRootRoute({
   head: () => ({
@@ -37,10 +40,14 @@ export const Route = createRootRoute({
         : []),
     ],
     links: [
-      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "icon", type: "image/svg+xml", href: atBase("favicon.svg") },
       { rel: "stylesheet", href: appCss },
-      { rel: "manifest", href: "/__grok/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
+      ...(!hubStatic
+        ? [
+            { rel: "manifest", href: "/__grok/manifest.webmanifest" },
+            { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
+          ]
+        : []),
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,650;9..144,700&display=swap",
@@ -53,7 +60,7 @@ export const Route = createRootRoute({
         <HeadContent />
       </head>
       <body className="bg-night text-bone antialiased">
-        <PreviewHostBridge />
+        {!hubStatic ? <PreviewHostBridge /> : null}
         <AuthProvider>
           <Outlet />
         </AuthProvider>
