@@ -31,7 +31,7 @@ try {
   assert.ok([...requested].some((p) => p.endsWith("/art/camp.jpg")), "live camp art was requested");
   assert.ok([...requested].some((p) => p.endsWith("/art/ember.png")), "live Ember sprite was requested");
 
-  await page.getByRole("button", { name: "Edit the list" }).click();
+  await page.getByRole("button", { name: "Edit" }).click();
   await page.getByRole("button", { name: "Do 10 push-ups +" }).click();
   await page.getByRole("button", { name: "Close" }).click();
 
