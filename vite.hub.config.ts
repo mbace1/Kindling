@@ -11,6 +11,7 @@ export default defineConfig({
     tanstackStart({
       spa: {
         enabled: true,
+        maskPath: "/Suds-Jack/kindling/",
         prerender: {
           outputPath: "/index.html",
           crawlLinks: false,
