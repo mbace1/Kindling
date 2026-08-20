@@ -21,6 +21,8 @@ import {
   PackScreen,
 } from "@/components/screens";
 
+const HUB_STATIC = import.meta.env.VITE_HUB_STATIC === "true";
+
 const NAV: { id: Tab; label: string; icon: typeof Home }[] = [
   { id: "today", label: "Today", icon: Home },
   { id: "journey", label: "Walk", icon: Footprints },
@@ -53,7 +55,7 @@ export function AppShell() {
   }, [s.hydrated, s.walk?.startedAt, s.walk?.endsAt]);
 
   useEffect(() => {
-    if (!s.hydrated || isPending || !user) return;
+    if (HUB_STATIC || !s.hydrated || isPending || !user) return;
     let cancelled = false;
     void (async () => {
       try {
@@ -75,7 +77,7 @@ export function AppShell() {
   }, [s.hydrated, isPending, user]);
 
   useEffect(() => {
-    if (!s.hydrated || !user) return;
+    if (HUB_STATIC || !s.hydrated || !user) return;
     const t = window.setTimeout(() => {
       void writeCloudSave({ data: useKindling.getState().snapshot() }).catch(() => undefined);
     }, 800);
@@ -205,6 +207,7 @@ export function AppShell() {
 
 function AuthSlot() {
   const { user, isPending } = useCurrentUserState();
+  if (HUB_STATIC) return <Flame className="size-4 text-fire" aria-label="Local save" />;
   if (isPending) {
     return <div className="h-9 w-20 animate-pulse rounded-full bg-ash" />;
   }
