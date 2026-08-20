@@ -6,6 +6,9 @@ on:
     branches:
       - main
       - agent/hub-static-deploy
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build-hub:
