@@ -1,0 +1,171 @@
+# Kindling — product plan
+
+**A health app for Dark Souls fans.** A fun thing to check in on that keeps you
+reminded about staying healthy. `CANONICAL.md` holds the rules; this holds the
+order of work and, for each item, **who can do it**.
+
+Written 2026-08-21, after auditing the approved art bible against what the app
+actually runs on.
+
+---
+
+## The finding that sets the order
+
+The art is **not** the hurdle. Most of it already exists and is not being used.
+
+`art-src/approved-hires/` (16 sheets, 38 MB, currently in the Suds-Jack repo) is
+the owner-approved visual language: real pixel art, warm fire against cold
+moonlight, deep value hierarchy. Audited file by file, it splits into two kinds:
+
+**Finished, usable as-is — five composed scenes at 1672×941, no labels, no
+captions, no frames.** `camp-night-moonlit` is the camp exactly as `CANONICAL.md`
+specifies it: monster left, bonfire to its right, ruin behind, opening toward the
+path and castle. At 1672 wide it covers a phone at DPR 3 with room to spare.
+
+**Boards — the ten sheets and the UI kit.** Labelled and captioned, so not
+droppable into a build, but the assets on them are genuinely separated against
+flat dark ground and can be cut. Two are worth naming:
+
+- `environments/bonfire-camp-sheet.png` carries **five discrete bonfire states** —
+  unlit ring, low embers, medium, full, sparks — plus logs, ashes, smoke and ember
+  particles. That is the 5-point care loop, drawn. `CANONICAL.md` says fire
+  height and light must stay gameplay-owned and never be baked into a background;
+  this is the asset that lets that be true.
+- `art-bible/ember.png` carries real sprite strips — **idle 8f, walk 6f, run 6f,
+  attack 8f** — plus separated parts (head, horns, arms, tail, scarf front and
+  back) and rigging notes.
+
+Meanwhile the app runs on Grok-derived placeholder art: `camp.jpg` and
+`path.jpg`, painterly illustration rather than pixel art, and four 256×256
+companion sprites. **Two visual languages are live at once and the approved one
+is the one not shipping.**
+
+So the first two phases need no new art at all. They are cutting and integration.
+
+---
+
+## The constraint, stated plainly
+
+**This assistant cannot generate 2D or 3D art.** No image model in this instance.
+What it can do: cut, key, trim, quantise and compose existing sheets
+(`tools/cut.mjs`), write the integration code, animate in code, build, test and
+deploy.
+
+So every item below is tagged:
+
+- **[cut]** — comes out of the approved bible. No new art. Startable now.
+- **[code]** — no art involved.
+- **[render]** — needs a new image from the owner's pipeline. Blocked until it
+  arrives, and the plan says exactly what to ask for.
+
+An item is never "waiting on art" unless it is tagged `[render]`.
+
+---
+
+## Phase 0 — move the canon here **[code]**
+
+`art-src/` and `tools/` still live in `mbace1/Suds-Jack/kindling/`. The art is
+consumed here, the plan is here, and that repo is a deployment target. Move:
+
+- `art-src/**` → this repo (38 MB; it is the canon and it belongs with the source)
+- `tools/cut.mjs` and siblings → this repo
+
+One catch, already paid for once: **Piritori's docs point five commands at
+`kindling/tools/cut.mjs`.** That project is moving to its own repo too, so it
+needs its own copy. Do not simply delete the Suds-Jack one out from under it.
+
+Until this happens every `[cut]` item below has to reach across repos, which is
+why it is phase 0 rather than a tidy-up.
+
+---
+
+## Phase 1 — the camp screen **[cut]**
+
+The top of `CANONICAL.md`'s own development order, and the biggest single visual
+gain available. No new art.
+
+1. Cut `scenes/camp-night-moonlit.png` to the camp background, replacing
+   `camp.jpg`. Keep the full composition — do not crop to a strip.
+2. Cut the **five bonfire states** from `environments/bonfire-camp-sheet.png` and
+   bind them to the care count: 0 → unlit ring, 1 → low embers, 2–3 → medium,
+   4 → full, 5 → full plus sparks. The fire is the score. Nothing else has to be.
+3. Cut `camp-twilight` and `camp-night-castle` as the other two times of day; the
+   camp sheet's three preview strips confirm the intended progression.
+
+**Acceptance:** the composed screen at 390×844, DPR 3, judged on
+`CANONICAL.md`'s nine criteria. Ticking a line visibly changes the fire. A
+screenshot, not a green suite — a gate that certifies *works* cannot see *looks*.
+
+---
+
+## Phase 2 — Ember is alive **[cut]**
+
+Right now the companion is a static 256×256 PNG. The bible has it animated.
+
+1. Cut the **idle 8f** strip from `art-bible/ember.png` into a sprite sheet.
+2. Render it in the camp at the approved staging — left of the fire, lit by it.
+3. Walk 6f only if it earns its place; idle is what a check-in screen shows.
+
+The board is 1055×1491 and the strip frames are small, so **check the cut frame
+at phone size before building on it** — if it will not hold up, that becomes a
+`[render]` request for the strips at 4× rather than an upscale.
+
+**Acceptance:** the companion reads as present and breathing on a screen you
+open for ten seconds. Souls fans will forgive a lot; they will not forgive a
+mascot that looks dead.
+
+---
+
+## Phase 3 — the road **[render]** + **[cut]**
+
+The Walk tab is five ordered regions. Exactly one of them has approved art:
+`scenes/travel-day-path.png`, and `travel-day-journey.png` beside it.
+
+- **[cut]** Birch Ruins ← `travel-day-path`, replacing `path.jpg`.
+- **[render]** Drowned Courtyard, Bell Keep, Ashwood, Old Gate.
+
+**This is the first place generation is genuinely required**, and PR #4 is the
+warning: it delivered Birch Ruins at 640×206 for a slot that needs 1260×480, so
+it went to mush on the device `CANONICAL.md` says to judge on.
+
+The request, so the next one has a number to beat:
+
+> Four region banners in the approved Kindling pixel-art language, matching
+> `scenes/travel-day-path.png` for palette, dithering and value hierarchy.
+> **1672×941 each, no labels, no captions, no frame.** Each needs a framing
+> device, a subject with somewhere to be, and depth — a flat strip of scenery
+> reads as wallpaper. Drowned Courtyard: standing water in a colonnade. Bell
+> Keep: a tower with the bell visible. Ashwood: burnt forest, the fire was here
+> once. Old Gate: something older than the road, closing it.
+
+---
+
+## Phase 4 — the UI wears the language **[cut]**
+
+`ui/ui-kit.png` is approved and unused; the app is Tailwind defaults on dark.
+Cut the frames, buttons and meters and dress the shell in them. Lower return
+than 1–3, so it comes after — but it is what stops the app reading as a form.
+
+---
+
+## Phase 5 — combat, world, breeding **[code]**
+
+`CANONICAL.md` items 4–6. The rules are already written there and the invariants
+are already enforced by `scripts/betterment-contract.test.mjs`. Do not start this
+before phases 1–2 land: *"do not build new content to hide an unresolved
+core-screen problem."*
+
+---
+
+## Standing rules for this repo
+
+- **Screen-first.** The composed screen is the deliverable, not the asset.
+- **Nothing that scolds**, in copy or in mechanics. Souls games let you walk back.
+- **Nothing leaves the browser.** No account required, no network call, no
+  leaderboard. It is why the cabinet has no high score.
+- **Two build targets, one source.** `npm run build` for Vercel, `npm run
+  build:hub` for the arcade. The hub build must stay a subset, never a fork.
+- **A delivery that is not a committed file did not arrive.** Four deliveries
+  into this project the recurring failure has been a document describing art that
+  never travelled. `approved-hires/MANIFEST.md` exists so a delivery is checked
+  by hash rather than by eye.

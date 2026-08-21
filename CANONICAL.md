@@ -4,6 +4,27 @@ This repository is the **source project**.
 
 `mbace1/Suds-Jack/kindling/` is a deployment target only. Do not develop a second Kindling implementation there and do not treat its generated/static files as the design source.
 
+## What this is (owner, 2026-08-21)
+
+**A health app for Dark Souls fans.** A fun thing to check in on that keeps you
+reminded about staying healthy.
+
+That sentence decides arguments the criteria below cannot. It is not a wellness
+product wearing a dark-fantasy skin — the audience is people who already like
+sitting at a bonfire between attempts, and the appeal is the *place*, not the
+tracking. So:
+
+- **Checking in has to be a pleasure, not a chore.** If a screen reads as a form
+  to fill in, it is wrong however correct its numbers are.
+- **The world is the reward.** Care buys firelight, a companion who stays, a road
+  that opens. It does not buy points, badges or a streak to protect.
+- **Souls games never scold you either.** They let you walk back. That is the
+  same rule as "the copy never scolds", arrived at from the fiction rather than
+  from wellness-app etiquette — which is why it holds.
+- **Difficulty is not the borrowed thing.** Nobody wants a punishing habit
+  tracker. What is borrowed is the tone: quiet, unhurried, a little grim, and
+  entirely on your side.
+
 ## What is authoritative
 
 1. The game/product rules in the current Betterment GDD direction.

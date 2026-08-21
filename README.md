@@ -4,6 +4,10 @@ A dark-fantasy self-care keeper. Five small real-life care points tend a bonfire
 
 Two fully missed care-days and the active monster becomes Kindling. The first missed day is warning only. Their name, form and Bond remain in the lineage, and the coals can begin again.
 
+**Plan:** `PRODUCT_PLAN.md` — the order of work, and for each item whether it
+needs new art or only cutting from the approved bible. `CANONICAL.md` holds the
+rules it serves.
+
 ## Play
 
 - **Today** — any five care points tend the Fire. Adding more goals never raises the target. Extra care is optional.
