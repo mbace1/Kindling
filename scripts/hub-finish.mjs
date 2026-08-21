@@ -70,6 +70,12 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 }
 `);
 
+// The release log travels WITH the build. The arcade derives every cabinet's
+// number by reading that project's VERSIONS.md, so a build arriving without
+// one has no honest source and the hub gate says so. Keeping the log at the
+// source and copying it is what stops the number and the bytes disagreeing.
+if (await exists('VERSIONS.md')) await cp('VERSIONS.md', path.join(DIST, 'VERSIONS.md'));
+
 // ── 2: the worker ──
 if (await exists('public/manifest.webmanifest') && !(await exists(path.join(DIST, 'manifest.webmanifest')))) {
   await cp('public/manifest.webmanifest', path.join(DIST, 'manifest.webmanifest'));
