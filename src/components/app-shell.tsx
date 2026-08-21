@@ -31,6 +31,8 @@ const NAV: { id: Tab; label: string; icon: typeof Home }[] = [
   { id: "journal", label: "Book", icon: BookOpen },
 ];
 
+const hubStatic = import.meta.env.VITE_HUB_STATIC === "true";
+
 export function AppShell() {
   const s = useKindling();
   const { user, isPending } = useCurrentUserState();
@@ -111,7 +113,16 @@ export function AppShell() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col bg-night text-bone">
-      <header className="flex items-center justify-between px-4 pb-2 pt-4">
+      {/* On the arcade the site's own HUB button is fixed to the top-left
+          corner, where it lands on the title. The header drops below it there
+          — both ends of the row move together, so it reads as intended
+          spacing rather than a dodge. */}
+      <header
+        className={cn(
+          "flex items-center justify-between px-4 pb-2",
+          hubStatic ? "pt-16" : "pt-4",
+        )}
+      >
         <div>
           <p className="font-display text-xl font-semibold leading-none">Kindling</p>
           <p className="mt-1 text-xs text-mute">The day turns at 04:00</p>

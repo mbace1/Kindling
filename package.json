@@ -11,7 +11,7 @@
     "build": "vite build && npm run db:migrate",
     "db:migrate": "node scripts/migrate.mjs",
     "build:dev": "vite build --mode development",
-    "build:hub": "VITE_AUTH_ENABLED=false vite build --config vite.hub.config.ts --mode hub",
+    "build:hub": "VITE_AUTH_ENABLED=false vite build --config vite.hub.config.ts --mode hub && node scripts/hub-finish.mjs",
     "preview": "vite preview --host 0.0.0.0 --port 8080",
     "typecheck": "tsc --noEmit",
     "test": "node --test 'scripts/**/*.test.mjs'",

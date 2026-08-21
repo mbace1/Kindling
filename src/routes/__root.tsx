@@ -48,10 +48,18 @@ export const Route = createRootRoute({
             { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
           ]
         : []),
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,650;9..144,700&display=swap",
-      },
+      // The arcade build makes no outbound request of any kind: every cabinet
+      // has to work on a plane, and several of them say so in their own copy.
+      // Both stacks in styles.css already name real fallbacks, so the hub
+      // build loses the exact letterforms and nothing else.
+      ...(!hubStatic
+        ? [
+            {
+              rel: "stylesheet",
+              href: "https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,650;9..144,700&display=swap",
+            },
+          ]
+        : []),
     ],
   }),
   component: () => (
