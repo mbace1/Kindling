@@ -14,7 +14,7 @@
 //      them say so in their own copy.
 //
 // So this runs after the build, over dist/client, and is purely additive.
-import { readdir, readFile, writeFile, cp, access } from 'node:fs/promises';
+import { readdir, readFile, writeFile, cp, access, rm } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
@@ -31,6 +31,13 @@ async function walk(dir = '.', base = '') {
 }
 
 const exists = async p => access(p).then(() => true, () => false);
+
+// __grok/ is the PWA install onboarding — a manifest, an icon and a styled
+// how-to-add-to-homescreen page with its own branding. __root.tsx already
+// drops the two links to it under VITE_HUB_STATIC, so on the arcade it is
+// 248 kB of another product's artwork that nothing references, and leaving it
+// in dist means the precache walk below faithfully caches all of it.
+await rm(path.join(DIST, '__grok'), { recursive: true, force: true });
 
 // ── 1 + 3: the page ──
 const html = path.join(DIST, 'index.html');
