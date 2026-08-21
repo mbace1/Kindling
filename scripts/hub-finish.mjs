@@ -40,6 +40,16 @@ const exists = async p => access(p).then(() => true, () => false);
 await rm(path.join(DIST, '__grok'), { recursive: true, force: true });
 
 // ── 1 + 3: the page ──
+//
+// The URLs here are absolute — `/Suds-Jack/kindling/…` — and they stay that
+// way. Rewriting them relative was tried twice and cannot be made correct:
+// `./` is right in the HTML and wrong inside a chunk (whose dynamic imports
+// resolve against the MODULE url, giving assets/assets/…), `../` by depth is
+// the reverse, and neither helps anyway because TanStack takes the router's
+// BASEPATH from the same build-time base — served anywhere else the page
+// renders "Not Found" with every asset loading fine. This build belongs at
+// exactly one URL, and the arcade's gate now serves the tree at that URL,
+// which is where GitHub Pages serves it too.
 const html = path.join(DIST, 'index.html');
 let page = await readFile(html, 'utf8');
 
@@ -52,6 +62,13 @@ if (/fonts\.(googleapis|gstatic)\.com/.test(page)) {
   throw new Error('hub build still links a webfont — gate it on hubStatic in __root.tsx');
 }
 
+// The HUB button goes in AFTER hydration, and that is not a nicety.
+// __root.tsx renders <html> itself, so React owns the whole document: a button
+// the shell appends to <body> before hydration is a child React did not render
+// and it gets DELETED. It survived every test where the app failed to load,
+// which is exactly the wrong way round. So the shell is imported on `load`,
+// once hydration has run, and the hub's gate waits for the button rather than
+// sampling for it at domcontentloaded.
 if (!page.includes('hub-shell.js')) {
   page = page.replace('</body>', '<script type="module" src="./hub-shell.js"></script></body>');
 }
@@ -59,12 +76,16 @@ await writeFile(html, page);
 
 await writeFile(path.join(DIST, 'hub-shell.js'), `// The arcade's HUB button, and the service worker.
 //
-// hub/shell.js is loaded from the SITE root rather than bundled: it belongs to
-// the arcade, not to this app, and it navigates on pointerup AND touchend
+// hub/shell.js is the SITE's, loaded from the site root rather than vendored —
+// a vendored copy drifts, and this one navigates on pointerup AND touchend
 // because most cabinets preventDefault every touch and kill the synthesised
-// click. Both are swallowed — a cabinet must open with or without the arcade
-// around it.
-import('../hub/shell.js').catch(() => {});
+// click.
+//
+// It is imported on \`load\` rather than from a tag in the page because React
+// owns the whole document in this app and removes any body child it did not
+// render itself. Both calls are swallowed: a cabinet has to open with or
+// without the arcade around it.
+addEventListener('load', () => { import('../hub/shell.js').catch(() => {}); });
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
 }

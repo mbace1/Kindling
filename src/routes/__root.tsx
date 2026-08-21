@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
@@ -70,10 +71,24 @@ export const Route = createRootRoute({
       <body className="bg-night text-bone antialiased">
         {!hubStatic ? <PreviewHostBridge /> : null}
         <AuthProvider>
-          <Outlet />
+          <HubSafeOutlet />
         </AuthProvider>
         <Scripts />
       </body>
     </html>
   ),
 });
+
+// The hub build is prerendered as an EMPTY shell — SPA masking matches no
+// route on the server — while the client renders the whole app on its first
+// pass. React calls that a hydration mismatch (#418), recovers by throwing the
+// server markup away, and logs an error on every single load. The arcade holds
+// its cabinets to zero console errors, so the first client pass renders
+// nothing either and the app mounts a tick later. One frame, no error.
+//
+// Anywhere else the shell and the client agree, so there is nothing to defer.
+function HubSafeOutlet() {
+  const [mounted, setMounted] = useState(!hubStatic);
+  useEffect(() => setMounted(true), []);
+  return mounted ? <Outlet /> : null;
+}
