@@ -48,7 +48,7 @@ export function JourneyWorldScreen() {
       <div className="relative min-h-[70vh] overflow-hidden">
         <div className="relative h-60 overflow-hidden sm:h-80">
           <img
-            src={assetSrc(path?.art ?? "art/path.jpg")}
+            src={assetSrc(path?.art ?? "art/path.webp")}
             alt=""
             className="h-full w-full scale-105 object-cover"
             style={{ objectPosition: path?.crop ?? "50% center" }}
@@ -78,13 +78,21 @@ export function JourneyWorldScreen() {
 
   return (
     <div>
+      {/* The plate is left ALONE. Two rounds of scrim-tuning to get the
+          overlaid title to WCAG AA either put Ember and the road into shadow or
+          left the companion cut off at the horns — the composition's subject
+          sits low, and the words were sitting on top of it. Approved art this
+          good should be a picture, not a background for text: the title moves
+          into the text column below, where it is on the page ground and legible
+          by construction. */}
       <div className="relative h-40 overflow-hidden sm:h-52">
         <img src={assetSrc(coverPath.art)} alt="" className="h-full w-full object-cover" style={{ objectPosition: coverPath.crop }} />
-        <div className="absolute inset-0 bg-gradient-to-b from-night/10 via-transparent to-night" />
-        <div className="absolute inset-x-4 bottom-3 sm:bottom-4">
-          <p className="text-xs uppercase tracking-[0.2em] text-bone/70">Journey</p>
-          <h2 className="font-display text-2xl font-semibold">The road keeps opening.</h2>
-        </div>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-night to-transparent" />
+      </div>
+
+      <div className="px-4 pt-3">
+        <p className="text-xs uppercase tracking-[0.2em] text-mute">Journey</p>
+        <h2 className="font-display text-2xl font-semibold">The road keeps opening.</h2>
       </div>
 
       <div className="space-y-4 px-4 pb-28 pt-4">

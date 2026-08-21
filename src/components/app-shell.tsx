@@ -169,7 +169,7 @@ export function AppShell() {
         style={
           combatBackdrop
             ? {
-                backgroundImage: `linear-gradient(to bottom, rgba(8,10,15,0.42), rgba(8,10,15,0.92)), url("${assetSrc(combatPath?.art ?? "art/path.jpg")}")`,
+                backgroundImage: `linear-gradient(to bottom, rgba(8,10,15,0.42), rgba(8,10,15,0.92)), url("${assetSrc(combatPath?.art ?? "art/path.webp")}")`,
               }
             : undefined
         }

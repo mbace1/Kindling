@@ -24,8 +24,8 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "White trunks, broken arches, and the first road away from the fire.",
     unlockAfter: null,
     artDirection: "cool birch woodland, broken pale stone, open daylight path",
-    art: "art/path.jpg",
-    crop: "48% center",
+    art: "art/path.webp",
+    crop: "50% 58%",
   },
   {
     ...source.forest,
@@ -34,7 +34,7 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "Roots have split the old court. Water sits where people once did.",
     unlockAfter: "ruin",
     artDirection: "wet courtyard, roots and moss, shallow water, overgrown masonry",
-    art: "art/path.jpg",
+    art: "art/path.webp",
     crop: "54% center",
   },
   {
@@ -44,7 +44,7 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "A road of old banners climbs toward a bell that no one rings.",
     unlockAfter: "forest",
     artDirection: "ruined keep approach, hanging banners, tower silhouette, windy high path",
-    art: "art/path.jpg",
+    art: "art/path.webp",
     crop: "60% center",
   },
   {
@@ -54,7 +54,7 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "Black trees, pale ground, and warmth trapped under the dust.",
     unlockAfter: "road",
     artDirection: "burnt woodland, ash ground, ember traces, open dead-tree path",
-    art: "art/path.jpg",
+    art: "art/path.webp",
     crop: "42% center",
   },
 ];
@@ -66,7 +66,7 @@ export const OLD_GATE = {
   worldBlurb: "Beyond Ashwood, something older closes the road.",
   unlockAfter: "ash",
   artDirection: "monumental ancient gate, distant warm slit of light, forest ending at stone",
-  art: "art/path.jpg",
+  art: "art/path.webp",
 } as const;
 
 export function pathCleared(s: Pick<KindlingSave, "found">, pathId: string) {

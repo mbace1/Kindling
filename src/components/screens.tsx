@@ -229,7 +229,7 @@ export function JourneyScreen() {
     return (
       <div className="relative min-h-[70vh] overflow-hidden">
         <img
-          src={assetSrc("art/path.jpg")}
+          src={assetSrc("art/path.webp")}
           alt=""
           className="h-64 w-full scale-105 object-cover sm:h-80"
           style={{ objectPosition: `${45 + ((90 - seconds) / 90) * 10}% center` }}
@@ -258,7 +258,7 @@ export function JourneyScreen() {
 
   return (
     <div>
-      <img src={assetSrc("art/path.jpg")} alt="" className="h-44 w-full object-cover sm:h-56" />
+      <img src={assetSrc("art/path.webp")} alt="" className="h-44 w-full object-cover sm:h-56" />
       <div className="space-y-4 px-4 pb-28 pt-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-mute">Journey</p>
