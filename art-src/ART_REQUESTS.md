@@ -5,6 +5,50 @@ to be posted one at a time — each is self-contained.
 
 ---
 
+## R1. The empty camp plate — **the one thing blocking the camp screen**
+
+*Added 2026-08-21, after cutting against the approved sheets.*
+
+`scenes/camp-night-moonlit.png` is beautiful and it is a **finished illustration,
+not a background plate**. It has the bonfire and Ember painted into it. The app
+needs both of those to be layers, and not for tidiness:
+
+- the fire IS the score — five care points, five states — and `CANONICAL.md`
+  says fire height and light stay gameplay-owned, never baked into a background;
+- the companion changes species, stage and colour, and has to be **absent from
+  camp while away on a Journey**. A painted-in Ember cannot leave.
+
+The fire half is already solved: the five states cut cleanly out of
+`environments/bonfire-camp-sheet.png` (see `tools/cut-fire-states.py`) and knock
+the painted flame back convincingly, because a flame against a dark masonry wall
+darkens without a trace. The **companion half cannot be faked** — covering a
+detailed monster on a lit rug leaves a smear, and inpainting it out is paint work,
+not cutting.
+
+So, one render:
+
+> **The same moonlit ruin camp as `camp-night-moonlit.png` — identical
+> composition, palette, dithering and light — with the FIRE PIT UNLIT AND EMPTY
+> and NO CREATURE in it.**
+>
+> - 1672 × 941, PNG, no labels, no captions, no frame.
+> - Keep everything else exactly: the tree and lantern at left, the banner, the
+>   ruin arches, the sword/shield/helm/book props, the signpost, the river and
+>   bridge, the castle on its hill, the moon.
+> - The stone ring stays; the logs and flames go. The rug stays — the companion
+>   sits on it — but nothing sits on it.
+> - **Light it as an unlit camp**: moonlight and the tree lantern only. No warm
+>   firelight on the stones, the rug, the arch or the ground, because the game
+>   paints that light in as the fire grows. This is the part most likely to come
+>   back wrong.
+>
+> The same treatment for `camp-twilight.png` and `camp-night-castle.png` when
+> convenient — they are the other times of day and have the same two problems.
+
+Everything else about the camp screen is already cut and waiting on this.
+
+---
+
 ## 0. Why this file exists
 
 The approach changed (owner direction, 2026-08-17): **cut assets out of sheets**

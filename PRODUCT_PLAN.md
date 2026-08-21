@@ -96,6 +96,26 @@ gain available. No new art.
 `CANONICAL.md`'s nine criteria. Ticking a line visibly changes the fire. A
 screenshot, not a green suite — a gate that certifies *works* cannot see *looks*.
 
+**Status, 2026-08-21 — half done, and the other half needs one render.**
+
+Done: the five states are cut and committed (`public/art/fire-states.png`,
+re-cuttable with `tools/cut-fire-states.py`). Composited over the approved scene
+at real render size they read correctly at 0, 2 and 5 of 5 — the painted flame
+knocks back cleanly, because a flame against dark masonry darkens without a
+trace.
+
+Blocked: **the approved scenes are finished illustrations, not plates.** All
+three camp scenes have Ember painted in, in the same pose. The app has to draw
+its own companion — species, stage and colour vary, and it must be ABSENT from
+camp while away on a Journey — so a painted-in Ember gives two monsters in shot.
+Covering it was tried and produces a smear; inpainting it out is paint work, not
+cutting. Request **R1** in `art-src/ART_REQUESTS.md` asks for the one plate that
+unblocks it: same camp, unlit pit, no creature, no firelight.
+
+Do not swap the background in until R1 lands. Shipping a plate with a baked-in
+companion would break the companion system, which is worse than the placeholder
+art it replaces.
+
 ---
 
 ## Phase 2 — Ember is alive **[cut]**
