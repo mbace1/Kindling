@@ -13,7 +13,7 @@ actually runs on.
 
 The art is **not** the hurdle. Most of it already exists and is not being used.
 
-`art-src/approved-hires/` (16 sheets, 38 MB, currently in the Suds-Jack repo) is
+`art-src/approved-hires/` (16 sheets, 38 MB) is
 the owner-approved visual language: real pixel art, warm fire against cold
 moonlight, deep value hierarchy. Audited file by file, it splits into two kinds:
 
@@ -62,9 +62,9 @@ An item is never "waiting on art" unless it is tagged `[render]`.
 
 ---
 
-## Phase 0 — move the canon here **[code]**
+## Phase 0 — move the canon here **[code]** — DONE 2026-08-21
 
-`art-src/` and `tools/` still live in `mbace1/Suds-Jack/kindling/`. The art is
+`art-src/` and `tools/` lived in `mbace1/Suds-Jack/kindling/`. The art is
 consumed here, the plan is here, and that repo is a deployment target. Move:
 
 - `art-src/**` → this repo (38 MB; it is the canon and it belongs with the source)
@@ -74,8 +74,9 @@ One catch, already paid for once: **Piritori's docs point five commands at
 `kindling/tools/cut.mjs`.** That project is moving to its own repo too, so it
 needs its own copy. Do not simply delete the Suds-Jack one out from under it.
 
-Until this happens every `[cut]` item below has to reach across repos, which is
-why it is phase 0 rather than a tidy-up.
+Done by COPY, not move, for that reason: all 16 sheets verified here against
+MANIFEST.md's sha256 column, and the Suds-Jack copy left standing until Piritori
+has its own. Deleting it is that lane's call.
 
 ---
 
