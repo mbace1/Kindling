@@ -5,6 +5,42 @@ to be posted one at a time — each is self-contained.
 
 ---
 
+## R2. Ember's animation strips as a real sprite sheet
+
+*Added 2026-08-22, after measuring the bible's strips against what already ships.*
+
+`art-bible/ember.png` carries the idle / walk / run / attack strips, and they are
+**too small to use**. Measured: an idle frame's ink is **89 × 73 px**. The camp
+canvas draws the companion at 112 CSS, which is **224 device px** on a phone — a
+3.07× upscale. The sprite already shipping is a 2×2 sheet of 128 px frames at
+1.75×. So cutting the bible strip would make the companion *softer* than the
+placeholder it replaces, while gaining the approved design. That is a trade worth
+refusing rather than shipping.
+
+Also worth fixing at the source: the board **labels the idle strip `8f` and draws
+seven frames**. Anyone building the loop from the label gets the rhythm wrong.
+
+> **Ember's four animation strips as a clean sprite sheet, not a board.**
+>
+> - **Frames at least 256 × 256** each, laid on a regular grid, one strip per row.
+> - Idle, walk, run, attack — and **state the true frame count per row**; the
+>   current board says 8 and draws 7.
+> - **Flat magenta `#FF00FF` background**, no labels, no captions, no panel, no
+>   notes box beside the strips. The notes belong in text.
+> - Same design, palette and dithering as the bible sheet — this is a resolution
+>   problem, not a redesign.
+> - Side view, consistent baseline across every frame so the sprite does not
+>   bob unless the animation bobs it.
+>
+> The same for Mossling, Ashling and Moss Knight when convenient; Ember first,
+> since it is the default companion.
+
+Until this lands the companion stays on the existing 128 px sheet, which is
+sharper — the design is worse and the pixels are better, and at 224 device px the
+pixels win.
+
+---
+
 ## R1. The empty camp plate — **the one thing blocking the camp screen**
 
 *Added 2026-08-21, after cutting against the approved sheets.*

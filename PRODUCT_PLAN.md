@@ -119,17 +119,28 @@ art it replaces.
 
 ---
 
-## Phase 2 — Ember is alive **[cut]**
+## Phase 2 — Ember is alive **[render]** — was **[cut]**, and the measurement moved it
 
-Right now the companion is a static 256×256 PNG. The bible has it animated.
+**Correction, 2026-08-22.** This phase was written on a wrong premise. The
+companion is **not** a static PNG: `public/art/ember.png` is a 2×2 sheet and
+`drawCompanion` already runs a four-frame idle at 3 fps. So the question was
+never "animate it" but "is the bible's animation better", and the answer is
+measured: **no, not at this resolution.**
 
-1. Cut the **idle 8f** strip from `art-bible/ember.png` into a sprite sheet.
-2. Render it in the camp at the approved staging — left of the fire, lit by it.
-3. Walk 6f only if it earns its place; idle is what a check-in screen shows.
+An idle frame on the board measures **89 × 73 px** of ink. The camp canvas draws
+the companion at 112 CSS = **224 device px** on a phone, so cutting the bible
+strip is a 3.07× upscale against the shipping sheet's 1.75×. The approved design
+would arrive *softer* than the placeholder it replaced. Refused rather than
+shipped.
 
-The board is 1055×1491 and the strip frames are small, so **check the cut frame
-at phone size before building on it** — if it will not hold up, that becomes a
-`[render]` request for the strips at 4× rather than an upscale.
+Two things came out of it. The board **labels the idle strip `8f` and draws
+seven** — anyone building the loop from the label gets the rhythm wrong. And
+request **R2** in `art-src/ART_REQUESTS.md` now asks for the four strips as a
+real sprite sheet at ≥256 px frames on flat magenta, with the true frame counts
+stated. It is a resolution problem, not a redesign.
+
+Until R2 lands the companion stays on the 128 px sheet: the design is worse and
+the pixels are better, and at 224 device px the pixels win.
 
 **Acceptance:** the companion reads as present and breathing on a screen you
 open for ten seconds. Souls fans will forgive a lot; they will not forgive a
