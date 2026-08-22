@@ -142,7 +142,12 @@ mascot that looks dead.
 The Walk tab is five ordered regions. Exactly one of them has approved art:
 `scenes/travel-day-path.png`, and `travel-day-journey.png` beside it.
 
-- **[cut]** Birch Ruins ← `travel-day-path`, replacing `path.jpg`.
+- **[cut]** Birch Ruins ← `travel-day-path`, replacing `path.jpg`. **DONE
+  2026-08-21** — and it replaced the file rather than adding beside it, so all
+  five regions and both fallbacks moved to the approved language at once. Ember
+  is painted into this plate, which is a problem on the camp screen and is right
+  here: the banner is a plain `<img>` with no sprite over it, and a companion
+  setting out on the road is what the picture is of.
 - **[render]** Drowned Courtyard, Bell Keep, Ashwood, Old Gate.
 
 **This is the first place generation is genuinely required**, and PR #4 is the
@@ -158,6 +163,12 @@ The request, so the next one has a number to beat:
 > reads as wallpaper. Drowned Courtyard: standing water in a colonnade. Bell
 > Keep: a tower with the bell visible. Ashwood: burnt forest, the fire was here
 > once. Old Gate: something older than the road, closing it.
+
+**Learned shipping the first one:** do not put the screen's title on the plate.
+Two rounds of scrim-tuning either put the subject in shadow or cut the companion
+off at the horns — these compositions carry their subject low, and a title sitting
+on top of it is the wrong variable to tune. The title lives in the text column
+below now, where it is legible by construction, and the plate is left alone.
 
 ---
 
