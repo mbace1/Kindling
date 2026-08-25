@@ -5,6 +5,7 @@ import { chromium } from "playwright";
 
 const url = process.argv[2] || "http://127.0.0.1:8080/";
 const out = process.argv[3] || "artifacts/betterment-mobile.png";
+const campOut = out.replace(/\.png$/i, "-camp.png");
 const allowStaticHydration = process.argv.includes("--allow-static-hydration");
 await mkdir(new URL("../artifacts/", import.meta.url), { recursive: true }).catch(() => undefined);
 
@@ -26,35 +27,17 @@ try {
   await page.getByRole("button", { name: "Tend the fire" }).waitFor({ state: "detached" });
   await page.getByRole("heading", { name: "0 / 5 tended" }).waitFor();
 
-  assert.equal(await page.locator("canvas").count(), 1, "Today has one composed camp canvas");
+  assert.equal(await page.locator("canvas").count(), 1, "Today has one gameplay canvas");
   await page.waitForFunction(() => document.querySelector("canvas")?.width > 0);
   assert.ok([...requested].some((p) => p.endsWith("/art/camp-night-clean.png")), "clean camp art was requested");
   assert.ok([...requested].some((p) => p.endsWith("/art/ember.png")), "live Ember sprite was requested");
-  // Do not merely accept a successful image request: prove that the environment
-  // has actually decoded and painted into the canvas. The companion alone covers
-  // only a small fraction of samples, while the camp plate fills the scene.
   await page.waitForFunction(() => {
-    const canvas = document.querySelector("canvas");
-    if (!(canvas instanceof HTMLCanvasElement) || !canvas.width || !canvas.height) return false;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return false;
-    const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    let lit = 0;
-    let samples = 0;
-    const stepX = Math.max(1, Math.floor(width / 24));
-    const stepY = Math.max(1, Math.floor(height / 18));
-    for (let y = 0; y < height; y += stepY) {
-      for (let x = 0; x < width; x += stepX) {
-        const i = (y * width + x) * 4;
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        if (r + g + b > 72 && b > 18) lit++;
-        samples++;
-      }
-    }
-    return samples > 0 && lit / samples > 0.18;
+    const plate = document.querySelector('img[data-camp-plate="clean-night"]');
+    return plate instanceof HTMLImageElement && plate.complete && plate.naturalWidth > 0 && plate.naturalHeight > 0;
   }, null, { timeout: 10_000 });
+  const campPlate = page.locator('img[data-camp-plate="clean-night"]');
+  const plateBox = await campPlate.boundingBox();
+  assert.ok(plateBox && plateBox.width >= 380 && plateBox.height >= 250, "clean camp plate visibly fills the phone scene");
 
   const moreCare = page.getByRole("button", { name: /More care/ });
   assert.equal(await moreCare.count(), 1, "phone Today exposes one compact secondary-care control");
@@ -84,6 +67,8 @@ try {
 
   await page.getByRole("button", { name: /^Drank some water/ }).click();
   await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
+  // Preserve a visual baseline while the companion and live fire are both at camp.
+  await page.screenshot({ path: campOut, fullPage: true });
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert.ok(overflow <= 0, `mobile page overflows horizontally by ${overflow}px`);
@@ -124,7 +109,7 @@ try {
     ? errors.filter((error) => !error.includes("Minified React error #418"))
     : errors;
   assert.deepEqual(actionableErrors, [], `browser errors: ${actionableErrors.join(" | ")}`);
-  console.log(JSON.stringify({ ok: true, viewport: "390x844", art: [...requested], ignoredStaticHydration: allowStaticHydration ? errors.length - actionableErrors.length : 0, screenshot: out }, null, 2));
+  console.log(JSON.stringify({ ok: true, viewport: "390x844", art: [...requested], ignoredStaticHydration: allowStaticHydration ? errors.length - actionableErrors.length : 0, screenshot: out, campScreenshot: campOut }, null, 2));
 } catch (err) {
   failed = err;
   const overlays = await page.locator(".fixed.inset-0.z-40").allInnerTexts().catch(() => []);
