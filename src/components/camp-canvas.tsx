@@ -33,9 +33,6 @@ export function CampCanvas({ save, tall }: Props) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Clean runtime plate: environment only. Companion, fire and all firelight
-    // stay gameplay-owned layers so away-state and the 0–5 fire loop remain true.
-    const camp = load(assetSrc("art/camp-night-clean.png"));
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0;
     let last = performance.now();
@@ -55,21 +52,11 @@ export function CampCanvas({ save, tall }: Props) {
         canvas.height = Math.floor(h * dpr);
       }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      ctx.fillStyle = "#0c1016";
-      ctx.fillRect(0, 0, w, h);
-
-      ctx.imageSmoothingEnabled = true;
-      if (camp.complete && camp.naturalWidth) {
-        const scale = Math.max(w / camp.naturalWidth, h / camp.naturalHeight);
-        const dw = camp.naturalWidth * scale;
-        const dh = camp.naturalHeight * scale;
-        ctx.drawImage(camp, (w - dw) / 2, (h - dh) / 2, dw, dh);
-      }
+      ctx.clearRect(0, 0, w, h);
 
       const heat = warmth(save);
       const warn = warningState(save);
-      // The new plate's empty stone ring is at ~37% width / 81% height.
+      // The clean plate's empty stone ring is at ~37% width / 81% height.
       const fx = w * 0.37;
       const fy = h * 0.81;
 
@@ -127,11 +114,20 @@ export function CampCanvas({ save, tall }: Props) {
   }, [save]);
 
   return (
-    <canvas
-      ref={ref}
-      className={tall ? "h-[52vh] min-h-72 w-full" : "h-56 w-full sm:h-72"}
-      aria-label={save.companion && !save.walk && !save.combat ? `${save.companion.name} by the bonfire` : "The bonfire"}
-    />
+    <div className={`relative overflow-hidden bg-night ${tall ? "h-[52vh] min-h-72 w-full" : "h-56 w-full sm:h-72"}`}>
+      <img
+        src={assetSrc("art/camp-night-clean.png")}
+        alt=""
+        aria-hidden="true"
+        data-camp-plate="clean-night"
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <canvas
+        ref={ref}
+        className="absolute inset-0 h-full w-full"
+        aria-label={save.companion && !save.walk && !save.combat ? `${save.companion.name} by the bonfire` : "The bonfire"}
+      />
+    </div>
   );
 }
 
