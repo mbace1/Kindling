@@ -67,7 +67,6 @@ try {
 
   await page.getByRole("button", { name: /^Drank some water/ }).click();
   await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
-  // Preserve a visual baseline while the companion and live fire are both at camp.
   await page.screenshot({ path: campOut, fullPage: true });
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -82,7 +81,7 @@ try {
   await page.getByRole("button", { name: "Birch Ruins" }).click();
   await page.getByRole("heading", { name: /is on the path\./ }).waitFor();
   const beforeReload = await page.evaluate(() => {
-    const save = JSON.parse(localStorage.getItem("kindlingState") || "null"));
+    const save = JSON.parse(localStorage.getItem("kindlingState") || "null");
     return { walk: save?.walk, fuel: save?.fuel, seen: save?.seen };
   });
   assert.ok(beforeReload.walk, "Journey is persisted to the save");
