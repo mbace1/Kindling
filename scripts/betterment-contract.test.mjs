@@ -45,8 +45,6 @@ test("progressive tiers reward without adding daily Fire", () => {
   assert.match(model, /bondXp:\s*60/);
   assert.match(store, /completeProgressive/);
   assert.match(store, /grantBonus/);
-  // The bonus grant deliberately does not touch lifetime care (`kept`), which is
-  // also what stops it from filling Fire or warming a lineage egg.
   const grant = model.match(/export function grantBonus[\s\S]*?\n}\n/)?.[0] ?? "";
   assert.doesNotMatch(grant, /s\.kept\s*\+=/);
 });
@@ -75,8 +73,8 @@ test("breathing uses the intended 4 / 4 / 6 cadence for four rounds", () => {
 
 test("the approved camp staging keeps the companion left of the fire", () => {
   assert.match(camp, /const cx = fx - w \* distance/);
-  assert.match(camp, /assetSrc\("art\/camp\.jpg"\)/);
-  assert.doesNotMatch(camp, /load\("\/art\/camp\.jpg"\)/);
+  assert.match(camp, /assetSrc\("art\/camp-night-clean\.png"\)/);
+  assert.doesNotMatch(camp, /assetSrc\("art\/camp\.jpg"\)/);
 });
 
 test("a companion on a Journey is not also drawn at camp", () => {
