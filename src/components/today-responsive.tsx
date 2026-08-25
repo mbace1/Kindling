@@ -30,7 +30,7 @@ export function TodayResponsive() {
 
   return (
     <div>
-      <div className="max-sm:[&>canvas]:!h-[42vh] max-sm:[&>canvas]:!min-h-64">
+      <div className="max-sm:[&>div]:!h-[42vh] max-sm:[&>div]:!min-h-64">
         <CampCanvas save={s} tall />
       </div>
 
