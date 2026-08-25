@@ -28,9 +28,34 @@ try {
 
   assert.equal(await page.locator("canvas").count(), 1, "Today has one composed camp canvas");
   await page.waitForFunction(() => document.querySelector("canvas")?.width > 0);
-  await page.waitForTimeout(500);
-  assert.ok([...requested].some((p) => p.endsWith("/art/camp.jpg")), "live camp art was requested");
+  assert.ok([...requested].some((p) => p.endsWith("/art/camp-night-clean.png")), "clean camp art was requested");
   assert.ok([...requested].some((p) => p.endsWith("/art/ember.png")), "live Ember sprite was requested");
+  // Do not merely accept a successful image request: prove that the environment
+  // has actually decoded and painted into the canvas. The companion alone covers
+  // only a small fraction of samples, while the camp plate fills the scene.
+  await page.waitForFunction(() => {
+    const canvas = document.querySelector("canvas");
+    if (!(canvas instanceof HTMLCanvasElement) || !canvas.width || !canvas.height) return false;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return false;
+    const { data, width, height } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let lit = 0;
+    let samples = 0;
+    const stepX = Math.max(1, Math.floor(width / 24));
+    const stepY = Math.max(1, Math.floor(height / 18));
+    for (let y = 0; y < height; y += stepY) {
+      for (let x = 0; x < width; x += stepX) {
+        const i = (y * width + x) * 4;
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        if (r + g + b > 72 && b > 18) lit++;
+        samples++;
+      }
+    }
+    return samples > 0 && lit / samples > 0.18;
+  }, null, { timeout: 10_000 });
+
   const moreCare = page.getByRole("button", { name: /More care/ });
   assert.equal(await moreCare.count(), 1, "phone Today exposes one compact secondary-care control");
   assert.equal(await moreCare.getAttribute("aria-expanded"), "false", "secondary care is collapsed by default on phone");
@@ -72,7 +97,7 @@ try {
   await page.getByRole("button", { name: "Birch Ruins" }).click();
   await page.getByRole("heading", { name: /is on the path\./ }).waitFor();
   const beforeReload = await page.evaluate(() => {
-    const save = JSON.parse(localStorage.getItem("kindlingState") || "null");
+    const save = JSON.parse(localStorage.getItem("kindlingState") || "null"));
     return { walk: save?.walk, fuel: save?.fuel, seen: save?.seen };
   });
   assert.ok(beforeReload.walk, "Journey is persisted to the save");
