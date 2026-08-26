@@ -114,13 +114,13 @@ export function CampCanvas({ save, tall }: Props) {
   }, [save]);
 
   return (
-    <div className={`relative overflow-hidden bg-night ${tall ? "h-[52vh] min-h-72 w-full" : "h-56 w-full sm:h-72"}`}>
+    <div className="relative aspect-video w-full overflow-hidden bg-night">
       <img
         src={assetSrc("art/camp-night-clean.png")}
         alt=""
         aria-hidden="true"
         data-camp-plate="clean-night"
-        className="absolute inset-0 h-full w-full object-cover"
+        className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated]"
       />
       <canvas
         ref={ref}
@@ -206,7 +206,7 @@ function drawCompanion(
   const frame = reduced ? 0 : Math.floor(t * 3) % 4;
   const col = frame % 2;
   const row = Math.floor(frame / 2);
-  const size = id === "mossknight" ? 132 : id === "ashling" ? 100 : 112;
+  const size = id === "mossknight" ? 58 : id === "ashling" ? 44 : 52;
   const bob = reduced ? 0 : Math.sin(t * 2.2) * 2;
   const glow = 0.18 + heat * 0.28;
   ctx.save();
@@ -216,7 +216,7 @@ function drawCompanion(
   ctx.ellipse(x, y + 4, size * 0.28, 7, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.shadowColor = `rgba(255, 122, 42, ${glow})`;
-  ctx.shadowBlur = 16;
+  ctx.shadowBlur = 4;
   if (img.complete && img.naturalWidth) {
     const cw = img.naturalWidth / 2;
     const ch = img.naturalHeight / 2;
