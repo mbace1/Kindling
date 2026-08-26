@@ -164,7 +164,17 @@ function CombatWorldScreen() {
   const done = Boolean(c.result);
 
   return (
-    <div className="min-h-[72vh] px-4 pb-28 pt-4">
+    <div className="relative min-h-[72vh] overflow-hidden pb-28">
+      {path ? (
+        <img
+          src={assetSrc(path.art)}
+          alt=""
+          className="absolute inset-0 h-full w-full scale-105 object-cover opacity-55"
+          style={{ objectPosition: path.crop }}
+        />
+      ) : null}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-night/40 via-night/65 to-night" />
+      <div className="relative z-10 px-4 pt-4">
       <p className="text-xs uppercase tracking-[0.2em] text-bone/65">{path ? `Chapter ${path.chapter} · ${path.displayName}` : "On the path"}</p>
       <h2 className="font-display text-3xl font-semibold">{enemy.name}</h2>
       <p className="text-sm text-bone/70">{enemy.blurb}</p>
@@ -206,6 +216,7 @@ function CombatWorldScreen() {
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }
