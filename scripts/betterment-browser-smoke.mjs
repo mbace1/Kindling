@@ -80,6 +80,8 @@ try {
 
   await page.getByRole("button", { name: "Birch Ruins" }).click();
   await page.getByRole("heading", { name: /is on the path\./ }).waitFor();
+  await page.waitForFunction(() => [...document.images].some((img) => img.src.includes("/art/birch-ruins.png") && img.complete && img.naturalWidth > 0));
+  assert.ok([...requested].some((p) => p.endsWith("/art/birch-ruins.png")), "Birch Ruins runtime art was requested");
   const beforeReload = await page.evaluate(() => {
     const save = JSON.parse(localStorage.getItem("kindlingState") || "null");
     return { walk: save?.walk, fuel: save?.fuel, seen: save?.seen };
