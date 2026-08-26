@@ -46,9 +46,9 @@ export function JourneyWorldScreen() {
     const left = 10 + travel * 72;
     return (
       <div className="relative min-h-[70vh] overflow-hidden">
-        <div className="relative h-60 overflow-hidden sm:h-80">
+        <div className="relative h-[50vh] min-h-[340px] max-h-[500px] overflow-hidden sm:h-80 sm:min-h-0 sm:max-h-none">
           <img
-            src={assetSrc(path?.art ?? "art/path.webp")}
+            src={assetSrc(path?.art ?? "art/path.png")}
             alt=""
             className="h-full w-full scale-105 object-cover"
             style={{ objectPosition: path?.crop ?? "50% center" }}
@@ -85,7 +85,7 @@ export function JourneyWorldScreen() {
           good should be a picture, not a background for text: the title moves
           into the text column below, where it is on the page ground and legible
           by construction. */}
-      <div className="relative h-40 overflow-hidden sm:h-52">
+      <div className="relative h-[38vh] min-h-72 max-h-[360px] overflow-hidden sm:h-52 sm:min-h-0 sm:max-h-none">
         <img src={assetSrc(coverPath.art)} alt="" className="h-full w-full object-cover" style={{ objectPosition: coverPath.crop }} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-night to-transparent" />
       </div>
