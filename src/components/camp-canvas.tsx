@@ -120,7 +120,7 @@ export function CampCanvas({ save, tall }: Props) {
   }, [save]);
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden bg-night">
+    <div data-camp-scene="native-16x9" className="relative aspect-video w-full overflow-hidden bg-night">
       <img
         src={assetSrc("art/camp-night-clean.png")}
         alt=""
