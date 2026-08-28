@@ -36,6 +36,7 @@ try {
   await page.waitForFunction(() => document.querySelector("canvas")?.width > 0);
   assert.ok([...requested].some((p) => p.endsWith("/art/camp-night-clean.png")), "clean camp art was requested");
   assert.ok([...requested].some((p) => p.endsWith("/art/ember.png")), "live Ember sprite was requested");
+  assert.ok([...requested].some((p) => p.endsWith("/art/fire-states.png")), "approved five-state fire sheet was requested");
   await page.waitForFunction(() => {
     const plate = document.querySelector('img[data-camp-plate="clean-night"]');
     return plate instanceof HTMLImageElement && plate.complete && plate.naturalWidth > 0 && plate.naturalHeight > 0;
