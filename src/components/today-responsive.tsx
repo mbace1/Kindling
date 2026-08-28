@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, ChevronDown, Flame, Wind } from "lucide-react";
 import { CampCanvas } from "@/components/camp-canvas";
+import { UiAtlasSprite } from "@/components/ui-atlas-sprite";
 import {
   ERRAND_COST,
   FLAMES_PER_FUEL,
@@ -30,9 +31,7 @@ export function TodayResponsive() {
 
   return (
     <div>
-      <div className="max-sm:[&>canvas]:!h-[42vh] max-sm:[&>canvas]:!min-h-64">
-        <CampCanvas save={s} tall />
-      </div>
+      <CampCanvas save={s} />
 
       <div className="space-y-4 px-4 pb-28 pt-4 sm:space-y-5">
         <section className="rounded-lg border border-ash/80 bg-stone/70 p-4 sm:border-0 sm:bg-transparent sm:p-0">
@@ -56,6 +55,16 @@ export function TodayResponsive() {
                 <span className="font-medium">{flames(s)}</span>
               </p>
               <p className="text-[11px] text-mute">Flames</p>
+              {warn ? (
+                <UiAtlasSprite
+                  x={640}
+                  y={1148}
+                  width={113}
+                  height={69}
+                  displayWidth={76}
+                  className="ml-auto mt-2 rounded-md"
+                />
+              ) : null}
               {s.companion ? (
                 <p className="mt-1 hidden text-xs text-mute sm:block">
                   {s.companion.bondXp} Bond XP{nextBond ? ` · ${nextBond} to next form` : ""}
@@ -64,9 +73,17 @@ export function TodayResponsive() {
             </div>
           </div>
 
-          <div className="mt-3 flex gap-1.5" aria-hidden>
+          <div className="mt-3 flex items-center justify-between gap-1" aria-label={`${fireDone} of ${FULL_DAY} fire steps tended`}>
             {Array.from({ length: FULL_DAY }).map((_, i) => (
-              <span key={i} className={cn("h-2 flex-1 rounded-full", fireDone > i ? "bg-fire" : "bg-ash")} />
+              <UiAtlasSprite
+                key={i}
+                x={656}
+                y={fireDone > i ? 124 : 50}
+                width={65}
+                height={63}
+                displayWidth={58}
+                className="rounded-full"
+              />
             ))}
           </div>
 

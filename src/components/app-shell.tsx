@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { BookOpen, Flame, Footprints, Home, Package, UserRound, Volume2, VolumeX } from "lucide-react";
+import { Flame, Footprints, Volume2, VolumeX } from "lucide-react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { authEnabled, signOut } from "@/lib/auth/client";
 import { loadCloudSave, writeCloudSave } from "@/lib/kindling/saves";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { CompanionResponsive } from "@/components/companion-responsive";
 import { JourneyWorldScreen } from "@/components/journey-world-screen";
 import { TodayResponsive } from "@/components/today-responsive";
+import { UiAtlasSprite } from "@/components/ui-atlas-sprite";
 import {
   BreatheModal,
   FirstNote,
@@ -23,12 +24,12 @@ import {
 
 const HUB_STATIC = import.meta.env.VITE_HUB_STATIC === "true";
 
-const NAV: { id: Tab; label: string; icon: typeof Home }[] = [
-  { id: "today", label: "Today", icon: Home },
-  { id: "journey", label: "Walk", icon: Footprints },
-  { id: "companion", label: "Keep", icon: UserRound },
-  { id: "pack", label: "Pack", icon: Package },
-  { id: "journal", label: "Book", icon: BookOpen },
+const NAV: { id: Tab; label: string; sprite: { x: number; y: number; w: number; h: number } }[] = [
+  { id: "today", label: "Today", sprite: { x: 779, y: 1190, w: 26, h: 39 } },
+  { id: "journey", label: "Walk", sprite: { x: 835, y: 1191, w: 38, h: 34 } },
+  { id: "companion", label: "Keep", sprite: { x: 1040, y: 1188, w: 40, h: 37 } },
+  { id: "pack", label: "Pack", sprite: { x: 902, y: 1187, w: 37, h: 39 } },
+  { id: "journal", label: "Book", sprite: { x: 975, y: 1188, w: 34, h: 35 } },
 ];
 
 const hubStatic = import.meta.env.VITE_HUB_STATIC === "true";
@@ -185,7 +186,6 @@ export function AppShell() {
 
       <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-lg border-t border-ash bg-stone/95 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur">
         {NAV.map((item) => {
-          const Icon = item.icon;
           const on = s.tab === item.id;
           return (
             <button
@@ -193,11 +193,18 @@ export function AppShell() {
               type="button"
               onClick={() => s.setTab(item.id)}
               className={cn(
-                "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-[11px]",
-                on ? "text-fire" : "text-mute",
+                "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 border-t text-[11px] transition",
+                on ? "border-fire/70 bg-coal/35 text-fire" : "border-transparent text-mute",
               )}
             >
-              <Icon className="size-5" />
+              <UiAtlasSprite
+                x={item.sprite.x}
+                y={item.sprite.y}
+                width={item.sprite.w}
+                height={item.sprite.h}
+                displayWidth={24}
+                className={cn("transition-opacity", on ? "opacity-100" : "opacity-55")}
+              />
               {item.label}
             </button>
           );

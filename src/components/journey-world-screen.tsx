@@ -18,6 +18,7 @@ import {
   worldProgress,
 } from "@/lib/kindling/world";
 import { cn } from "@/lib/utils";
+import { UiAtlasSprite } from "@/components/ui-atlas-sprite";
 
 const JOURNEY_FLAMES = ERRAND_COST * FLAMES_PER_FUEL;
 const JOURNEY_SECONDS = 90;
@@ -46,9 +47,9 @@ export function JourneyWorldScreen() {
     const left = 10 + travel * 72;
     return (
       <div className="relative min-h-[70vh] overflow-hidden">
-        <div className="relative h-60 overflow-hidden sm:h-80">
+        <div className="relative h-[50vh] min-h-[340px] max-h-[500px] overflow-hidden sm:h-80 sm:min-h-0 sm:max-h-none">
           <img
-            src={assetSrc(path?.art ?? "art/path.webp")}
+            src={assetSrc(path?.art ?? "art/path.png")}
             alt=""
             className="h-full w-full scale-105 object-cover"
             style={{ objectPosition: path?.crop ?? "50% center" }}
@@ -85,7 +86,7 @@ export function JourneyWorldScreen() {
           good should be a picture, not a background for text: the title moves
           into the text column below, where it is on the page ground and legible
           by construction. */}
-      <div className="relative h-40 overflow-hidden sm:h-52">
+      <div className="relative h-[38vh] min-h-72 max-h-[360px] overflow-hidden sm:h-52 sm:min-h-0 sm:max-h-none">
         <img src={assetSrc(coverPath.art)} alt="" className="h-full w-full object-cover" style={{ objectPosition: coverPath.crop }} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-night to-transparent" />
       </div>
@@ -164,7 +165,17 @@ function CombatWorldScreen() {
   const done = Boolean(c.result);
 
   return (
-    <div className="min-h-[72vh] px-4 pb-28 pt-4">
+    <div className="relative min-h-[72vh] overflow-hidden pb-28">
+      {path ? (
+        <img
+          src={assetSrc(path.art)}
+          alt=""
+          className="absolute inset-0 h-full w-full scale-105 object-cover opacity-55"
+          style={{ objectPosition: path.crop }}
+        />
+      ) : null}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-night/40 via-night/65 to-night" />
+      <div className="relative z-10 px-4 pt-4">
       <p className="text-xs uppercase tracking-[0.2em] text-bone/65">{path ? `Chapter ${path.chapter} · ${path.displayName}` : "On the path"}</p>
       <h2 className="font-display text-3xl font-semibold">{enemy.name}</h2>
       <p className="text-sm text-bone/70">{enemy.blurb}</p>
@@ -201,11 +212,24 @@ function CombatWorldScreen() {
         </div>
       ) : (
         <div className="mt-6 grid grid-cols-3 gap-2">
-          {(["strike", "guard", "skill"] as const).map((verb) => (
-            <button key={verb} type="button" onClick={() => s.playerAct(verb)} className="min-h-14 rounded-md border border-bone/20 bg-night/80 text-sm font-medium uppercase tracking-wide backdrop-blur-[1px]">{verbLabel(verb)}</button>
+          {([
+            { verb: "strike", x: 548 },
+            { verb: "guard", x: 736 },
+            { verb: "skill", x: 900 },
+          ] as const).map(({ verb, x }) => (
+            <button
+              key={verb}
+              type="button"
+              onClick={() => s.playerAct(verb)}
+              className="grid min-h-24 place-items-center overflow-hidden rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fire"
+              aria-label={verbLabel(verb)}
+            >
+              <UiAtlasSprite x={x} y={672} width={134} height={127} displayWidth={108} />
+            </button>
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

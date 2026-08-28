@@ -5,6 +5,7 @@ import { chromium } from "playwright";
 
 const url = process.argv[2] || "http://127.0.0.1:8080/";
 const out = process.argv[3] || "artifacts/betterment-mobile.png";
+const campOut = out.replace(/\.png$/i, "-camp.png");
 const allowStaticHydration = process.argv.includes("--allow-static-hydration");
 await mkdir(new URL("../artifacts/", import.meta.url), { recursive: true }).catch(() => undefined);
 
@@ -12,9 +13,18 @@ const browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 const errors = [];
 const requested = new Set();
+const failedResponses = [];
 page.on("pageerror", (e) => errors.push(String(e?.message || e)));
-page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
-page.on("response", (r) => { if (r.url().includes("/art/")) requested.add(new URL(r.url()).pathname); });
+page.on("console", (m) => {
+  if (m.type() !== "error") return;
+  const message = m.text();
+  if (!message.startsWith("Failed to load resource:")) errors.push(message);
+});
+page.on("response", (r) => {
+  const pathname = new URL(r.url()).pathname;
+  if (pathname.includes("/art/")) requested.add(pathname);
+  if (r.status() >= 400) failedResponses.push(`${r.status()} ${pathname}`);
+});
 
 let failed = null;
 try {
@@ -26,11 +36,23 @@ try {
   await page.getByRole("button", { name: "Tend the fire" }).waitFor({ state: "detached" });
   await page.getByRole("heading", { name: "0 / 5 tended" }).waitFor();
 
-  assert.equal(await page.locator("canvas").count(), 1, "Today has one composed camp canvas");
+  assert.equal(await page.locator("canvas").count(), 1, "Today has one gameplay canvas");
   await page.waitForFunction(() => document.querySelector("canvas")?.width > 0);
-  await page.waitForTimeout(500);
-  assert.ok([...requested].some((p) => p.endsWith("/art/camp.jpg")), "live camp art was requested");
+  for (const name of ["camp-q1.png", "camp-q2.png", "camp-q3.png", "camp-q4.png"]) {
+    assert.ok([...requested].some((p) => p.endsWith(`/art/camp/${name}`)), `${name} was requested`);
+  }
   assert.ok([...requested].some((p) => p.endsWith("/art/ember.png")), "live Ember sprite was requested");
+  assert.ok([...requested].some((p) => p.endsWith("/art/fire-states.png")), "approved five-state fire sheet was requested");
+  assert.ok([...requested].some((p) => p.endsWith("/art/ui/ui-kit.png")), "approved UI kit atlas was requested");
+  await page.waitForFunction(() => {
+    const tiles = [...document.querySelectorAll('img[data-camp-tile]')];
+    return tiles.length === 4 && tiles.every((img) => img.complete && img.naturalWidth > 0 && img.naturalHeight > 0);
+  }, null, { timeout: 10_000 });
+  const campScene = page.locator('[data-camp-scene="native-16x9"]');
+  const plateBox = await campScene.boundingBox();
+  assert.ok(plateBox && plateBox.width >= 380 && plateBox.height >= 210, "clean camp plate visibly fills the 16:9 phone scene");
+  assert.ok(plateBox && Math.abs((plateBox.width / plateBox.height) - (16 / 9)) < 0.08, "camp plate preserves the documented 16:9 canvas");
+
   const moreCare = page.getByRole("button", { name: /More care/ });
   assert.equal(await moreCare.count(), 1, "phone Today exposes one compact secondary-care control");
   assert.equal(await moreCare.getAttribute("aria-expanded"), "false", "secondary care is collapsed by default on phone");
@@ -59,6 +81,7 @@ try {
 
   await page.getByRole("button", { name: /^Drank some water/ }).click();
   await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
+  await page.screenshot({ path: campOut, fullPage: true });
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert.ok(overflow <= 0, `mobile page overflows horizontally by ${overflow}px`);
@@ -71,6 +94,8 @@ try {
 
   await page.getByRole("button", { name: "Birch Ruins" }).click();
   await page.getByRole("heading", { name: /is on the path\./ }).waitFor();
+  await page.waitForFunction(() => [...document.images].some((img) => img.src.includes("/art/birch-ruins.png") && img.complete && img.naturalWidth > 0));
+  assert.ok([...requested].some((p) => p.endsWith("/art/birch-ruins.png")), "Birch Ruins runtime art was requested");
   const beforeReload = await page.evaluate(() => {
     const save = JSON.parse(localStorage.getItem("kindlingState") || "null");
     return { walk: save?.walk, fuel: save?.fuel, seen: save?.seen };
@@ -98,12 +123,16 @@ try {
   const actionableErrors = allowStaticHydration
     ? errors.filter((error) => !error.includes("Minified React error #418"))
     : errors;
+  const actionableResponses = allowStaticHydration
+    ? failedResponses.filter((response) => response !== "404 /Suds-Jack/hub/shell.js")
+    : failedResponses;
   assert.deepEqual(actionableErrors, [], `browser errors: ${actionableErrors.join(" | ")}`);
-  console.log(JSON.stringify({ ok: true, viewport: "390x844", art: [...requested], ignoredStaticHydration: allowStaticHydration ? errors.length - actionableErrors.length : 0, screenshot: out }, null, 2));
+  assert.deepEqual(actionableResponses, [], `failed responses: ${actionableResponses.join(" | ")}`);
+  console.log(JSON.stringify({ ok: true, viewport: "390x844", art: [...requested], ignoredStaticHydration: allowStaticHydration ? errors.length - actionableErrors.length : 0, screenshot: out, campScreenshot: campOut }, null, 2));
 } catch (err) {
   failed = err;
   const overlays = await page.locator(".fixed.inset-0.z-40").allInnerTexts().catch(() => []);
-  console.error(JSON.stringify({ ok: false, overlays, errors, art: [...requested], error: String(err?.message || err) }, null, 2));
+  console.error(JSON.stringify({ ok: false, overlays, errors, failedResponses, art: [...requested], error: String(err?.message || err) }, null, 2));
 } finally {
   await page.screenshot({ path: out, fullPage: true }).catch(() => undefined);
   await browser.close();

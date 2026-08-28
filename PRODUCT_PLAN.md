@@ -189,6 +189,24 @@ below now, where it is legible by construction, and the plate is left alone.
 Cut the frames, buttons and meters and dress the shell in them. Lower return
 than 1–3, so it comes after — but it is what stops the app reading as a form.
 
+**Status, 2026-08-28 — started in PR #5.** The approved high-res kit is now
+runtime-accessible as a single atlas at `public/art/ui/ui-kit.png` using the
+same Git blob as the canonical source, so the binary is not duplicated in the
+repository. Live uses so far:
+
+- Today uses the kit's five circular fire-progress cells instead of generic bars.
+- Combat uses the exact STRIKE / GUARD / SKILL button art.
+- Bottom navigation uses the kit's fire / road / companion / pack / book symbols
+  while keeping Kindling's current tab names rather than shipping baked labels
+  that do not match the product.
+- The one-day warning can show the exact LOW FLAMES badge.
+- Browser smoke requires the approved atlas to be requested, and combat smoke
+  captures the live action buttons before the first move.
+
+Do not use baked example copy from the sheet when its semantics differ from the
+runtime action. The remaining safe targets are generic frames/panels and exact
+label matches; avoid reskinning for its own sake.
+
 ---
 
 ## Phase 5 — combat, world, breeding **[code]**
