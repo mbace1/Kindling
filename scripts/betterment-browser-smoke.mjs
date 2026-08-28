@@ -42,7 +42,8 @@ try {
   }, null, { timeout: 10_000 });
   const campPlate = page.locator('img[data-camp-plate="clean-night"]');
   const plateBox = await campPlate.boundingBox();
-  assert.ok(plateBox && plateBox.width >= 380 && plateBox.height >= 250, "clean camp plate visibly fills the phone scene");
+  assert.ok(plateBox && plateBox.width >= 380 && plateBox.height >= 210, "clean camp plate visibly fills the 16:9 phone scene");
+  assert.ok(plateBox && Math.abs((plateBox.width / plateBox.height) - (16 / 9)) < 0.08, "camp plate preserves the documented 16:9 canvas");
 
   const moreCare = page.getByRole("button", { name: /More care/ });
   assert.equal(await moreCare.count(), 1, "phone Today exposes one compact secondary-care control");
