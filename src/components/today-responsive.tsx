@@ -55,6 +55,16 @@ export function TodayResponsive() {
                 <span className="font-medium">{flames(s)}</span>
               </p>
               <p className="text-[11px] text-mute">Flames</p>
+              {warn ? (
+                <UiAtlasSprite
+                  x={640}
+                  y={1148}
+                  width={113}
+                  height={69}
+                  displayWidth={76}
+                  className="ml-auto mt-2 rounded-md"
+                />
+              ) : null}
               {s.companion ? (
                 <p className="mt-1 hidden text-xs text-mute sm:block">
                   {s.companion.bondXp} Bond XP{nextBond ? ` · ${nextBond} to next form` : ""}
