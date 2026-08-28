@@ -13,9 +13,14 @@ const browser = await chromium.launch({ headless: true, args: ["--no-sandbox", "
 const page = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 const errors = [];
 const requested = new Set();
+const failedResponses = [];
 page.on("pageerror", (e) => errors.push(String(e?.message || e)));
 page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
-page.on("response", (r) => { if (r.url().includes("/art/")) requested.add(new URL(r.url()).pathname); });
+page.on("response", (r) => {
+  const pathname = new URL(r.url()).pathname;
+  if (pathname.includes("/art/")) requested.add(pathname);
+  if (r.status() >= 400) failedResponses.push(`${r.status()} ${pathname}`);
+});
 
 let failed = null;
 try {
@@ -114,7 +119,7 @@ try {
 } catch (err) {
   failed = err;
   const overlays = await page.locator(".fixed.inset-0.z-40").allInnerTexts().catch(() => []);
-  console.error(JSON.stringify({ ok: false, overlays, errors, art: [...requested], error: String(err?.message || err) }, null, 2));
+  console.error(JSON.stringify({ ok: false, overlays, errors, failedResponses, art: [...requested], error: String(err?.message || err) }, null, 2));
 } finally {
   await page.screenshot({ path: out, fullPage: true }).catch(() => undefined);
   await browser.close();
