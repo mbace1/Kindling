@@ -73,7 +73,10 @@ test("breathing uses the intended 4 / 4 / 6 cadence for four rounds", () => {
 
 test("the approved camp staging keeps the companion left of the fire", () => {
   assert.match(camp, /const cx = fx - w \* distance/);
-  assert.match(camp, /assetSrc\("art\/camp-night-clean\.png"\)/);
+  assert.match(camp, /camp-q1\.png/);
+  assert.match(camp, /camp-q2\.png/);
+  assert.match(camp, /camp-q3\.png/);
+  assert.match(camp, /camp-q4\.png/);
   assert.doesNotMatch(camp, /assetSrc\("art\/camp\.jpg"\)/);
 });
 
