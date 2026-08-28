@@ -38,14 +38,15 @@ try {
 
   assert.equal(await page.locator("canvas").count(), 1, "Today has one gameplay canvas");
   await page.waitForFunction(() => document.querySelector("canvas")?.width > 0);
-  assert.ok([...requested].some((p) => p.endsWith("/art/camp-night-clean.png")), "clean camp art was requested");
+  for (const name of ["camp-q1.png", "camp-q2.png", "camp-q3.png", "camp-q4.png"]) {
+    assert.ok([...requested].some((p) => p.endsWith(`/art/camp/${name}`)), `${name} was requested`);
+  }
   assert.ok([...requested].some((p) => p.endsWith("/art/ember.png")), "live Ember sprite was requested");
   assert.ok([...requested].some((p) => p.endsWith("/art/fire-states.png")), "approved five-state fire sheet was requested");
   await page.waitForFunction(() => {
-    const plate = document.querySelector('img[data-camp-plate="clean-night"]');
-    return plate instanceof HTMLImageElement && plate.complete && plate.naturalWidth > 0 && plate.naturalHeight > 0;
+    const tiles = [...document.querySelectorAll('img[data-camp-tile]')];
+    return tiles.length === 4 && tiles.every((img) => img.complete && img.naturalWidth > 0 && img.naturalHeight > 0);
   }, null, { timeout: 10_000 });
-  const campPlate = page.locator('img[data-camp-plate="clean-night"]');
   const campScene = page.locator('[data-camp-scene="native-16x9"]');
   const plateBox = await campScene.boundingBox();
   assert.ok(plateBox && plateBox.width >= 380 && plateBox.height >= 210, "clean camp plate visibly fills the 16:9 phone scene");
