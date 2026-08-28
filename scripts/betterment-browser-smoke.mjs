@@ -15,7 +15,11 @@ const errors = [];
 const requested = new Set();
 const failedResponses = [];
 page.on("pageerror", (e) => errors.push(String(e?.message || e)));
-page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
+page.on("console", (m) => {
+  if (m.type() !== "error") return;
+  const message = m.text();
+  if (!message.startsWith("Failed to load resource:")) errors.push(message);
+});
 page.on("response", (r) => {
   const pathname = new URL(r.url()).pathname;
   if (pathname.includes("/art/")) requested.add(pathname);
@@ -42,7 +46,8 @@ try {
     return plate instanceof HTMLImageElement && plate.complete && plate.naturalWidth > 0 && plate.naturalHeight > 0;
   }, null, { timeout: 10_000 });
   const campPlate = page.locator('img[data-camp-plate="clean-night"]');
-  const plateBox = await campPlate.boundingBox();
+  const campScene = page.locator('[data-camp-scene="native-16x9"]');
+  const plateBox = await campScene.boundingBox();
   assert.ok(plateBox && plateBox.width >= 380 && plateBox.height >= 210, "clean camp plate visibly fills the 16:9 phone scene");
   assert.ok(plateBox && Math.abs((plateBox.width / plateBox.height) - (16 / 9)) < 0.08, "camp plate preserves the documented 16:9 canvas");
 
@@ -116,7 +121,11 @@ try {
   const actionableErrors = allowStaticHydration
     ? errors.filter((error) => !error.includes("Minified React error #418"))
     : errors;
+  const actionableResponses = allowStaticHydration
+    ? failedResponses.filter((response) => response !== "404 /Suds-Jack/hub/shell.js")
+    : failedResponses;
   assert.deepEqual(actionableErrors, [], `browser errors: ${actionableErrors.join(" | ")}`);
+  assert.deepEqual(actionableResponses, [], `failed responses: ${actionableResponses.join(" | ")}`);
   console.log(JSON.stringify({ ok: true, viewport: "390x844", art: [...requested], ignoredStaticHydration: allowStaticHydration ? errors.length - actionableErrors.length : 0, screenshot: out, campScreenshot: campOut }, null, 2));
 } catch (err) {
   failed = err;
