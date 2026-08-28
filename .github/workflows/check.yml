@@ -46,6 +46,8 @@ jobs:
         run: node scripts/combat-browser-smoke.mjs http://127.0.0.1:8080/
       - name: Mobile world progression smoke
         run: node scripts/world-browser-smoke.mjs http://127.0.0.1:8080/
+      - name: Expose approved UI kit for integration inspection
+        run: cp art-src/approved-hires/ui/ui-kit.png artifacts/ui-kit-preview.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:
