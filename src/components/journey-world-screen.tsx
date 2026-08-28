@@ -18,6 +18,7 @@ import {
   worldProgress,
 } from "@/lib/kindling/world";
 import { cn } from "@/lib/utils";
+import { UiAtlasSprite } from "@/components/ui-atlas-sprite";
 
 const JOURNEY_FLAMES = ERRAND_COST * FLAMES_PER_FUEL;
 const JOURNEY_SECONDS = 90;
@@ -211,8 +212,20 @@ function CombatWorldScreen() {
         </div>
       ) : (
         <div className="mt-6 grid grid-cols-3 gap-2">
-          {(["strike", "guard", "skill"] as const).map((verb) => (
-            <button key={verb} type="button" onClick={() => s.playerAct(verb)} className="min-h-14 rounded-md border border-bone/20 bg-night/80 text-sm font-medium uppercase tracking-wide backdrop-blur-[1px]">{verbLabel(verb)}</button>
+          {([
+            { verb: "strike", x: 548 },
+            { verb: "guard", x: 736 },
+            { verb: "skill", x: 900 },
+          ] as const).map(({ verb, x }) => (
+            <button
+              key={verb}
+              type="button"
+              onClick={() => s.playerAct(verb)}
+              className="grid min-h-24 place-items-center overflow-hidden rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fire"
+              aria-label={verbLabel(verb)}
+            >
+              <UiAtlasSprite x={x} y={672} width={134} height={127} displayWidth={108} />
+            </button>
           ))}
         </div>
       )}
