@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, ChevronDown, Flame, Wind } from "lucide-react";
 import { CampCanvas } from "@/components/camp-canvas";
+import { UiAtlasSprite } from "@/components/ui-atlas-sprite";
 import {
   ERRAND_COST,
   FLAMES_PER_FUEL,
@@ -62,9 +63,16 @@ export function TodayResponsive() {
             </div>
           </div>
 
-          <div className="mt-3 flex gap-1.5" aria-hidden>
+          <div className="mt-3 flex items-center justify-between gap-1" aria-label={`${fireDone} of ${FULL_DAY} fire steps tended`}>
             {Array.from({ length: FULL_DAY }).map((_, i) => (
-              <span key={i} className={cn("h-2 flex-1 rounded-full", fireDone > i ? "bg-fire" : "bg-ash")} />
+              <UiAtlasSprite
+                key={i}
+                x={656}
+                y={fireDone > i ? 124 : 50}
+                width={65}
+                height={63}
+                displayWidth={58}
+              />
             ))}
           </div>
 
