@@ -30,9 +30,7 @@ export function TodayResponsive() {
 
   return (
     <div>
-      <div className="max-sm:[&>div]:!h-[42vh] max-sm:[&>div]:!min-h-64">
-        <CampCanvas save={s} tall />
-      </div>
+      <CampCanvas save={s} />
 
       <div className="space-y-4 px-4 pb-28 pt-4 sm:space-y-5">
         <section className="rounded-lg border border-ash/80 bg-stone/70 p-4 sm:border-0 sm:bg-transparent sm:p-0">
