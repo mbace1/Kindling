@@ -120,14 +120,19 @@ export function CampCanvas({ save, tall }: Props) {
   }, [save]);
 
   return (
-    <div data-camp-scene="native-16x9" className="relative aspect-video w-full overflow-hidden bg-night">
-      <img
-        src={assetSrc("art/camp-night-clean.png")}
-        alt=""
-        aria-hidden="true"
-        data-camp-plate="clean-night"
-        className="absolute inset-0 h-full w-full object-contain [image-rendering:pixelated]"
-      />
+    <div data-camp-scene="native-16x9" className="relative w-full overflow-hidden bg-night" style={{ aspectRatio: "16 / 9" }}>
+      <div data-camp-plate="clean-night" className="absolute inset-0 grid grid-cols-2 grid-rows-2">
+        {["camp-q1.png", "camp-q2.png", "camp-q3.png", "camp-q4.png"].map((name) => (
+          <img
+            key={name}
+            src={assetSrc(`art/camp/${name}`)}
+            alt=""
+            aria-hidden="true"
+            data-camp-tile={name}
+            className="h-full w-full [image-rendering:pixelated]"
+          />
+        ))}
+      </div>
       <canvas
         ref={ref}
         className="absolute inset-0 h-full w-full"
