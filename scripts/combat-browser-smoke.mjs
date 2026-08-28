@@ -109,6 +109,7 @@ try {
   const loseBefore = await loseRun.page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
   await loseRun.page.getByRole("button", { name: "Walk" }).click();
   await loseRun.page.getByRole("heading", { name: "Moss Knight" }).waitFor();
+  await loseRun.page.screenshot({ path: "artifacts/betterment-combat-actions.png", fullPage: true });
   await loseRun.page.getByRole("button", { name: "Strike" }).click();
   await loseRun.page.getByText("You walk home. The fire is still there.").waitFor();
   const loseAfter = await loseRun.page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
