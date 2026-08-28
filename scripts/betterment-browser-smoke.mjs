@@ -43,6 +43,7 @@ try {
   }
   assert.ok([...requested].some((p) => p.endsWith("/art/ember.png")), "live Ember sprite was requested");
   assert.ok([...requested].some((p) => p.endsWith("/art/fire-states.png")), "approved five-state fire sheet was requested");
+  assert.ok([...requested].some((p) => p.endsWith("/art/ui/ui-kit.png")), "approved UI kit atlas was requested");
   await page.waitForFunction(() => {
     const tiles = [...document.querySelectorAll('img[data-camp-tile]')];
     return tiles.length === 4 && tiles.every((img) => img.complete && img.naturalWidth > 0 && img.naturalHeight > 0);
