@@ -72,6 +72,7 @@ export function TodayResponsive() {
                 width={65}
                 height={63}
                 displayWidth={58}
+                className="rounded-full"
               />
             ))}
           </div>
