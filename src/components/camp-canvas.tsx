@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { assetSrc, portraitSrc, spriteSrc, warningState, warmth, type KindlingSave, type SpeciesId } from "@/lib/kindling/model";
+import { FULL_DAY, assetSrc, portraitSrc, spriteSrc, warningState, warmth, type KindlingSave, type SpeciesId } from "@/lib/kindling/model";
 
 type Props = {
   save: KindlingSave;
@@ -14,6 +14,12 @@ function load(src: string) {
 }
 
 const sheets = new Map<string, HTMLImageElement>();
+let fireStates: HTMLImageElement | null = null;
+
+function fireSheet() {
+  if (!fireStates) fireStates = load(assetSrc("art/fire-states.png"));
+  return fireStates;
+}
 function sheet(id: SpeciesId) {
   const src = spriteSrc(id);
   let img = sheets.get(src);
@@ -65,7 +71,7 @@ export function CampCanvas({ save, tall }: Props) {
         ctx.fillRect(0, 0, w, h);
       }
 
-      drawFire(ctx, fx, fy, heat, t, reduced);
+      drawFire(ctx, fireSheet(), fx, fy, heat, t, reduced);
       if (save.kindlingPending || save.awaitingHatch) {
         drawAshMark(ctx, fx, fy + 10, t);
       }
@@ -133,57 +139,47 @@ export function CampCanvas({ save, tall }: Props) {
 
 function drawFire(
   ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
   x: number,
   y: number,
   heat: number,
   t: number,
   reduced: boolean,
 ) {
-  const flicker = reduced ? 1 : 0.92 + Math.sin(t * 7) * 0.06 + Math.sin(t * 13) * 0.03;
-  const h = 14 + heat * 54 * flicker;
-  const w = 12 + heat * 20;
+  const care = Math.max(0, Math.min(FULL_DAY, Math.round(heat * FULL_DAY)));
+  const cell = img.complete && img.naturalWidth ? img.naturalWidth / 5 : 0;
+  const cellH = img.complete && img.naturalHeight ? img.naturalHeight : 0;
 
-  ctx.fillStyle = "rgba(24, 14, 10, 0.72)";
-  ctx.beginPath();
-  ctx.ellipse(x, y + 7, 17, 5, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // Production sheet mapping from PRODUCT_PLAN.md:
+  // 0 = unlit, 1 = embers, 2–3 = medium, 4 = full, 5 = full + sparks.
+  const state = care === 0 ? 0 : care === 1 ? 1 : care <= 3 ? 2 : 3;
+  const sceneScale = Math.max(1, ctx.canvas.clientWidth / 320);
+  const drawW = 66 * sceneScale;
+  const drawH = 70 * sceneScale;
+  const top = y - drawH + 14 * sceneScale;
 
-  for (let i = 0; i < 5; i++) {
-    const on = heat >= (i + 0.15) / 5;
-    ctx.fillStyle = on ? "#b8441b" : "#241510";
-    ctx.fillRect(x - 12 + i * 5, y + 3, 4, 3);
+  if (cell && cellH) {
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, state * cell, 0, cell, cellH, x - drawW / 2, top, drawW, drawH);
+    if (care >= FULL_DAY) {
+      // The fifth cell is sparks only and is intended to layer over the full fire.
+      ctx.drawImage(img, 4 * cell, 0, cell, cellH, x - drawW / 2, top, drawW, drawH);
+    }
+    ctx.restore();
   }
 
-  if (heat <= 0.02) {
-    ctx.fillStyle = "rgba(196, 74, 26, 0.42)";
-    ctx.fillRect(x - 5, y + 1, 10, 2);
-    return;
+  // Firelight remains gameplay-owned even though the flame itself is approved art.
+  if (care > 0) {
+    const flicker = reduced ? 1 : 0.94 + Math.sin(t * 7) * 0.04 + Math.sin(t * 13) * 0.02;
+    const radius = (20 + care * 8) * sceneScale * flicker;
+    const glow = ctx.createRadialGradient(x, y - radius * 0.35, 2, x, y - radius * 0.35, radius);
+    glow.addColorStop(0, `rgba(255, 122, 42, ${0.05 + care * 0.025})`);
+    glow.addColorStop(1, "rgba(255, 122, 42, 0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(x - radius, y - radius * 1.2, radius * 2, radius * 1.5);
   }
-
-  const glow = ctx.createRadialGradient(x, y - h * 0.25, 2, x, y - h * 0.25, h * 1.05);
-  glow.addColorStop(0, `rgba(255, 122, 42, ${0.14 + heat * 0.12})`);
-  glow.addColorStop(1, "rgba(255, 122, 42, 0)");
-  ctx.fillStyle = glow;
-  ctx.fillRect(x - h, y - h * 1.3, h * 2, h * 1.7);
-
-  const tongue = (cx: number, baseY: number, width: number, height: number, lean: number, color: string) => {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(cx - width * 0.52, baseY);
-    ctx.quadraticCurveTo(cx - width * 0.72, baseY - height * 0.38, cx + lean, baseY - height);
-    ctx.quadraticCurveTo(cx + width * 0.68, baseY - height * 0.36, cx + width * 0.52, baseY);
-    ctx.quadraticCurveTo(cx, baseY - height * 0.08, cx - width * 0.52, baseY);
-    ctx.closePath();
-    ctx.fill();
-  };
-
-  const sway = reduced ? 0 : Math.sin(t * 8.5) * 2;
-  tongue(x - w * 0.18, y + 4, w * 0.7, h * 0.72, -2 + sway, "rgba(177, 55, 20, 0.95)");
-  tongue(x + w * 0.18, y + 4, w * 0.62, h, 2 - sway * 0.6, "rgba(229, 79, 22, 0.97)");
-  tongue(x, y + 3, w * 0.38, h * 0.62, sway * 0.25, "rgba(255, 160, 48, 0.98)");
-  tongue(x + 1, y + 3, w * 0.18, h * 0.38, 0, "rgba(247, 219, 148, 0.96)");
 }
-
 function drawAshMark(ctx: CanvasRenderingContext2D, x: number, y: number, t: number) {
   ctx.fillStyle = "#8ea0b8";
   ctx.beginPath();
