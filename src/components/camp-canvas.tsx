@@ -254,8 +254,8 @@ function drawCompanion(
 ) {
   const img = sheet(id);
   const ember = id === "ember" && !reduced;
-  const emberSequence = [0, 0, 1, 1, 0, 2, 0, 3, 0, 0, 1, 0];
-  const frame = reduced ? 0 : ember ? emberSequence[Math.floor(t * 2.4) % emberSequence.length] : Math.floor(t * 3) % 4;
+  const emberSequence = [0, 0, 1, 1, 0, 2, 0, 3, 0, 0, 1, 0, 2, 0, 0, 3];
+  const frame = reduced ? 0 : ember ? emberSequence[Math.floor(t * 2.1) % emberSequence.length] : Math.floor(t * 3) % 4;
   const col = frame % 2;
   const row = Math.floor(frame / 2);
   const size = id === "mossknight" ? 58 : id === "ashling" ? 44 : 52;
