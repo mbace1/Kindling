@@ -14,6 +14,7 @@ import {
   stageOf,
   warningState,
 } from "@/lib/kindling/model";
+import { companionFindReaction, unlockedFindUpgrades } from "@/lib/kindling/find-progression";
 import { useKindling } from "@/lib/kindling/store";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +29,8 @@ export function TodayResponsive() {
   const stage = stageOf(s);
   const nextBond = nextStageBondXp(s);
   const progressive = progressiveOpportunities(s);
+  const upgrades = unlockedFindUpgrades(s);
+  const reaction = companionFindReaction(s);
 
   return (
     <div>
@@ -103,6 +106,27 @@ export function TodayResponsive() {
           </button>
         ) : null}
 
+        {upgrades.length ? (
+          <section className="rounded-lg border border-fire/25 bg-coal/45 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-fire">Camp changed</p>
+                <p className="text-sm text-mute">Finds now unlock useful things around the fire.</p>
+              </div>
+              <span className="text-xs text-mute">{upgrades.length} / 5</span>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              {upgrades.map((upgrade) => (
+                <div key={upgrade.kind} className="rounded-md border border-ash/80 bg-night/35 px-3 py-2">
+                  <p className="text-sm font-medium text-bone">{upgrade.name}</p>
+                  <p className="text-xs text-mute">{upgrade.effect}</p>
+                </div>
+              ))}
+            </div>
+            {reaction ? <p className="mt-3 text-sm text-bone/80">{reaction}</p> : null}
+          </section>
+        ) : null}
+
         <section className="space-y-2">
           <div className="flex items-end justify-between">
             <div>
@@ -130,7 +154,7 @@ export function TodayResponsive() {
                   on ? "border-fire/40 bg-coal/60 text-bone" : "border-ash bg-stone text-bone hover:border-mute",
                 )}
               >
-                <span className={cn("grid size-7 shrink-0 place-items-center rounded-full border", on ? "border-fire bg-fire text-night" : "border-mute/50")}> 
+                <span className={cn("grid size-7 shrink-0 place-items-center rounded-full border", on ? "border-fire bg-fire text-night" : "border-mute/50")}>
                   {on ? <Check className="size-4" /> : null}
                 </span>
                 <span className="flex-1 text-base font-medium">{task.text}</span>

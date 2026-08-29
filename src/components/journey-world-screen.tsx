@@ -8,6 +8,7 @@ import {
   portraitSrc,
   verbLabel,
 } from "@/lib/kindling/model";
+import { unlockedFindKinds } from "@/lib/kindling/find-progression";
 import { useKindling } from "@/lib/kindling/store";
 import {
   OLD_GATE,
@@ -101,6 +102,9 @@ export function JourneyWorldScreen() {
   const progress = worldProgress(s);
   const oldGate = oldGateVisible(s);
   const coverPath = [...WORLD_PATHS].reverse().find((path) => pathUnlocked(s, path)) ?? WORLD_PATHS[0];
+  const findKinds = unlockedFindKinds(s);
+  const hasWaymarker = findKinds.has("relic");
+  const hasLens = findKinds.has("shard");
 
   return (
     <div>
@@ -120,11 +124,19 @@ export function JourneyWorldScreen() {
           <p className="mt-2 text-xs text-mute sm:mt-0 sm:shrink-0 sm:text-right">{progress.cleared} / {progress.total} roads known</p>
         </div>
 
+        {(hasWaymarker || hasLens) ? (
+          <div className="flex flex-wrap gap-2 text-xs">
+            {hasWaymarker ? <span className="rounded-full border border-fire/30 bg-coal px-2.5 py-1 text-fire">Waymarker · finds revealed</span> : null}
+            {hasLens ? <span className="rounded-full border border-fire/30 bg-coal px-2.5 py-1 text-fire">Glass Lens · danger revealed</span> : null}
+          </div>
+        ) : null}
+
         <div className="space-y-2">
           {WORLD_PATHS.map((path) => {
             const unlocked = pathUnlocked(s, path);
             const cleared = pathCleared(s, path.id);
             const enough = s.fuel >= ERRAND_COST;
+            const findNames = path.finds.map((find) => find.name.replace(/^a |^an /, "")).join(" · ");
             return (
               <button
                 key={path.id}
@@ -150,6 +162,8 @@ export function JourneyWorldScreen() {
                         ? "Known path · return whenever you want."
                         : path.worldBlurb}
                   </span>
+                  {unlocked && hasWaymarker ? <span className="mt-1 block text-xs text-bone/55">May hold · {findNames}</span> : null}
+                  {unlocked && hasLens ? <span className="mt-1 block text-xs text-bone/55">Encounter risk · {Math.round(path.encounter * 100)}%</span> : null}
                 </span>
                 <span className="shrink-0 text-right text-xs">
                   {cleared ? <span className="text-fire">CLEARED</span> : null}
