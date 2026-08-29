@@ -23,6 +23,12 @@ import { UiAtlasSprite } from "@/components/ui-atlas-sprite";
 const JOURNEY_FLAMES = ERRAND_COST * FLAMES_PER_FUEL;
 const JOURNEY_SECONDS = 90;
 
+const JOURNEY_MOMENTS = [
+  { at: 0.18, title: "Tracks in the path", copy: "Something small passed this way recently." },
+  { at: 0.46, title: "A warm trace", copy: "A little heat remains under the stones." },
+  { at: 0.74, title: "Something ahead", copy: "The road goes quiet. Keep moving." },
+] as const;
+
 export function JourneyWorldScreen() {
   const s = useKindling();
   const [now, setNow] = useState(Date.now());
@@ -49,6 +55,7 @@ export function JourneyWorldScreen() {
     const step = Math.floor(now / 240) % 2;
     const bob = step === 0 ? 0 : -4;
     const lean = step === 0 ? -1.5 : 1.5;
+    const moment = [...JOURNEY_MOMENTS].reverse().find((entry) => travel >= entry.at);
     return (
       <div className="relative min-h-[70vh] overflow-hidden">
         <div className="relative h-[50vh] min-h-[340px] max-h-[500px] overflow-hidden sm:h-80 sm:min-h-0 sm:max-h-none">
@@ -71,10 +78,20 @@ export function JourneyWorldScreen() {
               />
             </div>
           ) : null}
+          {moment ? (
+            <div className="absolute inset-x-4 bottom-3 rounded-md border border-bone/15 bg-night/80 px-3 py-2 backdrop-blur-[2px] sm:left-auto sm:right-4 sm:w-72">
+              <p className="text-xs uppercase tracking-[0.16em] text-fire">On the road</p>
+              <p className="mt-0.5 text-sm font-medium text-bone">{moment.title}</p>
+              <p className="text-xs text-bone/65">{moment.copy}</p>
+            </div>
+          ) : null}
         </div>
         <div className="space-y-2 px-4 py-5 sm:px-5 sm:py-6">
           <p className="text-xs uppercase tracking-[0.2em] text-mute">Chapter {path?.chapter ?? "?"} · {path?.displayName ?? "The path"}</p>
           <h2 className="font-display text-2xl">{s.companion?.name ?? "Someone"} is on the path.</h2>
+          <div className="h-1.5 overflow-hidden rounded-full bg-stone">
+            <div className="h-full bg-fire transition-[width] duration-300 ease-linear" style={{ width: `${travel * 100}%` }} />
+          </div>
           <p className="text-sm text-mute">{seconds > 0 ? `${seconds}s · continues if you close the app.` : "Coming home."}</p>
         </div>
       </div>
