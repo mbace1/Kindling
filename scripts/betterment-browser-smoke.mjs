@@ -41,7 +41,7 @@ try {
   for (const name of ["camp-q1.png", "camp-q2.png", "camp-q3.png", "camp-q4.png"]) {
     assert.ok([...requested].some((p) => p.endsWith(`/art/camp/${name}`)), `${name} was requested`);
   }
-  assert.ok([...requested].some((p) => p.endsWith("/art/ember.png")), "live Ember sprite was requested");
+  assert.ok([...requested].some((p) => p.endsWith("/art/ember-idle-runtime.svg")), "live Ember idle atlas was requested");
   assert.ok([...requested].some((p) => p.endsWith("/art/fire-states.png")), "approved five-state fire sheet was requested");
   assert.ok([...requested].some((p) => p.endsWith("/art/ui/ui-kit.png")), "approved UI kit atlas was requested");
   await page.waitForFunction(() => {
