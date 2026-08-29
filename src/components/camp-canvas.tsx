@@ -259,14 +259,15 @@ function drawCompanion(
   const col = frame % 2;
   const row = Math.floor(frame / 2);
   const size = id === "mossknight" ? 58 : id === "ashling" ? 44 : 52;
-  const breath = ember ? 1 + Math.sin(t * 2.1) * 0.035 : 1;
-  const sway = ember ? Math.sin(t * 1.15) * 0.055 : 0;
-  const listening = ember && Math.sin(t * 0.43) > 0.78;
+  const energy = 0.45 + heat * 0.55;
+  const breath = ember ? 1 + Math.sin(t * 2.1) * 0.03 * energy : 1;
+  const sway = ember ? Math.sin(t * 1.15) * 0.045 * energy : 0;
+  const listening = ember && heat > 0.2 && Math.sin(t * 0.43) > 0.78;
   const blink = ember && Math.sin(t * 0.73) > 0.985;
-  const hopPhase = ember && Math.sin(t * 0.31) > 0.965 ? Math.max(0, Math.sin(t * 9)) : 0;
-  const bob = reduced ? 0 : ember ? Math.sin(t * 2.1) * 1.4 - hopPhase * 3 : Math.sin(t * 2.2) * 2;
-  const scaleX = ember ? (listening ? 1.08 : 1) * breath : 1;
-  const scaleY = ember ? (listening ? 0.96 : 1) / breath : 1;
+  const hopPhase = ember && heat > 0.55 && Math.sin(t * 0.31) > 0.965 ? Math.max(0, Math.sin(t * 9)) : 0;
+  const bob = reduced ? 0 : ember ? Math.sin(t * 2.1) * 1.2 * energy - hopPhase * 3 : Math.sin(t * 2.2) * 2;
+  const scaleX = ember ? (listening ? 1.07 : 1) * breath : 1;
+  const scaleY = ember ? (listening ? 0.97 : 1) / breath : 1;
   const glow = 0.18 + heat * 0.28;
 
   ctx.save();
