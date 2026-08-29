@@ -1,6 +1,7 @@
 import { Flame, Footprints } from "lucide-react";
 import { useKindling } from "@/lib/kindling/store";
 import { formatDay, portraitSrc } from "@/lib/kindling/model";
+import { EmberAtlasSprite } from "@/components/ember-atlas-sprite";
 
 export function PackResponsive() {
   const s = useKindling();
@@ -33,11 +34,19 @@ export function PackResponsive() {
               </div>
             </div>
             {s.companion ? (
-              <img
-                src={portraitSrc(s.companion.species)}
-                alt=""
-                className="h-32 w-28 shrink-0 object-contain object-bottom drop-shadow-[0_8px_5px_rgba(0,0,0,0.35)]"
-              />
+              s.companion.species === "ember" ? (
+                <div className="relative mb-1 h-32 w-28 shrink-0">
+                  <div className="absolute inset-x-3 bottom-0 h-4 rounded-full bg-night/55 blur-sm" />
+                  <EmberAtlasSprite mode="happy" className="absolute bottom-0 left-1/2 h-28 w-28 -translate-x-1/2 drop-shadow-[0_8px_5px_rgba(0,0,0,0.35)]" />
+                  <span className="absolute right-1 top-2 text-lg text-fire animate-bounce" aria-hidden="true">♥</span>
+                </div>
+              ) : (
+                <img
+                  src={portraitSrc(s.companion.species)}
+                  alt=""
+                  className="h-32 w-28 shrink-0 object-contain object-bottom drop-shadow-[0_8px_5px_rgba(0,0,0,0.35)]"
+                />
+              )
             ) : null}
           </div>
           <div className="grid grid-cols-2 gap-2 border-t border-bone/10 p-3">
