@@ -29,7 +29,7 @@ export function JourneyWorldScreen() {
 
   useEffect(() => {
     if (!s.walk) return;
-    const update = window.setInterval(() => setNow(Date.now()), 1000);
+    const update = window.setInterval(() => setNow(Date.now()), 250);
     const wait = Math.max(0, s.walk.endsAt - Date.now());
     const finish = window.setTimeout(() => useKindling.getState().finishWalk(), wait + 40);
     return () => {
@@ -42,9 +42,13 @@ export function JourneyWorldScreen() {
 
   if (s.walk) {
     const path = WORLD_PATHS.find((p) => p.id === s.walk?.pathId);
-    const seconds = Math.max(0, Math.ceil((s.walk.endsAt - now) / 1000));
-    const travel = Math.max(0, Math.min(1, (JOURNEY_SECONDS - seconds) / JOURNEY_SECONDS));
+    const remainingMs = Math.max(0, s.walk.endsAt - now);
+    const seconds = Math.ceil(remainingMs / 1000);
+    const travel = Math.max(0, Math.min(1, (JOURNEY_SECONDS * 1000 - remainingMs) / (JOURNEY_SECONDS * 1000)));
     const left = 10 + travel * 72;
+    const step = Math.floor(now / 240) % 2;
+    const bob = step === 0 ? 0 : -4;
+    const lean = step === 0 ? -1.5 : 1.5;
     return (
       <div className="relative min-h-[70vh] overflow-hidden">
         <div className="relative h-[50vh] min-h-[340px] max-h-[500px] overflow-hidden sm:h-80 sm:min-h-0 sm:max-h-none">
@@ -55,15 +59,17 @@ export function JourneyWorldScreen() {
             style={{ objectPosition: path?.crop ?? "50% center" }}
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-night/5 via-transparent to-night" />
-          {/* Birch Ruins currently has Ember baked into the approved scene art.
-              Do not stack the moving portrait on top until a clean environment-only plate replaces it. */}
           {s.companion && path?.id !== "ruin" ? (
-            <img
-              src={portraitSrc(s.companion.species)}
-              alt=""
-              className="absolute bottom-8 h-20 w-20 -translate-x-1/2 object-contain transition-[left] duration-700 ease-linear sm:bottom-10 sm:h-24 sm:w-24"
-              style={{ left: `${left}%` }}
-            />
+            <div
+              className="absolute bottom-8 -translate-x-1/2 transition-[left] duration-300 ease-linear sm:bottom-10"
+              style={{ left: `${left}%`, transform: `translateX(-50%) translateY(${bob}px) rotate(${lean}deg)` }}
+            >
+              <img
+                src={portraitSrc(s.companion.species)}
+                alt=""
+                className="h-20 w-20 origin-bottom object-contain drop-shadow-[0_5px_3px_rgba(0,0,0,0.35)] sm:h-24 sm:w-24"
+              />
+            </div>
           ) : null}
         </div>
         <div className="space-y-2 px-4 py-5 sm:px-5 sm:py-6">
@@ -81,13 +87,6 @@ export function JourneyWorldScreen() {
 
   return (
     <div>
-      {/* The plate is left ALONE. Two rounds of scrim-tuning to get the
-          overlaid title to WCAG AA either put Ember and the road into shadow or
-          left the companion cut off at the horns — the composition's subject
-          sits low, and the words were sitting on top of it. Approved art this
-          good should be a picture, not a background for text: the title moves
-          into the text column below, where it is on the page ground and legible
-          by construction. */}
       <div className="relative h-[38vh] min-h-72 max-h-[360px] overflow-hidden sm:h-52 sm:min-h-0 sm:max-h-none">
         <img src={assetSrc(coverPath.art)} alt="" className="h-full w-full object-cover" style={{ objectPosition: coverPath.crop }} />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-night to-transparent" />
@@ -127,7 +126,7 @@ export function JourneyWorldScreen() {
                     {!unlocked ? <LockKeyhole className="size-3.5 shrink-0 text-mute" /> : null}
                     <span className="font-medium">{path.chapter}. {path.displayName}</span>
                   </span>
-                  <span className={cn("mt-0.5 text-sm text-mute", !unlocked ? "hidden sm:block" : "block")}> 
+                  <span className={cn("mt-0.5 text-sm text-mute", !unlocked ? "hidden sm:block" : "block")}>
                     {!unlocked
                       ? `Bring something home from ${WORLD_PATHS[path.chapter - 2]?.displayName ?? "the previous road"}.`
                       : cleared
