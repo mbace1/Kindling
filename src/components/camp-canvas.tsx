@@ -253,29 +253,55 @@ function drawCompanion(
   heat: number,
 ) {
   const img = sheet(id);
-  const frame = reduced ? 0 : Math.floor(t * 3) % 4;
+  const ember = id === "ember" && !reduced;
+  const emberSequence = [0, 0, 1, 1, 0, 2, 0, 3, 0, 0, 1, 0, 2, 0, 0, 3];
+  const frame = reduced ? 0 : ember ? emberSequence[Math.floor(t * 2.1) % emberSequence.length] : Math.floor(t * 3) % 4;
   const col = frame % 2;
   const row = Math.floor(frame / 2);
   const size = id === "mossknight" ? 58 : id === "ashling" ? 44 : 52;
-  const bob = reduced ? 0 : Math.sin(t * 2.2) * 2;
+  const energy = 0.45 + heat * 0.55;
+  const breath = ember ? 1 + Math.sin(t * 2.1) * 0.03 * energy : 1;
+  const sway = ember ? Math.sin(t * 1.15) * 0.045 * energy : 0;
+  const listening = ember && heat > 0.2 && Math.sin(t * 0.43) > 0.78;
+  const blink = ember && Math.sin(t * 0.73) > 0.985;
+  const hopPhase = ember && heat > 0.55 && Math.sin(t * 0.31) > 0.965 ? Math.max(0, Math.sin(t * 9)) : 0;
+  const bob = reduced ? 0 : ember ? Math.sin(t * 2.1) * 1.2 * energy - hopPhase * 3 : Math.sin(t * 2.2) * 2;
+  const scaleX = ember ? (listening ? 1.07 : 1) * breath : 1;
+  const scaleY = ember ? (listening ? 0.97 : 1) / breath : 1;
   const glow = 0.18 + heat * 0.28;
+
   ctx.save();
   ctx.imageSmoothingEnabled = false;
   ctx.fillStyle = "rgba(8, 10, 14, 0.45)";
   ctx.beginPath();
-  ctx.ellipse(x, y + 4, size * 0.28, 7, 0, 0, Math.PI * 2);
+  ctx.ellipse(x, y + 4, size * 0.28 * (1 - hopPhase * 0.035), 7 * (1 - hopPhase * 0.04), 0, 0, Math.PI * 2);
   ctx.fill();
+
+  ctx.translate(x, y);
+  ctx.rotate(sway);
+  ctx.scale(scaleX, scaleY);
   ctx.shadowColor = `rgba(255, 122, 42, ${glow})`;
-  ctx.shadowBlur = 4;
+  ctx.shadowBlur = ember ? 7 : 4;
+
   if (img.complete && img.naturalWidth) {
     const cw = img.naturalWidth / 2;
     const ch = img.naturalHeight / 2;
-    ctx.drawImage(img, col * cw, row * ch, cw, ch, x - size / 2, y - size + bob, size, size);
+    ctx.drawImage(img, col * cw, row * ch, cw, ch, -size / 2, -size + bob, size, size);
   } else {
     const p = load(portraitSrc(id));
     if (p.complete && p.naturalWidth) {
-      ctx.drawImage(p, x - size / 2, y - size + bob, size, size);
+      ctx.drawImage(p, -size / 2, -size + bob, size, size);
     }
+  }
+
+  if (ember && heat > 0.6) {
+    const pulse = 0.35 + Math.sin(t * 5) * 0.12;
+    ctx.fillStyle = `rgba(255, 168, 72, ${pulse})`;
+    ctx.fillRect(-2, -size * 0.38 + bob, 4, 3);
+  }
+  if (blink) {
+    ctx.fillStyle = "rgba(20, 14, 12, 0.72)";
+    ctx.fillRect(-5, -size * 0.62 + bob, 10, 2);
   }
   ctx.restore();
 }
