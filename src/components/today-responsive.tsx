@@ -81,7 +81,7 @@ export function TodayResponsive() {
                 y={fireDone > i ? 124 : 50}
                 width={65}
                 height={63}
-                displayWidth={58}
+                displayWidth={48}
                 className="rounded-full"
               />
             ))}
