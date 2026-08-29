@@ -16,10 +16,15 @@ function load(src: string) {
 
 const sheets = new Map<string, HTMLImageElement>();
 let fireStates: HTMLImageElement | null = null;
+let emberIdle: HTMLImageElement | null = null;
 
 function fireSheet() {
   if (!fireStates) fireStates = load(assetSrc("art/fire-states.png"));
   return fireStates;
+}
+function emberIdleSheet() {
+  if (!emberIdle) emberIdle = load(assetSrc("art/ember-idle-runtime.svg"));
+  return emberIdle;
 }
 function sheet(id: SpeciesId) {
   const src = spriteSrc(id);
@@ -252,22 +257,22 @@ function drawCompanion(
   reduced: boolean,
   heat: number,
 ) {
-  const img = sheet(id);
-  const ember = id === "ember" && !reduced;
-  const emberSequence = [0, 0, 1, 1, 0, 2, 0, 3, 0, 0, 1, 0, 2, 0, 0, 3];
-  const frame = reduced ? 0 : ember ? emberSequence[Math.floor(t * 2.1) % emberSequence.length] : Math.floor(t * 3) % 4;
-  const col = frame % 2;
-  const row = Math.floor(frame / 2);
-  const size = id === "mossknight" ? 58 : id === "ashling" ? 44 : 52;
+  const ember = id === "ember";
+  const img = ember ? emberIdleSheet() : sheet(id);
+  const frame = reduced ? 0 : ember ? Math.floor(t * 5) % 16 : Math.floor(t * 3) % 4;
+  const cols = ember ? 8 : 2;
+  const rows = 2;
+  const col = frame % cols;
+  const row = Math.floor(frame / cols);
+  const size = id === "mossknight" ? 58 : id === "ashling" ? 44 : ember ? 56 : 52;
   const energy = 0.45 + heat * 0.55;
-  const breath = ember ? 1 + Math.sin(t * 2.1) * 0.03 * energy : 1;
-  const sway = ember ? Math.sin(t * 1.15) * 0.045 * energy : 0;
-  const listening = ember && heat > 0.2 && Math.sin(t * 0.43) > 0.78;
-  const blink = ember && Math.sin(t * 0.73) > 0.985;
-  const hopPhase = ember && heat > 0.55 && Math.sin(t * 0.31) > 0.965 ? Math.max(0, Math.sin(t * 9)) : 0;
-  const bob = reduced ? 0 : ember ? Math.sin(t * 2.1) * 1.2 * energy - hopPhase * 3 : Math.sin(t * 2.2) * 2;
-  const scaleX = ember ? (listening ? 1.07 : 1) * breath : 1;
-  const scaleY = ember ? (listening ? 0.97 : 1) / breath : 1;
+  const breath = ember && !reduced ? 1 + Math.sin(t * 2.1) * 0.015 * energy : 1;
+  const sway = ember && !reduced ? Math.sin(t * 1.15) * 0.018 * energy : 0;
+  const listening = ember && !reduced && heat > 0.2 && Math.sin(t * 0.43) > 0.78;
+  const hopPhase = ember && !reduced && heat > 0.55 && Math.sin(t * 0.31) > 0.965 ? Math.max(0, Math.sin(t * 9)) : 0;
+  const bob = reduced ? 0 : ember ? Math.sin(t * 2.1) * 0.5 * energy - hopPhase * 2 : Math.sin(t * 2.2) * 2;
+  const scaleX = ember ? (listening ? 1.035 : 1) * breath : 1;
+  const scaleY = ember ? (listening ? 0.985 : 1) / breath : 1;
   const glow = 0.18 + heat * 0.28;
 
   ctx.save();
@@ -284,8 +289,8 @@ function drawCompanion(
   ctx.shadowBlur = ember ? 7 : 4;
 
   if (img.complete && img.naturalWidth) {
-    const cw = img.naturalWidth / 2;
-    const ch = img.naturalHeight / 2;
+    const cw = img.naturalWidth / cols;
+    const ch = img.naturalHeight / rows;
     ctx.drawImage(img, col * cw, row * ch, cw, ch, -size / 2, -size + bob, size, size);
   } else {
     const p = load(portraitSrc(id));
@@ -295,13 +300,9 @@ function drawCompanion(
   }
 
   if (ember && heat > 0.6) {
-    const pulse = 0.35 + Math.sin(t * 5) * 0.12;
+    const pulse = 0.28 + Math.sin(t * 5) * 0.1;
     ctx.fillStyle = `rgba(255, 168, 72, ${pulse})`;
     ctx.fillRect(-2, -size * 0.38 + bob, 4, 3);
-  }
-  if (blink) {
-    ctx.fillStyle = "rgba(20, 14, 12, 0.72)";
-    ctx.fillRect(-5, -size * 0.62 + bob, 10, 2);
   }
   ctx.restore();
 }
