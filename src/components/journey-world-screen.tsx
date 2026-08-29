@@ -55,7 +55,9 @@ export function JourneyWorldScreen() {
             style={{ objectPosition: path?.crop ?? "50% center" }}
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-night/5 via-transparent to-night" />
-          {s.companion ? (
+          {/* Birch Ruins currently has Ember baked into the approved scene art.
+              Do not stack the moving portrait on top until a clean environment-only plate replaces it. */}
+          {s.companion && path?.id !== "ruin" ? (
             <img
               src={portraitSrc(s.companion.species)}
               alt=""
