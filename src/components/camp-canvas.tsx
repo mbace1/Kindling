@@ -253,14 +253,16 @@ function drawCompanion(
   heat: number,
 ) {
   const img = sheet(id);
-  const frame = reduced ? 0 : Math.floor(t * 3) % 4;
+  const ember = id === "ember" && !reduced;
+  const emberSequence = [0, 0, 1, 1, 0, 2, 0, 3, 0, 0, 1, 0];
+  const frame = reduced ? 0 : ember ? emberSequence[Math.floor(t * 2.4) % emberSequence.length] : Math.floor(t * 3) % 4;
   const col = frame % 2;
   const row = Math.floor(frame / 2);
   const size = id === "mossknight" ? 58 : id === "ashling" ? 44 : 52;
-  const ember = id === "ember" && !reduced;
   const breath = ember ? 1 + Math.sin(t * 2.1) * 0.035 : 1;
   const sway = ember ? Math.sin(t * 1.15) * 0.055 : 0;
   const listening = ember && Math.sin(t * 0.43) > 0.78;
+  const blink = ember && Math.sin(t * 0.73) > 0.985;
   const hopPhase = ember && Math.sin(t * 0.31) > 0.965 ? Math.max(0, Math.sin(t * 9)) : 0;
   const bob = reduced ? 0 : ember ? Math.sin(t * 2.1) * 1.4 - hopPhase * 3 : Math.sin(t * 2.2) * 2;
   const scaleX = ember ? (listening ? 1.08 : 1) * breath : 1;
@@ -295,6 +297,10 @@ function drawCompanion(
     const pulse = 0.35 + Math.sin(t * 5) * 0.12;
     ctx.fillStyle = `rgba(255, 168, 72, ${pulse})`;
     ctx.fillRect(-2, -size * 0.38 + bob, 4, 3);
+  }
+  if (blink) {
+    ctx.fillStyle = "rgba(20, 14, 12, 0.72)";
+    ctx.fillRect(-5, -size * 0.62 + bob, 10, 2);
   }
   ctx.restore();
 }
