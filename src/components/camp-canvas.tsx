@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { FULL_DAY, assetSrc, portraitSrc, spriteSrc, warningState, warmth, type KindlingSave, type SpeciesId } from "@/lib/kindling/model";
+import { campKeepsakes, type CampKeepsake } from "@/lib/kindling/camp-find-effects";
 
 type Props = {
   save: KindlingSave;
@@ -62,7 +63,6 @@ export function CampCanvas({ save, tall }: Props) {
 
       const heat = warmth(save);
       const warn = warningState(save);
-      // The clean plate's empty stone ring is at ~37% width / 81% height.
       const fx = w * 0.37;
       const fy = h * 0.81;
 
@@ -71,6 +71,7 @@ export function CampCanvas({ save, tall }: Props) {
         ctx.fillRect(0, 0, w, h);
       }
 
+      drawKeepsakes(ctx, campKeepsakes(save), w, h, t, reduced);
       drawFire(ctx, fireSheet(), fx, fy, heat, t, reduced);
       if (save.kindlingPending || save.awaitingHatch) {
         drawAshMark(ctx, fx, fy + 10, t);
@@ -136,10 +137,62 @@ export function CampCanvas({ save, tall }: Props) {
       <canvas
         ref={ref}
         className="absolute inset-0 h-full w-full"
-        aria-label={save.companion && !save.walk && !save.combat ? `${save.companion.name} by the bonfire` : "The bonfire"}
+        aria-label={save.companion && !save.walk && !save.combat ? `${save.companion.name} by the bonfire, with ${Math.min(save.found.length, 4)} journey keepsakes` : "The bonfire"}
       />
     </div>
   );
+}
+
+function drawKeepsakes(ctx: CanvasRenderingContext2D, keepsakes: CampKeepsake[], w: number, h: number, t: number, reduced: boolean) {
+  const scale = Math.max(1, w / 320);
+  for (const keepsake of keepsakes) {
+    const x = keepsake.x * w;
+    const y = keepsake.y * h;
+    const glint = reduced ? 0.65 : 0.55 + Math.sin(t * 2.4 + x) * 0.12;
+    ctx.save();
+    ctx.imageSmoothingEnabled = false;
+    ctx.fillStyle = "rgba(5, 8, 12, 0.38)";
+    ctx.beginPath();
+    ctx.ellipse(x, y + 3 * scale, 8 * scale, 3 * scale, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (keepsake.shape === "sprig") {
+      ctx.strokeStyle = "rgba(145, 169, 112, 0.95)";
+      ctx.lineWidth = 2 * scale;
+      ctx.beginPath();
+      ctx.moveTo(x, y + 2 * scale);
+      ctx.lineTo(x + 2 * scale, y - 10 * scale);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(121, 151, 94, 0.95)";
+      ctx.fillRect(x - 4 * scale, y - 8 * scale, 5 * scale, 3 * scale);
+      ctx.fillRect(x + 2 * scale, y - 6 * scale, 5 * scale, 3 * scale);
+    } else if (keepsake.shape === "charm") {
+      ctx.strokeStyle = `rgba(232, 182, 93, ${glint})`;
+      ctx.lineWidth = 2 * scale;
+      ctx.beginPath();
+      ctx.arc(x, y - 4 * scale, 5 * scale, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(222, 160, 72, 0.85)";
+      ctx.fillRect(x - scale, y - 5 * scale, 2 * scale, 7 * scale);
+    } else if (keepsake.shape === "shard") {
+      ctx.fillStyle = `rgba(142, 198, 214, ${glint})`;
+      ctx.beginPath();
+      ctx.moveTo(x, y - 13 * scale);
+      ctx.lineTo(x + 6 * scale, y - 2 * scale);
+      ctx.lineTo(x + 1 * scale, y + 2 * scale);
+      ctx.lineTo(x - 5 * scale, y - 3 * scale);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.fillStyle = "rgba(139, 142, 145, 0.95)";
+      ctx.beginPath();
+      ctx.ellipse(x, y - 2 * scale, 7 * scale, 5 * scale, -0.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "rgba(190, 143, 79, 0.5)";
+      ctx.fillRect(x - 2 * scale, y - 4 * scale, 4 * scale, 2 * scale);
+    }
+    ctx.restore();
+  }
 }
 
 function drawFire(
@@ -154,9 +207,6 @@ function drawFire(
   const care = Math.max(0, Math.min(FULL_DAY, Math.round(heat * FULL_DAY)));
   const cell = img.complete && img.naturalWidth ? img.naturalWidth / 5 : 0;
   const cellH = img.complete && img.naturalHeight ? img.naturalHeight : 0;
-
-  // Production sheet mapping from PRODUCT_PLAN.md:
-  // 0 = unlit, 1 = embers, 2–3 = medium, 4 = full, 5 = full + sparks.
   const state = care === 0 ? 0 : care === 1 ? 1 : care <= 3 ? 2 : 3;
   const sceneScale = Math.max(1, ctx.canvas.clientWidth / 320);
   const drawW = 66 * sceneScale;
@@ -168,13 +218,11 @@ function drawFire(
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(img, state * cell, 0, cell, cellH, x - drawW / 2, top, drawW, drawH);
     if (care >= FULL_DAY) {
-      // The fifth cell is sparks only and is intended to layer over the full fire.
       ctx.drawImage(img, 4 * cell, 0, cell, cellH, x - drawW / 2, top, drawW, drawH);
     }
     ctx.restore();
   }
 
-  // Firelight remains gameplay-owned even though the flame itself is approved art.
   if (care > 0) {
     const flicker = reduced ? 1 : 0.94 + Math.sin(t * 7) * 0.04 + Math.sin(t * 13) * 0.02;
     const radius = (20 + care * 8) * sceneScale * flicker;
@@ -185,6 +233,7 @@ function drawFire(
     ctx.fillRect(x - radius, y - radius * 1.2, radius * 2, radius * 1.5);
   }
 }
+
 function drawAshMark(ctx: CanvasRenderingContext2D, x: number, y: number, t: number) {
   ctx.fillStyle = "#8ea0b8";
   ctx.beginPath();
