@@ -11,6 +11,7 @@ import { WORLD_PATHS } from "@/lib/kindling/world";
 import { cn } from "@/lib/utils";
 import { CompanionResponsive } from "@/components/companion-responsive";
 import { JourneyWorldScreen } from "@/components/journey-world-screen";
+import { PackResponsive } from "@/components/pack-responsive";
 import { TodayResponsive } from "@/components/today-responsive";
 import { UiAtlasSprite } from "@/components/ui-atlas-sprite";
 import {
@@ -19,7 +20,6 @@ import {
   GoalEditor,
   JournalScreen,
   KindlingEvent,
-  PackScreen,
 } from "@/components/screens";
 
 const HUB_STATIC = import.meta.env.VITE_HUB_STATIC === "true";
@@ -104,7 +104,7 @@ export function AppShell() {
       : s.tab === "companion"
         ? CompanionResponsive
         : s.tab === "pack"
-          ? PackScreen
+          ? PackResponsive
           : s.tab === "journal"
             ? JournalScreen
             : TodayResponsive;
