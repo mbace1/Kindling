@@ -12,7 +12,9 @@ import {
   stageOfCompanion,
 } from "@/lib/kindling/model";
 import { useKindling } from "@/lib/kindling/store";
+import { companionVisualState } from "@/lib/kindling/find-progression";
 import { cn } from "@/lib/utils";
+import { CompanionAtlasSprite } from "@/components/ember-atlas-sprite";
 
 export function CompanionResponsive() {
   const s = useKindling();
@@ -55,10 +57,16 @@ export function CompanionResponsive() {
     return <div className="px-4 py-10 text-mute">No one is by the fire. The coals are still warm enough to hatch.</div>;
   }
 
+  const pose = companionVisualState(s);
+
   return (
     <div className="px-4 pb-28 pt-4">
       <section className="flex flex-col items-center rounded-xl border border-ash/70 bg-stone/50 px-4 pb-5 pt-4 sm:border-0 sm:bg-transparent">
-        <img src={portraitSrc(s.companion.species)} alt="" className="h-40 w-40 object-contain sm:h-44 sm:w-44" />
+        <CompanionAtlasSprite
+          species={s.companion.species}
+          mode={pose === "sleep" ? "warm" : pose}
+          className="h-40 w-40 sm:h-44 sm:w-44"
+        />
         <p className="mt-1 text-xs uppercase tracking-[0.2em] text-mute">{SPECIES[s.companion.species].name}</p>
         <h2 className="font-display text-3xl font-semibold">{s.companion.name}</h2>
         <p className="text-sm text-mute">{stage.name} · {s.companion.bondXp} Bond XP</p>
