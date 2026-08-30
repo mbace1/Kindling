@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Check, ChevronDown, Flame, Wind } from "lucide-react";
 import { CampCanvas } from "@/components/camp-canvas";
+import { CampReactionCue } from "@/components/camp-reaction-cue";
 import { UiAtlasSprite } from "@/components/ui-atlas-sprite";
 import {
   ERRAND_COST,
@@ -34,7 +35,10 @@ export function TodayResponsive() {
 
   return (
     <div>
-      <CampCanvas save={s} />
+      <div className="relative">
+        <CampCanvas save={s} />
+        <CampReactionCue save={s} />
+      </div>
 
       <div className="space-y-4 px-4 pb-28 pt-4 sm:space-y-5">
         <section className="rounded-lg border border-ash/80 bg-stone/70 p-4 sm:border-0 sm:bg-transparent sm:p-0">
