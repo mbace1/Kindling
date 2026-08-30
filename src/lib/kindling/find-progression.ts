@@ -10,22 +10,22 @@ export const FIND_UPGRADES: Record<FindKind, FindUpgrade> = {
   relic: {
     kind: "relic",
     name: "Waymarker",
-    effect: "Known roads now reveal what they may contain.",
+    effect: "Known roads reveal what they may contain.",
   },
   shard: {
     kind: "shard",
     name: "Glass Lens",
-    effect: "Journey cards reveal encounter risk.",
+    effect: "Journey danger is revealed. Encounters start with +2 Guard.",
   },
   moss: {
     kind: "moss",
     name: "Moss Bed",
-    effect: "Your companion settles closer to the fire after a journey.",
+    effect: "Coming home from a Journey gives +10 Bond XP.",
   },
   memory: {
     kind: "memory",
     name: "Story Stone",
-    effect: "The newest memory gives your companion a camp reaction.",
+    effect: "Memory finds give an extra +10 Bond XP and a camp reaction.",
   },
   ash: {
     kind: "ash",
@@ -43,6 +43,11 @@ export function unlockedFindUpgrades(s: Pick<KindlingSave, "found">) {
   return (Object.keys(FIND_UPGRADES) as FindKind[])
     .filter((kind) => kinds.has(kind))
     .map((kind) => FIND_UPGRADES[kind]);
+}
+
+export function journeyBondBonus(s: Pick<KindlingSave, "found">, findKind: FindKind) {
+  const kinds = unlockedFindKinds(s);
+  return (kinds.has("moss") ? 10 : 0) + (findKind === "memory" ? 10 : 0);
 }
 
 export function companionFindReaction(s: Pick<KindlingSave, "found" | "companion">) {

@@ -10,6 +10,7 @@ import { assetSrc, dayKey, type Tab } from "@/lib/kindling/model";
 import { WORLD_PATHS } from "@/lib/kindling/world";
 import { cn } from "@/lib/utils";
 import { CompanionResponsive } from "@/components/companion-responsive";
+import { GameplayFindEffects } from "@/components/gameplay-find-effects";
 import { JourneyWorldScreen } from "@/components/journey-world-screen";
 import { PackResponsive } from "@/components/pack-responsive";
 import { TodayResponsive } from "@/components/today-responsive";
@@ -114,6 +115,7 @@ export function AppShell() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col bg-night text-bone">
+      <GameplayFindEffects />
       {/* On the arcade the site's own HUB button is fixed to the top-left
           corner, where it lands on the title. The header drops below it there
           — both ends of the row move together, so it reads as intended
