@@ -20,6 +20,7 @@ import {
 } from "@/lib/kindling/world";
 import { cn } from "@/lib/utils";
 import { UiAtlasSprite } from "@/components/ui-atlas-sprite";
+import { EmberAtlasSprite } from "@/components/ember-atlas-sprite";
 
 const JOURNEY_FLAMES = ERRAND_COST * FLAMES_PER_FUEL;
 const JOURNEY_SECONDS = 90;
@@ -72,11 +73,18 @@ export function JourneyWorldScreen() {
               className="absolute bottom-8 -translate-x-1/2 transition-[left] duration-300 ease-linear sm:bottom-10"
               style={{ left: `${left}%`, transform: `translateX(-50%) translateY(${bob}px) rotate(${lean}deg)` }}
             >
-              <img
-                src={portraitSrc(s.companion.species)}
-                alt=""
-                className="h-20 w-20 origin-bottom object-contain drop-shadow-[0_5px_3px_rgba(0,0,0,0.35)] sm:h-24 sm:w-24"
-              />
+              {s.companion.species === "ember" ? (
+                <EmberAtlasSprite
+                  mode="walk"
+                  className="h-20 w-20 origin-bottom drop-shadow-[0_5px_3px_rgba(0,0,0,0.35)] sm:h-24 sm:w-24"
+                />
+              ) : (
+                <img
+                  src={portraitSrc(s.companion.species)}
+                  alt=""
+                  className="h-20 w-20 origin-bottom object-contain drop-shadow-[0_5px_3px_rgba(0,0,0,0.35)] sm:h-24 sm:w-24"
+                />
+              )}
             </div>
           ) : null}
           {moment ? (
