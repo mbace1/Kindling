@@ -15,7 +15,7 @@ export const FIND_UPGRADES: Record<FindKind, FindUpgrade> = {
   shard: {
     kind: "shard",
     name: "Glass Lens",
-    effect: "Journey danger is revealed and encounter risk drops by 20%.",
+    effect: "Journey danger is revealed. Encounters start with +2 Guard.",
   },
   moss: {
     kind: "moss",
@@ -43,11 +43,6 @@ export function unlockedFindUpgrades(s: Pick<KindlingSave, "found">) {
   return (Object.keys(FIND_UPGRADES) as FindKind[])
     .filter((kind) => kinds.has(kind))
     .map((kind) => FIND_UPGRADES[kind]);
-}
-
-export function adjustedEncounterRisk(s: Pick<KindlingSave, "found">, baseRisk: number) {
-  const hasLens = unlockedFindKinds(s).has("shard");
-  return Math.max(0, Math.min(1, hasLens ? baseRisk * 0.8 : baseRisk));
 }
 
 export function journeyBondBonus(s: Pick<KindlingSave, "found">, findKind: FindKind) {
