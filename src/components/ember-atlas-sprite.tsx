@@ -34,7 +34,7 @@ export function EmberAtlasSprite({ mode, className }: Props) {
       aria-hidden="true"
       className={cn("block bg-contain bg-no-repeat [image-rendering:pixelated]", mode === "happy" && "origin-bottom animate-[pulse_900ms_ease-in-out_infinite]", className)}
       style={{
-        backgroundImage: `url(${assetSrc("art/ember-idle-atlas.png")})`,
+        backgroundImage: `url(${assetSrc("art/ember-idle-runtime.svg")})`,
         backgroundSize: "800% 200%",
         backgroundPosition: `${(col / 7) * 100}% ${row * 100}%`,
       }}
