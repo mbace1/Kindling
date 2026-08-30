@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { FULL_DAY, assetSrc, portraitSrc, spriteSrc, warningState, warmth, type KindlingSave, type SpeciesId } from "@/lib/kindling/model";
+import { FULL_DAY, assetSrc, atlasSrc, portraitSrc, warningState, warmth, type KindlingSave, type SpeciesId } from "@/lib/kindling/model";
 import { campKeepsakes, type CampKeepsake } from "@/lib/kindling/camp-find-effects";
 
 type Props = {
@@ -16,18 +16,13 @@ function load(src: string) {
 
 const sheets = new Map<string, HTMLImageElement>();
 let fireStates: HTMLImageElement | null = null;
-let emberIdle: HTMLImageElement | null = null;
 
 function fireSheet() {
   if (!fireStates) fireStates = load(assetSrc("art/fire-states.png"));
   return fireStates;
 }
-function emberIdleSheet() {
-  if (!emberIdle) emberIdle = load(assetSrc("art/ember-idle-runtime.svg"));
-  return emberIdle;
-}
-function sheet(id: SpeciesId) {
-  const src = spriteSrc(id);
+function atlasSheet(id: SpeciesId) {
+  const src = atlasSrc(id);
   let img = sheets.get(src);
   if (!img) {
     img = load(src);
@@ -257,26 +252,31 @@ function drawCompanion(
   reduced: boolean,
   heat: number,
 ) {
+  const img = atlasSheet(id);
   const ember = id === "ember";
-  const img = ember ? emberIdleSheet() : sheet(id);
-  const frame = reduced ? 0 : ember ? Math.floor(t * 5) % 16 : Math.floor(t * 3) % 4;
-  const cols = ember ? 8 : 2;
-  const rows = 2;
+  const frame = reduced
+    ? 0
+    : ember
+      ? Math.floor(t * 5) % 16
+      : heat <= 0.2
+        ? 14 + (Math.floor(t * 2) % 2)
+        : Math.floor(t * 5) % 8;
+  const cols = 8;
   const col = frame % cols;
   const row = Math.floor(frame / cols);
   const size = id === "mossknight" ? 58 : id === "ashling" ? 44 : ember ? 56 : 52;
   const energy = 0.45 + heat * 0.55;
-  const breath = ember && !reduced ? 1 + Math.sin(t * 2.1) * 0.015 * energy : 1;
-  const sway = ember && !reduced ? Math.sin(t * 1.15) * 0.018 * energy : 0;
-  const listening = ember && !reduced && heat > 0.2 && Math.sin(t * 0.43) > 0.78;
-  const hopPhase = ember && !reduced && heat > 0.55 && Math.sin(t * 0.31) > 0.965 ? Math.max(0, Math.sin(t * 9)) : 0;
-  const bob = reduced ? 0 : ember ? Math.sin(t * 2.1) * 0.5 * energy - hopPhase * 2 : Math.sin(t * 2.2) * 2;
-  const scaleX = ember ? (listening ? 1.035 : 1) * breath : 1;
-  const scaleY = ember ? (listening ? 0.985 : 1) / breath : 1;
+  const breath = !reduced ? 1 + Math.sin(t * 2.1) * 0.015 * energy : 1;
+  const sway = !reduced ? Math.sin(t * 1.15) * 0.018 * energy : 0;
+  const listening = !reduced && heat > 0.2 && Math.sin(t * 0.43) > 0.78;
+  const hopPhase = !reduced && heat > 0.55 && Math.sin(t * 0.31) > 0.965 ? Math.max(0, Math.sin(t * 9)) : 0;
+  const bob = reduced ? 0 : Math.sin(t * 2.1) * 0.5 * energy - hopPhase * 2;
+  const scaleX = (listening ? 1.035 : 1) * breath;
+  const scaleY = (listening ? 0.985 : 1) / breath;
   const glow = 0.18 + heat * 0.28;
 
   ctx.save();
-  ctx.imageSmoothingEnabled = false;
+  ctx.imageSmoothingEnabled = !ember;
   ctx.fillStyle = "rgba(8, 10, 14, 0.45)";
   ctx.beginPath();
   ctx.ellipse(x, y + 4, size * 0.28 * (1 - hopPhase * 0.035), 7 * (1 - hopPhase * 0.04), 0, 0, Math.PI * 2);
@@ -286,11 +286,11 @@ function drawCompanion(
   ctx.rotate(sway);
   ctx.scale(scaleX, scaleY);
   ctx.shadowColor = `rgba(255, 122, 42, ${glow})`;
-  ctx.shadowBlur = ember ? 7 : 4;
+  ctx.shadowBlur = ember ? 7 : 5;
 
   if (img.complete && img.naturalWidth) {
     const cw = img.naturalWidth / cols;
-    const ch = img.naturalHeight / rows;
+    const ch = img.naturalHeight / 2;
     ctx.drawImage(img, col * cw, row * ch, cw, ch, -size / 2, -size + bob, size, size);
   } else {
     const p = load(portraitSrc(id));

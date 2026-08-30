@@ -42,6 +42,10 @@ try {
     assert.ok([...requested].some((p) => p.endsWith(`/art/camp/${name}`)), `${name} was requested`);
   }
   assert.ok([...requested].some((p) => p.endsWith("/art/ember-idle-runtime.svg")), "live Ember idle atlas was requested");
+  for (const name of ["mossling-idle-runtime.png", "ashling-idle-runtime.png", "mossknight-idle-runtime.png"]) {
+    const atlas = await page.request.get(new URL(`art/${name}`, url).toString());
+    assert.equal(atlas.status(), 200, `${name} is served as a runtime atlas`);
+  }
   assert.ok([...requested].some((p) => p.endsWith("/art/fire-states.png")), "approved five-state fire sheet was requested");
   assert.ok([...requested].some((p) => p.endsWith("/art/ui/ui-kit.png")), "approved UI kit atlas was requested");
   await page.waitForFunction(() => {

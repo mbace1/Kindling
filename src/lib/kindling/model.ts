@@ -661,6 +661,11 @@ export function assetSrc(path: string) {
   return `${base.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
 }
 
+export function atlasSrc(id: SpeciesId) {
+  if (id === "ember") return assetSrc("art/ember-idle-runtime.svg");
+  return assetSrc(`art/${id}-idle-runtime.png`);
+}
+
 export function spriteSrc(id: SpeciesId) {
   return assetSrc(`art/${id}.png`);
 }
