@@ -1,10 +1,12 @@
-import { type FindKind, type KindlingSave } from "./model";
+import { FULL_DAY, caredToday, type FindKind, type KindlingSave } from "./model";
 
 export type FindUpgrade = {
   kind: FindKind;
   name: string;
   effect: string;
 };
+
+export type CompanionVisualState = "low" | "warm" | "curious" | "happy" | "sleep";
 
 export const FIND_UPGRADES: Record<FindKind, FindUpgrade> = {
   relic: {
@@ -48,6 +50,18 @@ export function unlockedFindUpgrades(s: Pick<KindlingSave, "found">) {
 export function journeyBondBonus(s: Pick<KindlingSave, "found">, findKind: FindKind) {
   const kinds = unlockedFindKinds(s);
   return (kinds.has("moss") ? 10 : 0) + (findKind === "memory" ? 10 : 0);
+}
+
+export function companionVisualState(
+  s: Pick<KindlingSave, "found" | "companion" | "sheet" | "tasks">,
+): CompanionVisualState {
+  if (!s.companion) return "sleep";
+  const tended = caredToday(s as KindlingSave);
+  const latest = s.found[0];
+  if (latest?.kind === "relic" || latest?.kind === "shard" || latest?.kind === "memory") return "curious";
+  if (tended >= FULL_DAY) return "happy";
+  if (tended <= 1) return "low";
+  return "warm";
 }
 
 export function companionFindReaction(s: Pick<KindlingSave, "found" | "companion">) {
