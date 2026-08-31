@@ -1,8 +1,9 @@
+import { useEffect, useState } from "react";
 import { Flame, Search, TimerReset } from "lucide-react";
 import { PATHS, SAVE_KEY, dayKey } from "@/lib/kindling/model";
 import { useKindling } from "@/lib/kindling/store";
 
-const CHOICE_AT = 0.34;
+const CHOICE_AT_MS = 31_000;
 const markerPrefix = (startedAt: number) => `journey-choice:${startedAt}:`;
 
 function persistCurrent() {
@@ -14,12 +15,20 @@ function persistCurrent() {
   }
 }
 
-export function JourneyDecision({ travel, startedAt, pathId }: { travel: number; startedAt: number; pathId: string }) {
+export function JourneyDecision({ startedAt, pathId }: { startedAt: number; pathId: string }) {
   const s = useKindling();
+  const [now, setNow] = useState(Date.now());
   const prefix = markerPrefix(startedAt);
   const resolved = s.sheet.bonus.find((entry) => entry.startsWith(prefix));
+  const ready = now - startedAt >= CHOICE_AT_MS;
 
-  if (travel < CHOICE_AT || resolved || !s.walk || s.walk.startedAt !== startedAt) return null;
+  useEffect(() => {
+    if (!s.walk || resolved || ready) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 500);
+    return () => window.clearInterval(timer);
+  }, [s.walk?.startedAt, resolved, ready]);
+
+  if (!ready || resolved || !s.walk || s.walk.startedAt !== startedAt) return null;
 
   const choose = (choice: "investigate" | "rest" | "shortcut") => {
     const current = useKindling.getState();
@@ -34,35 +43,24 @@ export function JourneyDecision({ travel, startedAt, pathId }: { travel: number;
     if (choice === "investigate") {
       const path = PATHS.find((entry) => entry.id === pathId);
       const find = path?.finds[0];
-      if (find) {
-        const found = [
-          {
-            id: `jx${startedAt.toString(36)}`,
-            name: find.name,
-            kind: find.kind,
-            from: pathId,
-            date: dayKey(),
-          },
+      if (!find) return;
+      useKindling.setState({
+        found: [
+          { id: `jx${startedAt.toString(36)}`, name: find.name, kind: find.kind, from: pathId, date: dayKey() },
           ...current.found,
-        ];
-        useKindling.setState({
-          found,
-          sheet,
-          walk: { ...walk, endsAt: walk.endsAt + 20_000 },
-          updatedAt,
-          lastToast: `A closer look found ${find.name}. · +20s`,
-        });
-      }
+        ],
+        sheet,
+        walk: { ...walk, endsAt: walk.endsAt + 20_000 },
+        updatedAt,
+        lastToast: `A closer look found ${find.name}. · +20s`,
+      });
     } else if (choice === "rest") {
       const companion = current.companion
         ? { ...current.companion, bondXp: current.companion.bondXp + 20 }
         : null;
-      const roster = companion
-        ? current.roster.map((member) => (member.id === companion.id ? companion : member))
-        : current.roster;
       useKindling.setState({
         companion,
-        roster,
+        roster: companion ? current.roster.map((member) => (member.id === companion.id ? companion : member)) : current.roster,
         sheet,
         walk: { ...walk, endsAt: walk.endsAt + 10_000 },
         updatedAt,
@@ -81,7 +79,7 @@ export function JourneyDecision({ travel, startedAt, pathId }: { travel: number;
   };
 
   return (
-    <div className="absolute inset-x-3 bottom-3 z-10 rounded-lg border border-fire/35 bg-night/95 p-3 shadow-xl backdrop-blur-sm sm:left-auto sm:right-4 sm:w-80">
+    <section className="fixed inset-x-3 bottom-20 z-40 mx-auto max-w-md rounded-xl border border-fire/35 bg-night/95 p-3 shadow-2xl backdrop-blur">
       <p className="text-xs uppercase tracking-[0.18em] text-fire">A fork in the road</p>
       <p className="mt-1 text-sm font-medium text-bone">Something changes the journey.</p>
       <p className="mt-0.5 text-xs text-bone/65">Choose once. The road remembers.</p>
@@ -99,6 +97,6 @@ export function JourneyDecision({ travel, startedAt, pathId }: { travel: number;
           <span className="flex-1"><span className="block text-sm font-medium">Take the shortcut</span><span className="block text-xs text-mute">Get home 25s sooner · no bonus</span></span>
         </button>
       </div>
-    </div>
+    </section>
   );
 }
