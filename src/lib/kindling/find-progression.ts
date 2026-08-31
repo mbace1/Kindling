@@ -1,3 +1,4 @@
+import { builtCampKinds } from "./camp-construction";
 import { FULL_DAY, caredToday, type FindKind, type KindlingSave } from "./model";
 
 export type FindUpgrade = {
@@ -36,20 +37,20 @@ export const FIND_UPGRADES: Record<FindKind, FindUpgrade> = {
   },
 };
 
-export function unlockedFindKinds(s: Pick<KindlingSave, "found">) {
-  return new Set(s.found.map((item) => item.kind));
+export function unlockedFindKinds(s: Pick<KindlingSave, "journal">) {
+  return builtCampKinds(s);
 }
 
-export function unlockedFindUpgrades(s: Pick<KindlingSave, "found">) {
-  const kinds = unlockedFindKinds(s);
+export function unlockedFindUpgrades(s: Pick<KindlingSave, "journal">) {
+  const kinds = builtCampKinds(s);
   return (Object.keys(FIND_UPGRADES) as FindKind[])
     .filter((kind) => kinds.has(kind))
     .map((kind) => FIND_UPGRADES[kind]);
 }
 
-export function journeyBondBonus(s: Pick<KindlingSave, "found">, findKind: FindKind) {
-  const kinds = unlockedFindKinds(s);
-  return (kinds.has("moss") ? 10 : 0) + (findKind === "memory" ? 10 : 0);
+export function journeyBondBonus(s: Pick<KindlingSave, "journal">, findKind: FindKind) {
+  const kinds = builtCampKinds(s);
+  return (kinds.has("moss") ? 10 : 0) + (findKind === "memory" && kinds.has("memory") ? 10 : 0);
 }
 
 export function companionVisualState(
