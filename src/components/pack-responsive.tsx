@@ -1,4 +1,5 @@
 import { Flame, Footprints } from "lucide-react";
+import { CampConstructionPanel } from "@/components/camp-construction-panel";
 import { useKindling } from "@/lib/kindling/store";
 import { formatDay } from "@/lib/kindling/model";
 import { CompanionAtlasSprite } from "@/components/ember-atlas-sprite";
@@ -10,9 +11,12 @@ export function PackResponsive() {
 
   if (!latest) {
     return (
-      <div className="px-5 py-10">
-        <h2 className="font-display text-2xl">Pack</h2>
-        <p className="mt-2 text-sm text-mute">Journeys leave small things. The pack is empty for now.</p>
+      <div className="space-y-5 px-4 pb-28 pt-6">
+        <div>
+          <h2 className="font-display text-2xl">Pack</h2>
+          <p className="mt-2 text-sm text-mute">Journeys leave small things. The pack is empty for now.</p>
+        </div>
+        <CampConstructionPanel />
       </div>
     );
   }
@@ -64,8 +68,12 @@ export function PackResponsive() {
         </section>
       ) : null}
 
-      <h2 className="font-display text-2xl font-semibold">Pack</h2>
-      <p className="text-sm text-mute">{s.found.length} brought home</p>
+      <CampConstructionPanel />
+
+      <div className="mt-6">
+        <h2 className="font-display text-2xl font-semibold">Pack</h2>
+        <p className="text-sm text-mute">{s.found.length} materials available</p>
+      </div>
       <ul className="mt-4 grid grid-cols-2 gap-2">
         {s.found.map((item, index) => (
           <li
