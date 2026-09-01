@@ -9,7 +9,7 @@ import { startFireLoop, stopFireLoop, unlockAudio } from "@/lib/kindling/audio";
 import { assetSrc, dayKey, type Tab } from "@/lib/kindling/model";
 import { WORLD_PATHS } from "@/lib/kindling/world";
 import { cn } from "@/lib/utils";
-import { CompanionResponsive } from "@/components/companion-responsive";
+import { CompanionScreen } from "@/components/companion-screen";
 import { GameplayFindEffects } from "@/components/gameplay-find-effects";
 import { JourneyWorldScreen } from "@/components/journey-world-screen";
 import { PackResponsive } from "@/components/pack-responsive";
@@ -103,7 +103,7 @@ export function AppShell() {
     s.tab === "journey"
       ? JourneyWorldScreen
       : s.tab === "companion"
-        ? CompanionResponsive
+        ? CompanionScreen
         : s.tab === "pack"
           ? PackResponsive
           : s.tab === "journal"
