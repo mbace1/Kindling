@@ -1,4 +1,5 @@
 import { BASE_BOND_XP, STAGES, stageOfCompanion, type Companion, type SpeciesId } from "./model";
+import { useKindling } from "./store";
 
 export type CompanionJourneyTrait = {
   name: string;
@@ -124,6 +125,8 @@ export function journeyTraitForCompanion(companion?: Companion | null): Companio
 
 export function journeyTraitFor(species?: SpeciesId | null) {
   if (!species) return null;
+  const active = useKindling.getState().companion;
+  if (active?.species === species) return journeyTraitForCompanion(active);
   const base = TRAITS[species];
   return { ...base, rank: 0, rankLabel: ROMAN[0], name: `${base.name} ${ROMAN[0]}` };
 }
