@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Flame, Footprints, Heart, X } from "lucide-react";
 import { JourneyDecision } from "@/components/journey-decision";
+import { COMBAT_ACTION_COPY, actionStat, intentCopy } from "@/components/combat-readability";
 import { ERRAND_COST, FLAMES_PER_FUEL, SAVE_KEY, dayKey } from "@/lib/kindling/model";
-import { companionCombatGrowth } from "@/lib/kindling/companion-combat";
+import { combatStatsForCompanion, companionCombatGrowth } from "@/lib/kindling/companion-combat";
 import { journeyBondBonus, unlockedFindKinds } from "@/lib/kindling/find-progression";
 import { useKindling } from "@/lib/kindling/store";
 
@@ -111,6 +112,37 @@ export function GameplayFindEffects() {
     });
     queueMicrotask(persistCurrent);
   };
+
+  if (s.hydrated && s.tab === "journey" && s.combat && !s.combat.result && s.companion) {
+    const stats = combatStatsForCompanion(s.companion);
+    const growth = companionCombatGrowth(s.companion);
+    if (stats) {
+      return (
+        <section className="fixed inset-x-3 top-20 z-30 mx-auto max-w-md rounded-xl border border-fire/30 bg-night/90 p-3 shadow-xl backdrop-blur">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-fire">Enemy intent</p>
+              <p className="mt-0.5 text-sm font-medium text-bone">{COMBAT_ACTION_COPY[s.combat.telegraph].title}</p>
+              <p className="text-xs text-mute">{intentCopy(s.combat.telegraph)}</p>
+            </div>
+            {growth ? <span className="shrink-0 rounded-full border border-fire/25 px-2 py-1 text-xs text-fire">Combat {growth.rankLabel}</span> : null}
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {(["strike", "guard", "skill"] as const).map((verb) => (
+              <div key={verb} className="rounded-md border border-ash/70 bg-stone/75 px-2 py-2 text-center">
+                <p className="text-xs font-medium text-bone">{COMBAT_ACTION_COPY[verb].title}</p>
+                <p className="mt-0.5 text-lg font-semibold text-fire">{actionStat(verb, stats)}</p>
+                <p className="text-[10px] leading-tight text-mute">{COMBAT_ACTION_COPY[verb].hint}</p>
+              </div>
+            ))}
+          </div>
+          {s.combat.log.length ? (
+            <p className="mt-2 truncate border-t border-ash/60 pt-2 text-xs text-bone/65">Last · {s.combat.log[0]}</p>
+          ) : null}
+        </section>
+      );
+    }
+  }
 
   if (s.hydrated && s.tab === "journey" && s.walk) {
     return <JourneyDecision startedAt={s.walk.startedAt} pathId={s.walk.pathId} />;
