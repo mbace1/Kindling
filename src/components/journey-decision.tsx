@@ -9,6 +9,7 @@ import {
   pickTelegraph,
 } from "@/lib/kindling/model";
 import { hasCampBuild } from "@/lib/kindling/camp-construction";
+import { journeyTraitFor } from "@/lib/kindling/companion-journey";
 import { useKindling } from "@/lib/kindling/store";
 
 const CHOICE_AT_MS = 31_000;
@@ -98,6 +99,7 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
   const hasMossBed = hasCampBuild(s, "moss");
   const hasStoryStone = hasCampBuild(s, "memory");
   const hasEmberBowl = hasCampBuild(s, "ash");
+  const trait = journeyTraitFor(s.companion?.species);
   const shortcutProtected = hasLens || (pathId === "ash" && hasEmberBowl);
 
   useEffect(() => {
@@ -114,6 +116,7 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
     if (!walk || walk.startedAt !== startedAt) return;
     if (current.sheet.bonus.some((entry) => entry.startsWith(prefix))) return;
 
+    const currentTrait = journeyTraitFor(current.companion?.species);
     const marker = `${prefix}${pathId}:${choice}`;
     const sheet = { ...current.sheet, bonus: [...current.sheet.bonus, marker] };
     const updatedAt = Date.now();
@@ -129,11 +132,13 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
       ];
       let bonusCopy = "";
 
-      if (hasWaymarker && path.finds.length > 1) {
+      if ((hasWaymarker || currentTrait?.investigateExtra) && path.finds.length > 1) {
         const extraIndex = (event.investigate.findIndex + 1) % path.finds.length;
         const extra = path.finds[extraIndex];
         found.unshift({ id: `j2${startedAt.toString(36)}`, name: extra.name, kind: extra.kind, from: pathId, date: dayKey() });
-        bonusCopy = ` Waymarker reveals ${extra.name}.`;
+        bonusCopy = hasWaymarker
+          ? ` Waymarker reveals ${extra.name}.`
+          : ` ${current.companion?.name ?? "Your companion"} spots ${extra.name}.`;
       }
 
       let companion = current.companion;
@@ -144,18 +149,21 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
         bonusCopy += " Story Stone · +20 Bond XP.";
       }
 
+      const investigateTime = Math.max(3_000, event.investigate.time + (currentTrait?.investigateTimeDelta ?? 0));
       useKindling.setState({
         found,
         companion,
         roster,
         sheet,
-        walk: { ...walk, endsAt: walk.endsAt + event.investigate.time },
+        walk: { ...walk, endsAt: walk.endsAt + investigateTime },
         updatedAt,
-        lastToast: `${event.investigate.toast} ${find.name}.${bonusCopy} +${Math.round(event.investigate.time / 1000)}s`,
+        lastToast: `${event.investigate.toast} ${find.name}.${bonusCopy} +${Math.round(investigateTime / 1000)}s`,
       });
     } else if (choice === "rest") {
-      const restBonus = (hasMossBed ? 10 : 0) + (pathId === "ash" && hasEmberBowl ? 10 : 0);
-      const totalBond = event.rest.bond + restBonus;
+      const campRestBonus = (hasMossBed ? 10 : 0) + (pathId === "ash" && hasEmberBowl ? 10 : 0);
+      const companionRestBonus = currentTrait?.restBondBonus ?? 0;
+      const totalBond = event.rest.bond + campRestBonus + companionRestBonus;
+      const restTime = Math.max(3_000, event.rest.time + (currentTrait?.restTimeDelta ?? 0));
       const companion = current.companion
         ? { ...current.companion, bondXp: current.companion.bondXp + totalBond }
         : null;
@@ -163,43 +171,49 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
         companion,
         roster: companion ? current.roster.map((member) => (member.id === companion.id ? companion : member)) : current.roster,
         sheet,
-        walk: { ...walk, endsAt: walk.endsAt + event.rest.time },
+        walk: { ...walk, endsAt: walk.endsAt + restTime },
         updatedAt,
-        lastToast: `${event.rest.toast} · +${totalBond} Bond XP${restBonus ? " · camp bonus" : ""} · +${Math.round(event.rest.time / 1000)}s`,
+        lastToast: `${event.rest.toast} · +${totalBond} Bond XP${campRestBonus ? " · camp bonus" : ""}${companionRestBonus ? " · companion bonus" : ""} · +${Math.round(restTime / 1000)}s`,
       });
     } else {
       const path = PATHS.find((entry) => entry.id === pathId);
+      const ambushChance = event.shortcut.ambush * (currentTrait?.ambushMultiplier ?? 1);
       const ambushed = Boolean(path?.enemy)
         && !shortcutProtected
-        && consequenceRoll(pathId, startedAt) < event.shortcut.ambush;
+        && consequenceRoll(pathId, startedAt) < ambushChance;
 
       if (ambushed && path?.enemy && current.companion) {
         const pc = combatFor(current.companion.species);
         const ec = combatFor(path.enemy);
+        const guard = currentTrait?.ambushGuard ?? 0;
         useKindling.setState({
           sheet,
           walk: null,
           combat: {
             enemy: path.enemy,
             pathId,
-            playerHp: pc.hp,
-            playerMax: pc.hp,
+            playerHp: pc.hp + guard,
+            playerMax: pc.hp + guard,
             enemyHp: ec.hp,
             enemyMax: ec.hp,
             telegraph: pickTelegraph(path.enemy),
-            log: [`The shortcut was watched. ${SPECIES[path.enemy].name} cuts you off.`],
+            log: [
+              `The shortcut was watched. ${SPECIES[path.enemy].name} cuts you off.`,
+              ...(guard ? [`${current.companion.name} braces first. +${guard} Guard.`] : []),
+            ],
             result: null,
           },
           updatedAt,
           lastToast: "The shortcut was faster. It was not safer.",
         });
       } else {
-        const seconds = Math.abs(Math.round(event.shortcut.time / 1000));
+        const shortcutTime = event.shortcut.time + (currentTrait?.shortcutTimeDelta ?? 0);
+        const seconds = Math.abs(Math.round(shortcutTime / 1000));
         useKindling.setState({
           sheet,
-          walk: { ...walk, endsAt: Math.max(Date.now() + 3_000, walk.endsAt + event.shortcut.time) },
+          walk: { ...walk, endsAt: Math.max(Date.now() + 3_000, walk.endsAt + shortcutTime) },
           updatedAt,
-          lastToast: `${event.shortcut.toast} · −${seconds}s${shortcutProtected && event.shortcut.ambush > 0 ? " · route scouted" : ""}`,
+          lastToast: `${event.shortcut.toast} · −${seconds}s${shortcutProtected && event.shortcut.ambush > 0 ? " · route scouted" : ""}${currentTrait?.shortcutTimeDelta ? " · companion pace" : ""}`,
         });
       }
     }
@@ -207,18 +221,32 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
     queueMicrotask(persistCurrent);
   };
 
-  const investigateDetail = `${event.investigate.detail}${hasWaymarker ? " · Waymarker may reveal extra" : ""}`;
-  const restBonus = (hasMossBed ? 10 : 0) + (pathId === "ash" && hasEmberBowl ? 10 : 0);
-  const restDetail = `${event.rest.detail}${restBonus ? ` · +${restBonus} camp bonus` : ""}`;
-  const shortcutDetail = shortcutProtected && event.shortcut.ambush > 0
-    ? `${event.shortcut.detail.replace(/ · .*ambush risk/, "")} · scouted safe`
-    : event.shortcut.detail;
+  const investigateTime = Math.max(3_000, event.investigate.time + (trait?.investigateTimeDelta ?? 0));
+  const investigateDetailBase = event.investigate.detail.replace(/\+\d+s/, `+${Math.round(investigateTime / 1000)}s`);
+  const investigateDetail = `${investigateDetailBase}${hasWaymarker ? " · Waymarker may reveal extra" : trait?.investigateExtra ? " · companion may reveal extra" : ""}`;
+  const campRestBonus = (hasMossBed ? 10 : 0) + (pathId === "ash" && hasEmberBowl ? 10 : 0);
+  const companionRestBonus = trait?.restBondBonus ?? 0;
+  const restTime = Math.max(3_000, event.rest.time + (trait?.restTimeDelta ?? 0));
+  const restDetail = `+${event.rest.bond + campRestBonus + companionRestBonus} Bond XP · +${Math.round(restTime / 1000)}s${campRestBonus ? " · camp bonus" : ""}${companionRestBonus ? " · companion bonus" : ""}`;
+  const shortcutTime = event.shortcut.time + (trait?.shortcutTimeDelta ?? 0);
+  const shortcutSeconds = Math.abs(Math.round(shortcutTime / 1000));
+  const baseShortcutRisk = shortcutProtected && event.shortcut.ambush > 0
+    ? "scouted safe"
+    : event.shortcut.ambush > 0
+      ? `${Math.round(event.shortcut.ambush * (trait?.ambushMultiplier ?? 1) * 100)}% ambush risk`
+      : "safe route";
+  const shortcutDetail = `Get home ${shortcutSeconds}s sooner · ${baseShortcutRisk}`;
 
   return (
     <section className="fixed inset-x-3 bottom-20 z-40 mx-auto max-w-md rounded-xl border border-fire/35 bg-night/95 p-3 shadow-2xl backdrop-blur">
       <p className="text-xs uppercase tracking-[0.18em] text-fire">{event.eyebrow}</p>
       <p className="mt-1 text-sm font-medium text-bone">{event.title}</p>
       <p className="mt-0.5 text-xs text-bone/65">{event.copy}</p>
+      {trait && s.companion ? (
+        <p className="mt-2 rounded-md border border-fire/20 bg-coal/70 px-2.5 py-2 text-xs text-bone/75">
+          <span className="font-medium text-fire">{s.companion.name} · {trait.name}</span> — {trait.summary}
+        </p>
+      ) : null}
       <div className="mt-3 grid gap-2">
         <button type="button" onClick={() => choose("investigate")} className="flex min-h-11 items-center gap-3 rounded-md border border-bone/15 bg-stone px-3 text-left">
           <Search className="size-4 shrink-0 text-fire" />
