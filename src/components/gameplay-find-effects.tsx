@@ -2,10 +2,12 @@ import { useEffect, useState } from "react";
 import { Flame, Footprints, Heart, X } from "lucide-react";
 import { JourneyDecision } from "@/components/journey-decision";
 import { ERRAND_COST, FLAMES_PER_FUEL, SAVE_KEY, dayKey } from "@/lib/kindling/model";
+import { companionCombatGrowth } from "@/lib/kindling/companion-combat";
 import { journeyBondBonus, unlockedFindKinds } from "@/lib/kindling/find-progression";
 import { useKindling } from "@/lib/kindling/store";
 
 const LENS_MARK = "Glass Lens reads the danger. +2 Guard.";
+const COMBAT_GROWTH_MARK = "Bond-hardened";
 const CARE_COST = 1;
 const CARE_BOND = 40;
 
@@ -54,6 +56,29 @@ export function GameplayFindEffects() {
     });
     queueMicrotask(persistCurrent);
   }, [s.hydrated, s.lastToast, s.found[0]?.id, s.companion?.id]);
+
+  useEffect(() => {
+    const combat = s.combat;
+    const growth = companionCombatGrowth(s.companion);
+    if (!s.hydrated || !combat || combat.result || !growth || growth.rank <= 0) return;
+    if (combat.log.some((line) => line.startsWith(COMBAT_GROWTH_MARK))) return;
+
+    const openingDamage = Math.min(growth.openingDamage, Math.max(0, combat.enemyHp - 1));
+    useKindling.setState({
+      combat: {
+        ...combat,
+        playerHp: combat.playerHp + growth.hpBonus,
+        playerMax: combat.playerMax + growth.hpBonus,
+        enemyHp: Math.max(1, combat.enemyHp - openingDamage),
+        log: [
+          `${COMBAT_GROWTH_MARK} ${growth.rankLabel} · +${growth.hpBonus} Vitality${openingDamage ? ` · ${openingDamage} opening pressure` : ""}.`,
+          ...combat.log,
+        ],
+      },
+      updatedAt: Date.now(),
+    });
+    queueMicrotask(persistCurrent);
+  }, [s.hydrated, s.combat?.pathId, s.combat?.result, s.companion?.id, s.companion?.bondXp]);
 
   useEffect(() => {
     const combat = s.combat;
