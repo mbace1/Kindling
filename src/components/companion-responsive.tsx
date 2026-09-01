@@ -11,10 +11,23 @@ import {
   stageOf,
   stageOfCompanion,
 } from "@/lib/kindling/model";
+import { journeyTraitForCompanion, nextJourneyTraitGrowth } from "@/lib/kindling/companion-journey";
 import { useKindling } from "@/lib/kindling/store";
 import { companionVisualState } from "@/lib/kindling/find-progression";
 import { cn } from "@/lib/utils";
 import { CompanionAtlasSprite } from "@/components/ember-atlas-sprite";
+
+function traitEffects(trait: NonNullable<ReturnType<typeof journeyTraitForCompanion>>) {
+  const effects: string[] = [];
+  if (trait.investigateExtra) effects.push("Can uncover an extra material");
+  if (trait.investigateTimeDelta < 0) effects.push(`Investigations ${Math.abs(trait.investigateTimeDelta) / 1000}s faster`);
+  if (trait.restBondBonus > 0) effects.push(`+${trait.restBondBonus} Bond on Journey rests`);
+  if (trait.restTimeDelta < 0) effects.push(`Rests ${Math.abs(trait.restTimeDelta) / 1000}s faster`);
+  if (trait.shortcutTimeDelta < 0) effects.push(`Shortcuts ${Math.abs(trait.shortcutTimeDelta) / 1000}s faster`);
+  if (trait.ambushMultiplier < 1) effects.push(`${Math.round((1 - trait.ambushMultiplier) * 100)}% less shortcut ambush risk`);
+  if (trait.ambushGuard > 0) effects.push(`+${trait.ambushGuard} opening Guard in ambushes`);
+  return effects;
+}
 
 export function CompanionResponsive() {
   const s = useKindling();
@@ -58,6 +71,9 @@ export function CompanionResponsive() {
   }
 
   const pose = companionVisualState(s);
+  const journeyTrait = journeyTraitForCompanion(s.companion);
+  const nextTraitGrowth = nextJourneyTraitGrowth(s.companion);
+  const journeyEffects = journeyTrait ? traitEffects(journeyTrait) : [];
 
   return (
     <div className="px-4 pb-28 pt-4">
@@ -93,6 +109,41 @@ export function CompanionResponsive() {
 
       <p className="mt-4 text-sm text-mute">{SPECIES[s.companion.species].blurb}</p>
       <p className="mt-1 text-sm text-mute">{SPECIES[s.companion.species].combat.tendency.replace("-", " ")}</p>
+
+      {journeyTrait ? (
+        <section className="mt-6 rounded-lg border border-fire/30 bg-coal/70 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-mute">Journey trait</p>
+              <h3 className="mt-1 font-display text-xl text-fire">{journeyTrait.name}</h3>
+            </div>
+            <span className="rounded-full border border-fire/25 px-2 py-1 text-xs text-fire">Rank {journeyTrait.rankLabel}</span>
+          </div>
+          <p className="mt-2 text-sm text-mute">{journeyTrait.summary}</p>
+          <ul className="mt-3 grid gap-1.5 text-sm text-bone/85 sm:grid-cols-2">
+            {journeyEffects.map((effect) => (
+              <li key={effect} className="rounded-md border border-ash/60 bg-night/45 px-2.5 py-2">{effect}</li>
+            ))}
+          </ul>
+          {nextTraitGrowth ? (
+            <div className="mt-4 border-t border-ash/60 pt-3">
+              <div className="flex items-baseline justify-between gap-3 text-xs">
+                <span className="uppercase tracking-[0.15em] text-mute">Next growth · {nextTraitGrowth.stage}</span>
+                <span className="text-fire">{nextTraitGrowth.remaining} Bond XP to go</span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-ash" aria-label={`${s.companion.bondXp} of ${nextTraitGrowth.bondXp} Bond XP`}>
+                <div
+                  className="h-full rounded-full bg-fire transition-[width]"
+                  style={{ width: `${Math.min(100, Math.max(3, (s.companion.bondXp / nextTraitGrowth.bondXp) * 100))}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-mute">Reach {nextTraitGrowth.bondXp} Bond XP to strengthen this Journey trait.</p>
+            </div>
+          ) : (
+            <p className="mt-4 border-t border-ash/60 pt-3 text-xs text-fire">Elder rank reached · this Journey trait is fully grown.</p>
+          )}
+        </section>
+      ) : null}
 
       {s.egg ? (
         <section className="mt-6 rounded-lg border border-fire/35 bg-coal p-4">
