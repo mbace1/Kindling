@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Flame, Footprints, Heart, X } from "lucide-react";
 import { JourneyDecision } from "@/components/journey-decision";
 import { COMBAT_ACTION_COPY, actionStat, intentCopy } from "@/components/combat-readability";
-import { ERRAND_COST, FLAMES_PER_FUEL, SAVE_KEY, dayKey } from "@/lib/kindling/model";
+import { ERRAND_COST, FLAMES_PER_FUEL, SAVE_KEY, dayKey, progressiveOpportunities } from "@/lib/kindling/model";
 import { combatStatsForCompanion, companionCombatGrowth } from "@/lib/kindling/companion-combat";
 import { journeyBondBonus, unlockedFindKinds } from "@/lib/kindling/find-progression";
 import { useKindling } from "@/lib/kindling/store";
@@ -27,6 +27,7 @@ export function GameplayFindEffects() {
   const hasLens = unlockedFindKinds(s).has("shard");
   const careMarker = `fire-care:${dayKey()}`;
   const caredWithFire = s.sheet.bonus.includes(careMarker);
+  const hasProgressiveOpportunity = progressiveOpportunities(s).length > 0;
 
   useEffect(() => {
     setChoiceHidden(false);
@@ -148,7 +149,7 @@ export function GameplayFindEffects() {
     return <JourneyDecision startedAt={s.walk.startedAt} pathId={s.walk.pathId} />;
   }
 
-  const showChoice = s.hydrated && s.tab === "today" && !!s.companion && s.fuel >= CARE_COST && !choiceHidden && !caredWithFire;
+  const showChoice = s.hydrated && s.tab === "today" && !!s.companion && s.fuel >= CARE_COST && !choiceHidden && !caredWithFire && !hasProgressiveOpportunity;
   if (!showChoice) return null;
 
   return (
