@@ -6,6 +6,15 @@
      it reads each project's VERSIONS.md and nothing else. Keeping the log with
      the SOURCE is what stops the number and the build disagreeing. -->
 
+## v13 — 2026-09-02
+**The road finally has its own visual identity**
+- Drowned Courtyard, Bell Keep and Ashwood now use dedicated character-free environment plates instead of cropped shared art
+- the shell, Journey cards, combat panels and progression panels share one darker firelit presentation language
+- combat has stronger intent/counter emphasis, damage pop feedback, animated hit/victory states and a clearer latest-exchange readout
+- Journey choices now visibly alter the scene: investigate reveals a glint, rest warms the road, and shortcuts add motion streaks
+- companion animation now includes species-weighted movement plus hit and victory modes
+- Bond growth immediately announces a new stage and the Keep screen shows the exact next combat-stat gains
+
 ## v12 — 2026-09-02
 **Journeys read cleaner and the whole care list counts**
 - Today now tracks every editable care task separately from the five-step Fire target, so the sixth task visibly counts and still rewards Flames/Bond

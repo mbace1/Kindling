@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Flame, LockKeyhole } from "lucide-react";
 import {
   ERRAND_COST,
   FLAMES_PER_FUEL,
   SPECIES,
   assetSrc,
-  portraitSrc,
   verbLabel,
+  type SpeciesId,
 } from "@/lib/kindling/model";
 import { unlockedFindKinds } from "@/lib/kindling/find-progression";
 import { useKindling } from "@/lib/kindling/store";
@@ -20,7 +20,7 @@ import {
 } from "@/lib/kindling/world";
 import { cn } from "@/lib/utils";
 import { UiAtlasSprite } from "@/components/ui-atlas-sprite";
-import { CompanionAtlasSprite } from "@/components/ember-atlas-sprite";
+import { CompanionAtlasSprite, type CompanionAtlasMode } from "@/components/ember-atlas-sprite";
 
 const JOURNEY_FLAMES = ERRAND_COST * FLAMES_PER_FUEL;
 const JOURNEY_SECONDS = 90;
@@ -46,6 +46,36 @@ function counterTo(intent: "strike" | "guard" | "skill") {
   if (intent === "strike") return "guard";
   if (intent === "guard") return "skill";
   return "strike";
+}
+
+function journeyChoice(markers: string[], startedAt: number) {
+  const marker = markers.find((entry) => entry.startsWith(`journey-choice:${startedAt}:`));
+  if (!marker) return null;
+  const choice = marker.split(":").at(-1);
+  return choice === "investigate" || choice === "rest" || choice === "shortcut" ? choice : null;
+}
+
+function JourneyAtmosphere({ choice, pathId }: { choice: "investigate" | "rest" | "shortcut" | null; pathId: string }) {
+  if (!choice) return null;
+  if (choice === "investigate") {
+    return (
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 mix-blend-screen"
+        style={{ background: pathId === "ash" ? "radial-gradient(circle at 58% 66%, rgba(255,134,65,.32), transparent 27%)" : "radial-gradient(circle at 56% 64%, rgba(210,229,196,.22), transparent 25%)" }}
+      />
+    );
+  }
+  if (choice === "rest") {
+    return <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_72%,rgba(255,181,78,0.18),transparent_36%)]" />;
+  }
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 opacity-20"
+      style={{ backgroundImage: "repeating-linear-gradient(112deg, transparent 0 34px, rgba(234,224,201,.22) 35px 37px, transparent 38px 72px)" }}
+    />
+  );
 }
 
 export function JourneyWorldScreen() {
@@ -75,40 +105,47 @@ export function JourneyWorldScreen() {
     const bob = step === 0 ? 0 : -4;
     const lean = step === 0 ? -1.5 : 1.5;
     const moment = [...JOURNEY_MOMENTS].reverse().find((entry) => travel >= entry.at);
+    const choice = journeyChoice(s.sheet.bonus, s.walk.startedAt);
+    const mode: CompanionAtlasMode = choice === "investigate" ? "curious" : "walk";
     return (
       <div className="relative min-h-[70vh] overflow-hidden">
-        <div className="relative h-[50vh] min-h-[340px] max-h-[500px] overflow-hidden sm:h-80 sm:min-h-0 sm:max-h-none">
+        <div className="relative h-[50vh] min-h-[340px] max-h-[500px] overflow-hidden border-y border-bone/10 sm:h-80 sm:min-h-0 sm:max-h-none">
           <img
             src={assetSrc(path?.art ?? "art/path.png")}
             alt=""
-            className="h-full w-full scale-105 object-cover"
+            className="h-full w-full scale-[1.02] object-cover"
             style={{ objectPosition: path?.crop ?? "50% center" }}
           />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-night/5 via-transparent to-night" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-night/10 via-transparent to-night/90" />
+          <JourneyAtmosphere choice={choice} pathId={path?.id ?? ""} />
+          {choice === "rest" ? (
+            <div aria-hidden="true" className="absolute bottom-[12%] left-1/2 h-16 w-16 -translate-x-1/2 rounded-full bg-fire/10 blur-xl" />
+          ) : null}
           {s.companion ? (
             <div
               className="absolute bottom-8 -translate-x-1/2 transition-[left] duration-300 ease-linear sm:bottom-10"
-              style={{ left: `${left}%`, transform: `translateX(-50%) translateY(${bob}px) rotate(${lean}deg)` }}
+              style={{ left: `${left}%`, transform: `translateX(-50%) translateY(${choice === "rest" ? 1 : bob}px) rotate(${choice === "rest" ? 0 : lean}deg)` }}
             >
               <CompanionAtlasSprite
                 species={s.companion.species}
-                mode="walk"
-                className="h-20 w-20 origin-bottom drop-shadow-[0_5px_3px_rgba(0,0,0,0.35)] sm:h-24 sm:w-24"
+                mode={choice === "rest" ? "warm" : mode}
+                className="h-20 w-20 origin-bottom drop-shadow-[0_7px_5px_rgba(0,0,0,0.45)] sm:h-24 sm:w-24"
               />
             </div>
           ) : null}
           {moment ? (
-            <div className="absolute inset-x-4 bottom-3 rounded-md border border-bone/15 bg-night/80 px-3 py-2 backdrop-blur-[2px] sm:left-auto sm:right-4 sm:w-72">
+            <div className="absolute inset-x-4 bottom-3 rounded-lg border border-bone/15 bg-night/82 px-3 py-2 shadow-xl backdrop-blur-[3px] sm:left-auto sm:right-4 sm:w-72">
               <p className="text-xs uppercase tracking-[0.16em] text-fire">On the road</p>
               <p className="mt-0.5 text-sm font-medium text-bone">{moment.title}</p>
               <p className="text-xs text-bone/65">{moment.copy}</p>
+              {choice ? <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-fire/80">{choice} changed the road</p> : null}
             </div>
           ) : null}
         </div>
         <div className="space-y-2 px-4 py-5 sm:px-5 sm:py-6">
           <p className="text-xs uppercase tracking-[0.2em] text-mute">Chapter {path?.chapter ?? "?"} · {path?.displayName ?? "The path"}</p>
           <h2 className="font-display text-2xl">{s.companion?.name ?? "Someone"} is on the path.</h2>
-          <div className="h-1.5 overflow-hidden rounded-full bg-stone">
+          <div className="h-1.5 overflow-hidden rounded-full bg-stone shadow-inner">
             <div className="h-full bg-fire transition-[width] duration-300 ease-linear" style={{ width: `${travel * 100}%` }} />
           </div>
           <p className="text-sm text-mute">{seconds > 0 ? `${seconds}s · continues if you close the app.` : "Coming home."}</p>
@@ -126,18 +163,22 @@ export function JourneyWorldScreen() {
 
   return (
     <div>
-      <div className="relative h-[38vh] min-h-72 max-h-[360px] overflow-hidden sm:h-52 sm:min-h-0 sm:max-h-none">
+      <div className="relative h-[38vh] min-h-72 max-h-[360px] overflow-hidden border-y border-bone/10 sm:h-52 sm:min-h-0 sm:max-h-none">
         <img src={assetSrc(coverPath.art)} alt="" className="h-full w-full object-cover" style={{ objectPosition: coverPath.crop }} />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-night to-transparent" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-night" />
+        <div className="absolute bottom-4 left-4 rounded-md border border-bone/15 bg-night/75 px-3 py-2 backdrop-blur-sm">
+          <p className="text-[10px] uppercase tracking-[0.18em] text-fire">Farthest known road</p>
+          <p className="font-display text-lg">{coverPath.displayName}</p>
+        </div>
       </div>
 
-      <div className="px-4 pt-3">
+      <div className="px-4 pt-4">
         <p className="text-xs uppercase tracking-[0.2em] text-mute">Journey</p>
         <h2 className="font-display text-2xl font-semibold">The road keeps opening.</h2>
       </div>
 
       <div className="space-y-4 px-4 pb-28 pt-4">
-        <div className="rounded-lg border border-ash/80 bg-stone/65 p-3 sm:flex sm:items-start sm:justify-between sm:gap-4 sm:border-0 sm:bg-transparent sm:p-0">
+        <div className="rounded-xl border border-ash/80 bg-gradient-to-b from-stone/80 to-coal/70 p-3 sm:flex sm:items-start sm:justify-between sm:gap-4">
           <p className="text-sm text-mute">{JOURNEY_FLAMES} Flames · about 90 seconds. Bring something home to open the next region.</p>
           <p className="mt-2 text-xs text-mute sm:mt-0 sm:shrink-0 sm:text-right">{progress.cleared} / {progress.total} roads known</p>
         </div>
@@ -162,13 +203,15 @@ export function JourneyWorldScreen() {
                 disabled={!s.companion || !unlocked || !enough}
                 onClick={() => s.startWalk(path.id)}
                 className={cn(
-                  "flex min-h-16 w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left sm:min-h-20 sm:gap-4",
+                  "relative flex min-h-20 w-full items-center justify-between gap-3 overflow-hidden rounded-xl border px-4 py-3 text-left shadow-[0_10px_28px_rgba(0,0,0,0.14)] transition",
                   cleared ? "border-fire/35 bg-coal" : "border-ash bg-stone",
+                  unlocked && enough && "hover:border-fire/45",
                   !unlocked && "opacity-55",
                 )}
                 aria-label={path.displayName}
               >
-                <span className="min-w-0">
+                <span className="absolute inset-y-0 left-0 w-1 bg-fire/35" />
+                <span className="min-w-0 pl-1">
                   <span className="flex items-center gap-2">
                     {!unlocked ? <LockKeyhole className="size-3.5 shrink-0 text-mute" /> : null}
                     <span className="font-medium">{path.chapter}. {path.displayName}</span>
@@ -191,7 +234,7 @@ export function JourneyWorldScreen() {
             );
           })}
 
-          <div className={cn("rounded-lg border border-ash bg-stone px-4 py-3", oldGate ? "opacity-90" : "opacity-45")}>
+          <div className={cn("rounded-xl border border-ash bg-gradient-to-b from-stone to-coal px-4 py-3", oldGate ? "opacity-90" : "opacity-45")}>
             <div className="flex items-center gap-2">
               <LockKeyhole className="size-3.5 text-mute" />
               <p className="font-medium">{OLD_GATE.chapter}. {OLD_GATE.displayName}</p>
@@ -209,6 +252,29 @@ export function JourneyWorldScreen() {
 function CombatWorldScreen() {
   const s = useKindling();
   const c = s.combat;
+  const previousPlayerHp = useRef(c?.playerHp ?? 0);
+  const previousEnemyHp = useRef(c?.enemyHp ?? 0);
+  const [playerDamage, setPlayerDamage] = useState(0);
+  const [enemyDamage, setEnemyDamage] = useState(0);
+
+  useEffect(() => {
+    if (!c) return;
+    const p = Math.max(0, previousPlayerHp.current - c.playerHp);
+    const e = Math.max(0, previousEnemyHp.current - c.enemyHp);
+    previousPlayerHp.current = c.playerHp;
+    previousEnemyHp.current = c.enemyHp;
+    if (p) {
+      setPlayerDamage(p);
+      const timer = window.setTimeout(() => setPlayerDamage(0), 520);
+      return () => window.clearTimeout(timer);
+    }
+    if (e) {
+      setEnemyDamage(e);
+      const timer = window.setTimeout(() => setEnemyDamage(0), 520);
+      return () => window.clearTimeout(timer);
+    }
+  }, [c?.playerHp, c?.enemyHp]);
+
   if (!c || !s.companion) return null;
   const enemy = SPECIES[c.enemy];
   const path = WORLD_PATHS.find((p) => p.id === c.pathId);
@@ -218,105 +284,106 @@ function CombatWorldScreen() {
   return (
     <div className="relative min-h-[72vh] overflow-hidden pb-28">
       {path ? (
-        <img
-          src={assetSrc(path.art)}
-          alt=""
-          className="absolute inset-0 h-full w-full scale-105 object-cover opacity-55"
-          style={{ objectPosition: path.crop }}
-        />
+        <img src={assetSrc(path.art)} alt="" className="absolute inset-0 h-full w-full scale-[1.03] object-cover opacity-65" style={{ objectPosition: path.crop }} />
       ) : null}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-night/40 via-night/65 to-night" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-night/35 via-night/68 to-night" />
       <div className="relative z-10 px-4 pt-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-bone/65">{path ? `Chapter ${path.chapter} · ${path.displayName}` : "On the path"}</p>
-      <h2 className="font-display text-3xl font-semibold">{enemy.name}</h2>
-      <p className="text-sm text-bone/70">{enemy.blurb}</p>
+        <p className="text-xs uppercase tracking-[0.2em] text-bone/65">{path ? `Chapter ${path.chapter} · ${path.displayName}` : "On the path"}</p>
+        <h2 className="font-display text-3xl font-semibold">{enemy.name}</h2>
+        <p className="text-sm text-bone/70">{enemy.blurb}</p>
 
-      <div className="mt-5 flex items-end justify-between gap-3 rounded-lg border border-bone/10 bg-night/35 px-3 pb-3 pt-4 backdrop-blur-[1px] sm:mt-6 sm:gap-5 sm:pt-5">
-        <Fighter name={s.companion.name} src={portraitSrc(s.companion.species)} hp={c.playerHp} max={c.playerMax} align="left" />
-        <Fighter name={enemy.name} src={portraitSrc(c.enemy)} hp={c.enemyHp} max={c.enemyMax} align="right" pose={c.result ? undefined : c.telegraph} />
-      </div>
-
-      {!done ? (
-        <div className="mt-3 rounded-md border border-fire/25 bg-night/70 px-3 py-2 text-sm">
-          <span className="text-mute">Intent · </span><span className="font-medium text-bone">{verbLabel(c.telegraph)}</span>
-          <span className="ml-2 text-xs text-fire">Counter: {verbLabel(recommended)}</span>
+        <div className="mt-5 flex items-end justify-between gap-3 rounded-xl border border-bone/10 bg-night/45 px-3 pb-3 pt-4 shadow-2xl backdrop-blur-[2px] sm:mt-6 sm:gap-5 sm:pt-5">
+          <Fighter name={s.companion.name} species={s.companion.species} hp={c.playerHp} max={c.playerMax} align="left" damage={playerDamage} result={c.result} />
+          <Fighter name={enemy.name} species={c.enemy} hp={c.enemyHp} max={c.enemyMax} align="right" pose={c.result ? undefined : c.telegraph} damage={enemyDamage} result={c.result === "win" ? "lose" : c.result === "lose" ? "win" : null} />
         </div>
-      ) : (
-        <p className="mt-4 text-sm font-medium text-bone">{c.result === "win" ? "The path opens." : "You walk home. The fire is still there."}</p>
-      )}
 
-      <ul className="mt-3 space-y-1 text-sm text-bone/65">{c.log.map((line, i) => <li key={i}>{line}</li>)}</ul>
+        {!done ? (
+          <div className="mt-3 rounded-lg border border-fire/25 bg-night/78 px-3 py-2 text-sm shadow-lg">
+            <span className="text-mute">Intent · </span><span className="font-medium text-bone">{verbLabel(c.telegraph)}</span>
+            <span className="ml-2 rounded-full bg-fire/10 px-2 py-0.5 text-xs text-fire">Counter: {verbLabel(recommended)}</span>
+            <p className="mt-1 text-[11px] text-bone/55">{enemy.combat.tendency.replace("-", " ")} · read the intent, then answer it.</p>
+          </div>
+        ) : (
+          <p className="mt-4 rounded-lg border border-fire/20 bg-coal/75 px-3 py-2 text-sm font-medium text-bone">{c.result === "win" ? "The path opens." : "You walk home. The fire is still there."}</p>
+        )}
 
-      {done ? (
-        <div className="mt-6 space-y-2">
-          {c.result === "win" && SPECIES[c.enemy].capturable && s.roster.length < 6 && !s.roster.some((m) => m.species === c.enemy) ? (
-            <button type="button" onClick={() => s.keepEncounter()} className="min-h-12 w-full rounded-md bg-fire px-4 font-medium text-night">Keep them by the fire</button>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => {
-              const lost = c.result === "lose";
-              s.leaveCombat();
-              if (lost) queueMicrotask(() => useKindling.getState().setTab("today"));
-            }}
-            className="min-h-12 w-full rounded-md border border-bone/20 bg-night/75 px-4 font-medium"
-          >
-            {c.result === "lose" ? "Return to the fire" : "Back to the paths"}
-          </button>
-        </div>
-      ) : (
-        <div className="mt-6 grid grid-cols-3 gap-2">
-          {([
-            { verb: "strike", x: 548 },
-            { verb: "guard", x: 736 },
-            { verb: "skill", x: 900 },
-          ] as const).map(({ verb, x }) => {
-            const isCounter = verb === recommended;
-            return (
-              <button
-                key={verb}
-                type="button"
-                onClick={() => s.playerAct(verb)}
-                className={cn(
-                  "relative grid min-h-24 place-items-center overflow-hidden rounded-lg border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fire",
-                  isCounter ? "border-fire bg-fire/10 shadow-[0_0_0_1px_rgba(255,181,78,0.25)]" : "border-bone/10 bg-night/25 opacity-75",
-                )}
-                aria-label={`${verbLabel(verb)}${isCounter ? " · recommended counter" : ""}`}
-              >
-                {isCounter ? <span className="absolute left-1/2 top-1 -translate-x-1/2 rounded-full bg-fire px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-night">Counter</span> : null}
-                <UiAtlasSprite x={x} y={672} width={134} height={127} displayWidth={108} className={isCounter ? "scale-105" : "scale-95"} />
-              </button>
-            );
-          })}
-        </div>
-      )}
+        {c.log.length ? (
+          <div className="mt-3 rounded-lg border border-bone/10 bg-night/55 p-3">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-fire">Latest exchange</p>
+            <p className="mt-1 text-sm text-bone/80">{c.log[0]}</p>
+            {c.log.slice(1, 4).map((line, i) => <p key={i} className="mt-1 text-xs text-bone/45">{line}</p>)}
+          </div>
+        ) : null}
+
+        {done ? (
+          <div className="mt-6 space-y-2">
+            {c.result === "win" && SPECIES[c.enemy].capturable && s.roster.length < 6 && !s.roster.some((m) => m.species === c.enemy) ? (
+              <button type="button" onClick={() => s.keepEncounter()} className="min-h-12 w-full rounded-md bg-fire px-4 font-medium text-night">Keep them by the fire</button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                const lost = c.result === "lose";
+                s.leaveCombat();
+                if (lost) queueMicrotask(() => useKindling.getState().setTab("today"));
+              }}
+              className="min-h-12 w-full rounded-md border border-bone/20 bg-night/75 px-4 font-medium"
+            >
+              {c.result === "lose" ? "Return to the fire" : "Back to the paths"}
+            </button>
+          </div>
+        ) : (
+          <div className="mt-6 grid grid-cols-3 gap-2">
+            {([
+              { verb: "strike", x: 548 },
+              { verb: "guard", x: 736 },
+              { verb: "skill", x: 900 },
+            ] as const).map(({ verb, x }) => {
+              const isCounter = verb === recommended;
+              return (
+                <button
+                  key={verb}
+                  type="button"
+                  onClick={() => s.playerAct(verb)}
+                  className={cn(
+                    "relative grid min-h-28 place-items-center overflow-hidden rounded-xl border pb-2 pt-4 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fire",
+                    isCounter ? "border-fire bg-fire/10 shadow-[0_0_22px_rgba(255,181,78,0.12)]" : "border-bone/10 bg-night/35 opacity-78",
+                  )}
+                  aria-label={`${verbLabel(verb)}${isCounter ? " · recommended counter" : ""}`}
+                >
+                  {isCounter ? <span className="absolute left-1/2 top-1 -translate-x-1/2 rounded-full bg-fire px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-night">Counter</span> : null}
+                  <UiAtlasSprite x={x} y={672} width={134} height={127} displayWidth={82} className={isCounter ? "scale-105" : "scale-95"} />
+                  <span className={cn("text-xs font-semibold uppercase tracking-[0.12em]", isCounter ? "text-fire" : "text-bone/65")}>{verbLabel(verb)}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
-function Fighter({ name, src, hp, max, align, pose }: {
+function Fighter({ name, species, hp, max, align, pose, damage, result }: {
   name: string;
-  src: string;
+  species: SpeciesId;
   hp: number;
   max: number;
   align: "left" | "right";
   pose?: "strike" | "guard" | "skill";
+  damage: number;
+  result: null | "win" | "lose";
 }) {
+  const low = hp / max < 0.35;
+  const mode: CompanionAtlasMode = result === "win" ? "victory" : damage ? "hit" : low ? "low" : pose === "skill" ? "curious" : "warm";
   return (
-    <div className={cn("min-w-0 flex-1", align === "right" && "text-right")}>
-      <img
-        src={src}
-        alt=""
-        className={cn(
-          "mx-auto h-28 w-28 object-contain transition-transform duration-300 sm:h-32 sm:w-32",
-          pose === "strike" && (align === "right" ? "-translate-x-2 scale-110" : "translate-x-2 scale-110"),
-          pose === "guard" && "scale-x-110",
-          pose === "skill" && "scale-110",
-        )}
-      />
+    <div className={cn("relative min-w-0 flex-1", align === "right" && "text-right")}>
+      {damage ? <span className="absolute left-1/2 top-1 z-10 -translate-x-1/2 animate-[bounce_520ms_ease-out_1] rounded-full bg-night/90 px-2 py-1 text-sm font-bold text-fire">−{damage}</span> : null}
+      <div className={cn("mx-auto h-28 w-28 transition-transform duration-200 sm:h-32 sm:w-32", pose === "strike" && (align === "right" ? "-translate-x-2 scale-105" : "translate-x-2 scale-105"), pose === "guard" && "scale-x-105")}> 
+        <CompanionAtlasSprite species={species} mode={mode} className="h-full w-full drop-shadow-[0_8px_6px_rgba(0,0,0,0.5)]" />
+      </div>
       <p className="mt-1 truncate text-sm font-medium">{name}</p>
-      <div className="mt-1 h-2 overflow-hidden rounded-full bg-night/80"><div className="h-full bg-fire" style={{ width: `${Math.max(0, (hp / max) * 100)}%` }} /></div>
+      <div className="mt-1 h-2 overflow-hidden rounded-full bg-night/80 shadow-inner"><div className="h-full bg-fire transition-[width] duration-300" style={{ width: `${Math.max(0, (hp / max) * 100)}%` }} /></div>
       <p className="mt-1 text-xs text-bone/60">{hp} / {max}</p>
     </div>
   );

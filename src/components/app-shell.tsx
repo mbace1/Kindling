@@ -114,27 +114,23 @@ export function AppShell() {
   const combatBackdrop = Boolean(s.hydrated && s.tab === "journey" && s.combat);
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-lg flex-col bg-night text-bone">
+    <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col overflow-x-hidden bg-night text-bone shadow-[0_0_80px_rgba(0,0,0,0.35)] before:pointer-events-none before:absolute before:inset-0 before:z-0 before:bg-[radial-gradient(circle_at_50%_-10%,rgba(255,181,78,0.07),transparent_32%),linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.12)_100%)]">
       <GameplayFindEffects />
-      {/* On the arcade the site's own HUB button is fixed to the top-left
-          corner, where it lands on the title. The header drops below it there
-          — both ends of the row move together, so it reads as intended
-          spacing rather than a dodge. */}
       <header
         className={cn(
-          "flex items-center justify-between px-4 pb-2",
+          "relative z-10 flex items-center justify-between border-b border-bone/10 bg-night/82 px-4 pb-3 shadow-[0_8px_28px_rgba(0,0,0,0.15)] backdrop-blur-md",
           hubStatic ? "pt-16" : "pt-4",
         )}
       >
         <div>
-          <p className="font-display text-xl font-semibold leading-none">Kindling</p>
-          <p className="mt-1 text-xs text-mute">The day turns at 04:00</p>
+          <p className="font-display text-xl font-semibold leading-none tracking-wide">Kindling</p>
+          <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-mute">The day turns at 04:00</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => s.setSound(!s.sound)}
-            className="grid size-9 place-items-center rounded-full border border-ash text-mute"
+            className="grid size-9 place-items-center rounded-full border border-bone/15 bg-coal/70 text-mute shadow-inner transition hover:border-fire/35 hover:text-fire"
             aria-label={s.sound ? "Mute the fire" : "Hear the fire"}
           >
             {s.sound ? <Volume2 className="size-4" /> : <VolumeX className="size-4" />}
@@ -147,7 +143,7 @@ export function AppShell() {
         <button
           type="button"
           onClick={() => s.setTab("journey")}
-          className="mx-4 mb-2 flex min-h-11 items-center gap-2 rounded-md border border-fire/35 bg-coal px-3 text-left text-sm"
+          className="relative z-10 mx-4 mb-2 mt-2 flex min-h-11 items-center gap-2 rounded-lg border border-fire/35 bg-gradient-to-r from-coal to-stone px-3 text-left text-sm shadow-lg"
         >
           <Footprints className="size-4 shrink-0 text-fire" />
           <span className="flex-1">
@@ -161,18 +157,18 @@ export function AppShell() {
         <button
           type="button"
           onClick={() => s.leaveCombat()}
-          className="mx-4 mb-2 min-h-11 rounded-md border border-ash bg-stone px-3 text-left text-sm text-mute"
+          className="relative z-10 mx-4 mb-2 mt-2 min-h-11 rounded-lg border border-ash bg-stone/90 px-3 text-left text-sm text-mute shadow-lg"
         >
           Retreat from the encounter · nothing else is lost
         </button>
       ) : null}
 
       <main
-        className={cn("flex-1", combatBackdrop && "bg-cover bg-center bg-no-repeat")}
+        className={cn("relative z-10 flex-1", combatBackdrop && "bg-cover bg-center bg-no-repeat")}
         style={
           combatBackdrop
             ? {
-                backgroundImage: `linear-gradient(to bottom, rgba(8,10,15,0.42), rgba(8,10,15,0.92)), url("${assetSrc(combatPath?.art ?? "art/path.webp")}")`,
+                backgroundImage: `linear-gradient(to bottom, rgba(8,10,15,0.34), rgba(8,10,15,0.94)), url("${assetSrc(combatPath?.art ?? "art/path.webp")}")`,
               }
             : undefined
         }
@@ -181,12 +177,12 @@ export function AppShell() {
       </main>
 
       {s.lastToast ? (
-        <p className="pointer-events-none fixed bottom-24 left-1/2 z-20 -translate-x-1/2 rounded-full bg-coal px-3 py-1.5 text-sm text-fire">
+        <p className="pointer-events-none fixed bottom-24 left-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 rounded-xl border border-fire/25 bg-night/94 px-3 py-2 text-center text-sm text-fire shadow-2xl backdrop-blur-md">
           {s.lastToast}
         </p>
       ) : null}
 
-      <nav className="fixed inset-x-0 bottom-0 z-20 mx-auto flex max-w-lg border-t border-ash bg-stone/95 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur">
+      <nav className="fixed inset-x-0 bottom-0 z-40 mx-auto flex max-w-lg border-t border-bone/10 bg-gradient-to-b from-stone/95 to-night/98 px-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1 shadow-[0_-10px_32px_rgba(0,0,0,0.25)] backdrop-blur-md">
         {NAV.map((item) => {
           const on = s.tab === item.id;
           return (
@@ -196,7 +192,7 @@ export function AppShell() {
               onClick={() => s.setTab(item.id)}
               className={cn(
                 "flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 border-t text-[11px] transition",
-                on ? "border-fire/70 bg-coal/35 text-fire" : "border-transparent text-mute",
+                on ? "border-fire/70 bg-fire/5 text-fire" : "border-transparent text-mute",
               )}
             >
               <UiAtlasSprite
@@ -205,7 +201,7 @@ export function AppShell() {
                 width={item.sprite.w}
                 height={item.sprite.h}
                 displayWidth={24}
-                className={cn("transition-opacity", on ? "opacity-100" : "opacity-55")}
+                className={cn("transition-all", on ? "scale-105 opacity-100" : "opacity-50")}
               />
               {item.label}
             </button>
@@ -228,15 +224,10 @@ export function AppShell() {
 function AuthSlot() {
   const { user, isPending } = useCurrentUserState();
   if (HUB_STATIC) return <Flame className="size-4 text-fire" aria-label="Local save" />;
-  if (isPending) {
-    return <div className="h-9 w-20 animate-pulse rounded-full bg-ash" />;
-  }
+  if (isPending) return <div className="h-9 w-20 animate-pulse rounded-full bg-ash" />;
   if (!user) {
     return (
-      <Link
-        to="/login"
-        className="flex min-h-9 items-center rounded-full border border-ash px-3 text-xs text-mute"
-      >
+      <Link to="/login" className="flex min-h-9 items-center rounded-full border border-ash px-3 text-xs text-mute">
         Sign in
       </Link>
     );
@@ -250,9 +241,7 @@ function AuthSlot() {
         <span className="grid size-8 place-items-center rounded-full bg-ash text-xs">{label.charAt(0)}</span>
       )}
       {authEnabled ? (
-        <button type="button" onClick={() => void signOut()} className="text-xs text-mute underline-offset-4 hover:underline">
-          Sign out
-        </button>
+        <button type="button" onClick={() => void signOut()} className="text-xs text-mute underline-offset-4 hover:underline">Sign out</button>
       ) : (
         <Flame className="size-4 text-fire" />
       )}
