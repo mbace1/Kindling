@@ -12,10 +12,9 @@ export type WorldPath = (typeof PATHS)[number] & {
   crop: string;
 };
 
-// Keep the legacy route ids for save compatibility. Player-facing Journey art
-// must never rely on the baked character: Birch uses a clean plate, while the
-// temporary shared plate is cropped to its environment-only right side until
-// dedicated region art replaces it.
+// Keep legacy route ids for save compatibility. Every playable Journey region
+// now owns a character-free environment plate; the runtime companion is always
+// layered separately on top of the world art.
 export const WORLD_PATHS: WorldPath[] = [
   {
     ...source.ruin,
@@ -34,8 +33,8 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "Roots have split the old court. Water sits where people once did.",
     unlockAfter: "ruin",
     artDirection: "wet courtyard, roots and moss, shallow water, overgrown masonry",
-    art: "art/path.png",
-    crop: "82% center",
+    art: "art/drowned-courtyard-clean.svg",
+    crop: "50% center",
   },
   {
     ...source.road,
@@ -44,8 +43,8 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "A road of old banners climbs toward a bell that no one rings.",
     unlockAfter: "forest",
     artDirection: "ruined keep approach, hanging banners, tower silhouette, windy high path",
-    art: "art/path.png",
-    crop: "88% center",
+    art: "art/bell-keep-clean.svg",
+    crop: "50% center",
   },
   {
     ...source.ash,
@@ -54,8 +53,8 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "Black trees, pale ground, and warmth trapped under the dust.",
     unlockAfter: "road",
     artDirection: "burnt woodland, ash ground, ember traces, open dead-tree path",
-    art: "art/path.png",
-    crop: "78% center",
+    art: "art/ashwood-clean.svg",
+    crop: "50% center",
   },
 ];
 
@@ -66,7 +65,7 @@ export const OLD_GATE = {
   worldBlurb: "Beyond Ashwood, something older closes the road.",
   unlockAfter: "ash",
   artDirection: "monumental ancient gate, distant warm slit of light, forest ending at stone",
-  art: "art/path.png",
+  art: "art/ashwood-clean.svg",
 } as const;
 
 export function pathCleared(s: Pick<KindlingSave, "found">, pathId: string) {
