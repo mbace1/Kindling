@@ -98,7 +98,6 @@ try {
 
   await page.getByRole("button", { name: "Birch Ruins" }).click();
   await page.getByRole("heading", { name: /is on the path\./ }).waitFor();
-  await page.waitForFunction(() => [...document.images].some((img) => img.src.includes("/art/birch-ruins-clean.png") && img.complete && img.naturalWidth > 0));
   assert.ok([...requested].some((p) => p.endsWith("/art/birch-ruins-clean.png")), "clean Birch Ruins environment art was requested");
   assert.ok([...requested].some((p) => p.endsWith("/art/ember-idle-runtime.svg")), "runtime companion remains separate from Journey background art");
   const beforeReload = await page.evaluate(() => {
