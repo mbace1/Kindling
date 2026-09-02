@@ -28,6 +28,7 @@ export function GameplayFindEffects() {
   const careMarker = `fire-care:${dayKey()}`;
   const caredWithFire = s.sheet.bonus.includes(careMarker);
   const hasProgressiveOpportunity = progressiveOpportunities(s).length > 0;
+  const hasIncompleteCareTask = s.tasks.some((task) => !s.sheet.done.includes(task.id));
 
   useEffect(() => {
     setChoiceHidden(false);
@@ -149,7 +150,7 @@ export function GameplayFindEffects() {
     return <JourneyDecision startedAt={s.walk.startedAt} pathId={s.walk.pathId} />;
   }
 
-  const showChoice = s.hydrated && s.tab === "today" && !!s.companion && s.fuel >= CARE_COST && !choiceHidden && !caredWithFire && !hasProgressiveOpportunity;
+  const showChoice = s.hydrated && s.tab === "today" && !!s.companion && s.fuel >= CARE_COST && !choiceHidden && !caredWithFire && !hasProgressiveOpportunity && !hasIncompleteCareTask;
   if (!showChoice) return null;
 
   return (
