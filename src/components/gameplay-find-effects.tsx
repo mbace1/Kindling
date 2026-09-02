@@ -150,7 +150,7 @@ export function GameplayFindEffects() {
     return <JourneyDecision startedAt={s.walk.startedAt} pathId={s.walk.pathId} />;
   }
 
-  const showChoice = s.hydrated && s.tab === "today" && !!s.companion && s.fuel >= CARE_COST && !choiceHidden && !caredWithFire && !hasProgressiveOpportunity && !hasIncompleteCareTask;
+  const showChoice = s.hydrated && s.tab === "today" && !!s.companion && !s.egg && s.fuel >= CARE_COST && !choiceHidden && !caredWithFire && !hasProgressiveOpportunity && !hasIncompleteCareTask;
   if (!showChoice) return null;
 
   return (
