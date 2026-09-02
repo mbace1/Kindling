@@ -13,8 +13,9 @@ export type WorldPath = (typeof PATHS)[number] & {
 };
 
 // Keep the legacy route ids for save compatibility. Player-facing Journey art
-// must be environment-only: companions are always runtime sprites, never baked
-// into a background plate.
+// must never rely on the baked character: Birch uses a clean plate, while the
+// temporary shared plate is cropped to its environment-only right side until
+// dedicated region art replaces it.
 export const WORLD_PATHS: WorldPath[] = [
   {
     ...source.ruin,
@@ -33,8 +34,8 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "Roots have split the old court. Water sits where people once did.",
     unlockAfter: "ruin",
     artDirection: "wet courtyard, roots and moss, shallow water, overgrown masonry",
-    art: "art/drowned-courtyard-clean.png",
-    crop: "50% center",
+    art: "art/path.png",
+    crop: "82% center",
   },
   {
     ...source.road,
@@ -43,8 +44,8 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "A road of old banners climbs toward a bell that no one rings.",
     unlockAfter: "forest",
     artDirection: "ruined keep approach, hanging banners, tower silhouette, windy high path",
-    art: "art/bell-keep-clean.png",
-    crop: "50% center",
+    art: "art/path.png",
+    crop: "88% center",
   },
   {
     ...source.ash,
@@ -53,8 +54,8 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "Black trees, pale ground, and warmth trapped under the dust.",
     unlockAfter: "road",
     artDirection: "burnt woodland, ash ground, ember traces, open dead-tree path",
-    art: "art/ashwood-clean.png",
-    crop: "50% center",
+    art: "art/path.png",
+    crop: "78% center",
   },
 ];
 
@@ -65,7 +66,7 @@ export const OLD_GATE = {
   worldBlurb: "Beyond Ashwood, something older closes the road.",
   unlockAfter: "ash",
   artDirection: "monumental ancient gate, distant warm slit of light, forest ending at stone",
-  art: "art/bell-keep-clean.png",
+  art: "art/path.png",
 } as const;
 
 export function pathCleared(s: Pick<KindlingSave, "found">, pathId: string) {
