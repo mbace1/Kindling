@@ -24,12 +24,29 @@ import { CompanionAtlasSprite } from "@/components/ember-atlas-sprite";
 
 const JOURNEY_FLAMES = ERRAND_COST * FLAMES_PER_FUEL;
 const JOURNEY_SECONDS = 90;
+const DECISION_AT_MS = 31_000;
 
 const JOURNEY_MOMENTS = [
   { at: 0.18, title: "Tracks in the path", copy: "Something small passed this way recently." },
   { at: 0.46, title: "A warm trace", copy: "A little heat remains under the stones." },
   { at: 0.74, title: "Something ahead", copy: "The road goes quiet. Keep moving." },
 ] as const;
+
+function journeyProgress(startedAt: number, endsAt: number, now: number) {
+  const elapsed = Math.max(0, now - startedAt);
+  const baseDuration = JOURNEY_SECONDS * 1000;
+  const choiceProgress = DECISION_AT_MS / baseDuration;
+  if (elapsed <= DECISION_AT_MS) return Math.min(choiceProgress, elapsed / baseDuration);
+  const postChoiceDuration = Math.max(1, endsAt - startedAt - DECISION_AT_MS);
+  const postChoiceElapsed = Math.max(0, elapsed - DECISION_AT_MS);
+  return Math.max(0, Math.min(1, choiceProgress + (1 - choiceProgress) * (postChoiceElapsed / postChoiceDuration)));
+}
+
+function counterTo(intent: "strike" | "guard" | "skill") {
+  if (intent === "strike") return "guard";
+  if (intent === "guard") return "skill";
+  return "strike";
+}
 
 export function JourneyWorldScreen() {
   const s = useKindling();
@@ -52,7 +69,7 @@ export function JourneyWorldScreen() {
     const path = WORLD_PATHS.find((p) => p.id === s.walk?.pathId);
     const remainingMs = Math.max(0, s.walk.endsAt - now);
     const seconds = Math.ceil(remainingMs / 1000);
-    const travel = Math.max(0, Math.min(1, (JOURNEY_SECONDS * 1000 - remainingMs) / (JOURNEY_SECONDS * 1000)));
+    const travel = journeyProgress(s.walk.startedAt, s.walk.endsAt, now);
     const left = 10 + travel * 72;
     const step = Math.floor(now / 240) % 2;
     const bob = step === 0 ? 0 : -4;
@@ -68,7 +85,7 @@ export function JourneyWorldScreen() {
             style={{ objectPosition: path?.crop ?? "50% center" }}
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-night/5 via-transparent to-night" />
-          {s.companion && path?.id !== "ruin" ? (
+          {s.companion ? (
             <div
               className="absolute bottom-8 -translate-x-1/2 transition-[left] duration-300 ease-linear sm:bottom-10"
               style={{ left: `${left}%`, transform: `translateX(-50%) translateY(${bob}px) rotate(${lean}deg)` }}
@@ -196,6 +213,7 @@ function CombatWorldScreen() {
   const enemy = SPECIES[c.enemy];
   const path = WORLD_PATHS.find((p) => p.id === c.pathId);
   const done = Boolean(c.result);
+  const recommended = counterTo(c.telegraph);
 
   return (
     <div className="relative min-h-[72vh] overflow-hidden pb-28">
@@ -219,7 +237,10 @@ function CombatWorldScreen() {
       </div>
 
       {!done ? (
-        <div className="mt-3 rounded-md border border-fire/25 bg-night/70 px-3 py-2 text-sm"><span className="text-mute">Intent · </span><span className="font-medium text-bone">{verbLabel(c.telegraph)}</span></div>
+        <div className="mt-3 rounded-md border border-fire/25 bg-night/70 px-3 py-2 text-sm">
+          <span className="text-mute">Intent · </span><span className="font-medium text-bone">{verbLabel(c.telegraph)}</span>
+          <span className="ml-2 text-xs text-fire">Counter: {verbLabel(recommended)}</span>
+        </div>
       ) : (
         <p className="mt-4 text-sm font-medium text-bone">{c.result === "win" ? "The path opens." : "You walk home. The fire is still there."}</p>
       )}
@@ -249,17 +270,24 @@ function CombatWorldScreen() {
             { verb: "strike", x: 548 },
             { verb: "guard", x: 736 },
             { verb: "skill", x: 900 },
-          ] as const).map(({ verb, x }) => (
-            <button
-              key={verb}
-              type="button"
-              onClick={() => s.playerAct(verb)}
-              className="grid min-h-24 place-items-center overflow-hidden rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fire"
-              aria-label={verbLabel(verb)}
-            >
-              <UiAtlasSprite x={x} y={672} width={134} height={127} displayWidth={108} />
-            </button>
-          ))}
+          ] as const).map(({ verb, x }) => {
+            const isCounter = verb === recommended;
+            return (
+              <button
+                key={verb}
+                type="button"
+                onClick={() => s.playerAct(verb)}
+                className={cn(
+                  "relative grid min-h-24 place-items-center overflow-hidden rounded-lg border transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fire",
+                  isCounter ? "border-fire bg-fire/10 shadow-[0_0_0_1px_rgba(255,181,78,0.25)]" : "border-bone/10 bg-night/25 opacity-75",
+                )}
+                aria-label={`${verbLabel(verb)}${isCounter ? " · recommended counter" : ""}`}
+              >
+                {isCounter ? <span className="absolute left-1/2 top-1 -translate-x-1/2 rounded-full bg-fire px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-night">Counter</span> : null}
+                <UiAtlasSprite x={x} y={672} width={134} height={127} displayWidth={108} className={isCounter ? "scale-105" : "scale-95"} />
+              </button>
+            );
+          })}
         </div>
       )}
       </div>
