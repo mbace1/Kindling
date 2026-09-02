@@ -6,6 +6,15 @@
      it reads each project's VERSIONS.md and nothing else. Keeping the log with
      the SOURCE is what stops the number and the build disagreeing. -->
 
+## v12 — 2026-09-02
+**Journeys read cleaner and the whole care list counts**
+- Today now tracks every editable care task separately from the five-step Fire target, so the sixth task visibly counts and still rewards Flames/Bond
+- Birch Ruins uses a clean environment-only plate and the runtime companion walks there like every other region
+- temporary shared Journey art is cropped away from its baked character while dedicated region plates are rebuilt
+- Journey progress no longer jumps backward when a decision adds travel time
+- region investigation rewards are keyed by explicit find type instead of fragile array positions
+- combat buttons now visibly identify the counter to the enemy's current intent
+
 ## v11 — 2026-09-01
 **Companions start becoming a real system**
 - mid-Journey choices now have region-specific time, reward and ambush consequences
