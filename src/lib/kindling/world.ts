@@ -13,7 +13,7 @@ export type WorldPath = (typeof PATHS)[number] & {
 };
 
 // Keep legacy route ids for save compatibility. Every playable Journey region
-// now owns a character-free environment plate; the runtime companion is always
+// owns a character-free environment plate; the runtime companion is always
 // layered separately on top of the world art.
 export const WORLD_PATHS: WorldPath[] = [
   {
@@ -23,7 +23,7 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "White trunks, broken arches, and the first road away from the fire.",
     unlockAfter: null,
     artDirection: "cool birch woodland, broken pale stone, open daylight path",
-    art: "art/birch-ruins-clean.png",
+    art: "art/birch-ruins-clean.svg",
     crop: "50% 55%",
   },
   {
