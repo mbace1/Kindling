@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="54" viewBox="0 0 192 54">
+  <defs>
+    <image id="ember" href="ember-portrait.png" width="24" height="27" preserveAspectRatio="xMidYMid meet"/>
+  </defs>
+  <g>
+    <use href="#ember" x="0" y="0"/><use href="#ember" x="24" y="0"/><use href="#ember" x="48" y="0"/><use href="#ember" x="72" y="0"/>
+    <use href="#ember" x="96" y="0"/><use href="#ember" x="120" y="0"/><use href="#ember" x="144" y="0"/><use href="#ember" x="168" y="0"/>
+    <use href="#ember" x="0" y="27"/><use href="#ember" x="24" y="27"/><use href="#ember" x="48" y="27"/><use href="#ember" x="72" y="27"/>
+    <use href="#ember" x="96" y="27"/><use href="#ember" x="120" y="27"/><use href="#ember" x="144" y="27"/><use href="#ember" x="168" y="27"/>
+  </g>
+</svg>
