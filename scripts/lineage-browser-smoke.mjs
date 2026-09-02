@@ -97,7 +97,7 @@ try {
   for (const name of ["Drank some water", "Stepped outside", "Moved your body", "Ate something real", "Put one thing back"]) {
     await eggPage.getByRole("button", { name: new RegExp(`^${name}`) }).click();
   }
-  await eggPage.getByRole("heading", { name: "5 / 5 tended" }).waitFor();
+  await eggPage.getByRole("heading", { name: "5 / 6 care tasks" }).waitFor();
   await eggPage.getByRole("button", { name: "Keep" }).click();
   await eggPage.getByText("Warm enough to hatch whenever you are ready.").waitFor();
   const warmed = await eggPage.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
@@ -147,7 +147,7 @@ try {
   await kindlePage.getByRole("button", { name: "Keep their name" }).click();
   await kindlePage.getByRole("heading", { name: "Something small is waiting." }).waitFor();
   await kindlePage.getByRole("button", { name: /Ember/ }).click();
-  await kindlePage.getByRole("heading", { name: "0 / 5 tended" }).waitFor();
+  await kindlePage.getByRole("heading", { name: "0 / 6 care tasks" }).waitFor();
   const restarted = await kindlePage.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
   assert.equal(restarted.lineage.length, 1, "Kindled monster is retained as one ancestor");
   assert.equal(restarted.lineage[0].id, "ember-old", "ancestor keeps the actual Kindled monster identity");
