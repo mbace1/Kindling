@@ -7,9 +7,10 @@ import {
   combatFor,
   dayKey,
   pickTelegraph,
+  type FindKind,
 } from "@/lib/kindling/model";
 import { hasCampBuild } from "@/lib/kindling/camp-construction";
-import { journeyTraitFor } from "@/lib/kindling/companion-journey";
+import { journeyTraitForCompanion } from "@/lib/kindling/companion-journey";
 import { useKindling } from "@/lib/kindling/store";
 
 const CHOICE_AT_MS = 31_000;
@@ -20,7 +21,7 @@ type RoadEvent = {
   eyebrow: string;
   title: string;
   copy: string;
-  investigate: { label: string; detail: string; toast: string; findIndex: number; time: number };
+  investigate: { label: string; detail: string; toast: string; findKind: FindKind; time: number };
   rest: { label: string; detail: string; toast: string; bond: number; time: number };
   shortcut: { label: string; detail: string; toast: string; time: number; ambush: number };
 };
@@ -30,7 +31,7 @@ const ROAD_EVENTS: Record<string, RoadEvent> = {
     eyebrow: "Birch Ruins · broken arch",
     title: "A pale glint sits beneath a fallen stone.",
     copy: "The direct path is open, but the ruin is full of small hiding places.",
-    investigate: { label: "Lift the stone", detail: "Guaranteed relic · +15s", toast: "Something was hidden under the stone.", findIndex: 0, time: 15_000 },
+    investigate: { label: "Lift the stone", detail: "Guaranteed relic · +15s", toast: "Something was hidden under the stone.", findKind: "relic", time: 15_000 },
     rest: { label: "Sit beneath the arch", detail: "+20 Bond XP · +8s", toast: "The old stones make a quiet shelter.", bond: 20, time: 8_000 },
     shortcut: { label: "Cross the collapsed wall", detail: "Get home 20s sooner", toast: "The broken wall saves time.", time: -20_000, ambush: 0 },
   },
@@ -38,7 +39,7 @@ const ROAD_EVENTS: Record<string, RoadEvent> = {
     eyebrow: "Drowned Courtyard · root pool",
     title: "Something moves under the black water.",
     copy: "Roots knot around the safer trail. The flooded middle is faster.",
-    investigate: { label: "Search the roots", detail: "Guaranteed moss find · +20s", toast: "The roots were holding something soft.", findIndex: 1, time: 20_000 },
+    investigate: { label: "Search the roots", detail: "Guaranteed moss find · +20s", toast: "The roots were holding something soft.", findKind: "moss", time: 20_000 },
     rest: { label: "Wait by the dry roots", detail: "+30 Bond XP · +12s", toast: "You wait together until the water stills.", bond: 30, time: 12_000 },
     shortcut: { label: "Wade through", detail: "Get home 25s sooner · ambush risk", toast: "The flooded middle is cold, but quick.", time: -25_000, ambush: 0.35 },
   },
@@ -46,7 +47,7 @@ const ROAD_EVENTS: Record<string, RoadEvent> = {
     eyebrow: "Bell Keep · hanging banners",
     title: "A torn banner marks a narrow side stair.",
     copy: "The main road is exposed. The stair disappears behind the old wall.",
-    investigate: { label: "Follow the banner thread", detail: "Guaranteed memory · +18s", toast: "The banner leads to something remembered.", findIndex: 1, time: 18_000 },
+    investigate: { label: "Follow the banner thread", detail: "Guaranteed memory · +18s", toast: "The banner leads to something remembered.", findKind: "memory", time: 18_000 },
     rest: { label: "Listen at the wall", detail: "+20 Bond XP · +5s", toast: "For a moment, even the keep is quiet.", bond: 20, time: 5_000 },
     shortcut: { label: "Take the side stair", detail: "Get home 30s sooner · high ambush risk", toast: "The hidden stair cuts across the keep.", time: -30_000, ambush: 0.45 },
   },
@@ -54,7 +55,7 @@ const ROAD_EVENTS: Record<string, RoadEvent> = {
     eyebrow: "Ashwood · warm fissure",
     title: "Heat breathes through a crack in the ground.",
     copy: "The ash is thin here. Something below is still warm.",
-    investigate: { label: "Dig into the warm ash", detail: "Guaranteed ash find · +25s", toast: "There is still something warm beneath the ash.", findIndex: 0, time: 25_000 },
+    investigate: { label: "Dig into the warm ash", detail: "Guaranteed ash find · +25s", toast: "There is still something warm beneath the ash.", findKind: "ash", time: 25_000 },
     rest: { label: "Warm yourselves here", detail: "+40 Bond XP · +15s", toast: "You stay beside the buried heat a little longer.", bond: 40, time: 15_000 },
     shortcut: { label: "Run the cooling ridge", detail: "Get home 20s sooner · ambush risk", toast: "The ridge holds long enough to cross.", time: -20_000, ambush: 0.3 },
   },
@@ -64,7 +65,7 @@ const FALLBACK_EVENT: RoadEvent = {
   eyebrow: "A fork in the road",
   title: "Something changes the journey.",
   copy: "Choose once. The road remembers.",
-  investigate: { label: "Investigate", detail: "Guaranteed material · +20s", toast: "A closer look found something.", findIndex: 0, time: 20_000 },
+  investigate: { label: "Investigate", detail: "Guaranteed material · +20s", toast: "A closer look found something.", findKind: "relic", time: 20_000 },
   rest: { label: "Rest together", detail: "+20 Bond XP · +10s", toast: "A quiet rest.", bond: 20, time: 10_000 },
   shortcut: { label: "Take the shortcut", detail: "Get home 25s sooner · ambush risk", toast: "Shortcut taken.", time: -25_000, ambush: 0.25 },
 };
@@ -99,7 +100,7 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
   const hasMossBed = hasCampBuild(s, "moss");
   const hasStoryStone = hasCampBuild(s, "memory");
   const hasEmberBowl = hasCampBuild(s, "ash");
-  const trait = journeyTraitFor(s.companion?.species);
+  const trait = journeyTraitForCompanion(s.companion);
   const shortcutProtected = hasLens || (pathId === "ash" && hasEmberBowl);
 
   useEffect(() => {
@@ -116,14 +117,14 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
     if (!walk || walk.startedAt !== startedAt) return;
     if (current.sheet.bonus.some((entry) => entry.startsWith(prefix))) return;
 
-    const currentTrait = journeyTraitFor(current.companion?.species);
+    const currentTrait = journeyTraitForCompanion(current.companion);
     const marker = `${prefix}${pathId}:${choice}`;
     const sheet = { ...current.sheet, bonus: [...current.sheet.bonus, marker] };
     const updatedAt = Date.now();
 
     if (choice === "investigate") {
       const path = PATHS.find((entry) => entry.id === pathId);
-      const find = path?.finds[Math.min(event.investigate.findIndex, Math.max(0, (path?.finds.length ?? 1) - 1))];
+      const find = path?.finds.find((entry) => entry.kind === event.investigate.findKind) ?? path?.finds[0];
       if (!find || !path) return;
 
       const found = [
@@ -133,8 +134,8 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
       let bonusCopy = "";
 
       if ((hasWaymarker || currentTrait?.investigateExtra) && path.finds.length > 1) {
-        const extraIndex = (event.investigate.findIndex + 1) % path.finds.length;
-        const extra = path.finds[extraIndex];
+        const primaryIndex = Math.max(0, path.finds.findIndex((entry) => entry.name === find.name && entry.kind === find.kind));
+        const extra = path.finds[(primaryIndex + 1) % path.finds.length];
         found.unshift({ id: `j2${startedAt.toString(36)}`, name: extra.name, kind: extra.kind, from: pathId, date: dayKey() });
         bonusCopy = hasWaymarker
           ? ` Waymarker reveals ${extra.name}.`
