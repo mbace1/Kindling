@@ -12,10 +12,9 @@ export type WorldPath = (typeof PATHS)[number] & {
   crop: string;
 };
 
-// Keep the legacy route ids for save compatibility. The ordered world names are
-// the player-facing canon. Each region owns a runtime art slot. Birch Ruins now
-// uses the approved high-res Journey scene; later regions deliberately share the
-// approved path PNG until their dedicated production layers are ready.
+// Keep the legacy route ids for save compatibility. Player-facing Journey art
+// must be environment-only: companions are always runtime sprites, never baked
+// into a background plate.
 export const WORLD_PATHS: WorldPath[] = [
   {
     ...source.ruin,
@@ -24,8 +23,8 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "White trunks, broken arches, and the first road away from the fire.",
     unlockAfter: null,
     artDirection: "cool birch woodland, broken pale stone, open daylight path",
-    art: "art/birch-ruins.png",
-    crop: "50% 58%",
+    art: "art/birch-ruins-clean.png",
+    crop: "50% 55%",
   },
   {
     ...source.forest,
@@ -34,8 +33,8 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "Roots have split the old court. Water sits where people once did.",
     unlockAfter: "ruin",
     artDirection: "wet courtyard, roots and moss, shallow water, overgrown masonry",
-    art: "art/path.png",
-    crop: "54% center",
+    art: "art/drowned-courtyard-clean.png",
+    crop: "50% center",
   },
   {
     ...source.road,
@@ -44,8 +43,8 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "A road of old banners climbs toward a bell that no one rings.",
     unlockAfter: "forest",
     artDirection: "ruined keep approach, hanging banners, tower silhouette, windy high path",
-    art: "art/path.png",
-    crop: "60% center",
+    art: "art/bell-keep-clean.png",
+    crop: "50% center",
   },
   {
     ...source.ash,
@@ -54,8 +53,8 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "Black trees, pale ground, and warmth trapped under the dust.",
     unlockAfter: "road",
     artDirection: "burnt woodland, ash ground, ember traces, open dead-tree path",
-    art: "art/path.png",
-    crop: "42% center",
+    art: "art/ashwood-clean.png",
+    crop: "50% center",
   },
 ];
 
@@ -66,7 +65,7 @@ export const OLD_GATE = {
   worldBlurb: "Beyond Ashwood, something older closes the road.",
   unlockAfter: "ash",
   artDirection: "monumental ancient gate, distant warm slit of light, forest ending at stone",
-  art: "art/path.png",
+  art: "art/bell-keep-clean.png",
 } as const;
 
 export function pathCleared(s: Pick<KindlingSave, "found">, pathId: string) {
