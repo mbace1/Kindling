@@ -129,6 +129,12 @@ export function GameplayFindEffects() {
             </div>
             {growth ? <span className="shrink-0 rounded-full border border-fire/25 px-2 py-1 text-xs text-fire">Combat {growth.rankLabel}</span> : null}
           </div>
+          {growth ? (
+            <div className="mt-2 rounded-md border border-fire/15 bg-coal/70 px-2.5 py-2">
+              <p className="text-xs font-medium text-fire">{growth.identity}</p>
+              <p className="text-[11px] leading-snug text-bone/65">{growth.identitySummary}</p>
+            </div>
+          ) : null}
           <div className="mt-3 grid grid-cols-3 gap-2">
             {(["strike", "guard", "skill"] as const).map((verb) => (
               <div key={verb} className="rounded-md border border-ash/70 bg-stone/75 px-2 py-2 text-center">
