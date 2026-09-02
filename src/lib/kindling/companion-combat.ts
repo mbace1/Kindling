@@ -9,6 +9,8 @@ export type CompanionCombatGrowth = {
   skillBonus: number;
   speedBonus: number;
   openingDamage: number;
+  identity: string;
+  identitySummary: string;
 };
 
 const ROMAN = ["I", "II", "III", "IV", "V"] as const;
@@ -25,13 +27,57 @@ export function companionCombatGrowth(companion?: Companion | null): CompanionCo
 
   switch (companion.species) {
     case "ember":
-      return { rank, rankLabel, hpBonus: rank * 2, strikeBonus: rank, guardBonus: rank, skillBonus: rank * 2, speedBonus: rank, openingDamage: rank };
+      return {
+        rank,
+        rankLabel,
+        hpBonus: rank * 2,
+        strikeBonus: rank,
+        guardBonus: rank,
+        skillBonus: rank * 2,
+        speedBonus: rank,
+        openingDamage: rank,
+        identity: "Hearthcaster",
+        identitySummary: "Balanced, but Bond growth favors Skill and steady all-round pressure.",
+      };
     case "mossling":
-      return { rank, rankLabel, hpBonus: rank * 3, strikeBonus: 0, guardBonus: rank * 2, skillBonus: rank * 2, speedBonus: 0, openingDamage: rank };
+      return {
+        rank,
+        rankLabel,
+        hpBonus: rank * 3,
+        strikeBonus: 0,
+        guardBonus: rank * 2,
+        skillBonus: rank * 2,
+        speedBonus: 0,
+        openingDamage: rank,
+        identity: "Rootwarden",
+        identitySummary: "Tough and patient. Bond growth heavily favors Guard, Vitality and Skill.",
+      };
     case "ashling":
-      return { rank, rankLabel, hpBonus: rank, strikeBonus: rank * 2, guardBonus: 0, skillBonus: rank, speedBonus: rank * 2, openingDamage: rank * 2 };
+      return {
+        rank,
+        rankLabel,
+        hpBonus: rank,
+        strikeBonus: rank * 2,
+        guardBonus: 0,
+        skillBonus: rank,
+        speedBonus: rank * 2,
+        openingDamage: rank * 2,
+        identity: "First-striker",
+        identitySummary: "Fast and aggressive. Bond growth turns Strike, Speed and opening pressure into its edge.",
+      };
     case "mossknight":
-      return { rank, rankLabel, hpBonus: rank * 4, strikeBonus: rank, guardBonus: rank * 2, skillBonus: 0, speedBonus: 0, openingDamage: rank };
+      return {
+        rank,
+        rankLabel,
+        hpBonus: rank * 4,
+        strikeBonus: rank,
+        guardBonus: rank * 2,
+        skillBonus: 0,
+        speedBonus: 0,
+        openingDamage: rank,
+        identity: "Bulwark",
+        identitySummary: "Slow and relentless. Bond growth piles on Vitality and Guard for counter-heavy fights.",
+      };
   }
 }
 
