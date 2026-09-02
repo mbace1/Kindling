@@ -26,6 +26,7 @@ export function TodayResponsive() {
   const [moreOpen, setMoreOpen] = useState(false);
   const cared = caredToday(s);
   const fireDone = Math.min(FULL_DAY, cared);
+  const taskDone = s.tasks.filter((task) => s.sheet.done.includes(task.id)).length;
   const warn = warningState(s);
   const stage = stageOf(s);
   const nextBond = nextStageBondXp(s);
@@ -47,12 +48,12 @@ export function TodayResponsive() {
               <p className="text-xs uppercase tracking-[0.2em] text-mute">
                 {warn ? "The fire is fading." : fireDone >= FULL_DAY ? "Fire tended. Enough for today." : "Today"}
               </p>
-              <h2 className="font-display text-2xl font-semibold">{fireDone} / {FULL_DAY} tended</h2>
+              <h2 className="font-display text-2xl font-semibold">{taskDone} / {s.tasks.length} care tasks</h2>
               <p className="mt-0.5 text-sm text-mute sm:hidden">
-                {s.companion ? `${s.companion.name} · ${stage.name}` : "Keep the coals going."}
+                Fire {fireDone} / {FULL_DAY}{s.companion ? ` · ${s.companion.name} · ${stage.name}` : ""}
               </p>
               <p className="mt-0.5 hidden text-sm text-mute sm:block">
-                {s.tasks.length} on your list{s.companion ? ` · ${s.companion.name} is ${stage.name}` : ""}
+                Fire {fireDone} / {FULL_DAY}{s.companion ? ` · ${s.companion.name} is ${stage.name}` : ""}
               </p>
             </div>
 
@@ -95,7 +96,7 @@ export function TodayResponsive() {
           </div>
 
           {fireDone >= FULL_DAY ? (
-            <p className="mt-3 text-sm text-mute">The fire stays full. Anything else today is optional.</p>
+            <p className="mt-3 text-sm text-mute">The fire stays full. Extra care tasks still count, reward Flames, and grow Bond.</p>
           ) : null}
         </section>
 

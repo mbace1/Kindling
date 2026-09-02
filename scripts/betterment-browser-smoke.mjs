@@ -34,7 +34,7 @@ try {
   await page.getByRole("button", { name: "Tend the fire" }).waitFor();
   await page.getByRole("button", { name: "Tend the fire" }).click();
   await page.getByRole("button", { name: "Tend the fire" }).waitFor({ state: "detached" });
-  await page.getByRole("heading", { name: "0 / 5 tended" }).waitFor();
+  await page.getByRole("heading", { name: "0 / 6 care tasks" }).waitFor();
 
   assert.equal(await page.locator("canvas").count(), 1, "Today has one gameplay canvas");
   await page.waitForFunction(() => document.querySelector("canvas")?.width > 0);
@@ -69,7 +69,7 @@ try {
   const pushups = page.getByRole("button", { name: /Do 10 push-ups/ }).first();
   await pushups.click();
   await page.getByText("Optional · go further", { exact: true }).waitFor();
-  assert.equal(await page.getByRole("heading", { name: "1 / 5 tended" }).count(), 1, "base goal adds one Fire point");
+  assert.equal(await page.getByRole("heading", { name: "1 / 7 care tasks" }).count(), 1, "base goal counts toward the full editable care list");
   const afterBase = await page.locator("body").innerText();
   assert.match(afterBase, /20\s+Flames/, "base goal shows 20 Flames");
   const savedAfterBase = await page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
@@ -77,14 +77,14 @@ try {
 
   await page.getByRole("button", { name: /Feeling good\? Reach 20 push-ups total/ }).click();
   await page.getByText(/One more tier: reach 30 push-ups total/).waitFor();
-  assert.equal(await page.getByRole("heading", { name: "1 / 5 tended" }).count(), 1, "Tier II does not add Fire");
+  assert.equal(await page.getByRole("heading", { name: "1 / 7 care tasks" }).count(), 1, "Tier II does not duplicate task completion");
   const afterTier2 = await page.locator("body").innerText();
   assert.match(afterTier2, /40\s+Flames/, "Tier II added 20 Flames");
   const savedAfterTier2 = await page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
   assert.equal(savedAfterTier2.companion?.bondXp, 60, "Tier II adds 40 Bond XP even when Bond details are collapsed");
 
   await page.getByRole("button", { name: /^Drank some water/ }).click();
-  await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
+  await page.getByRole("heading", { name: "2 / 7 care tasks" }).waitFor();
   await page.screenshot({ path: campOut, fullPage: true });
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -98,8 +98,8 @@ try {
 
   await page.getByRole("button", { name: "Birch Ruins" }).click();
   await page.getByRole("heading", { name: /is on the path\./ }).waitFor();
-  await page.waitForFunction(() => [...document.images].some((img) => img.src.includes("/art/birch-ruins.png") && img.complete && img.naturalWidth > 0));
-  assert.ok([...requested].some((p) => p.endsWith("/art/birch-ruins.png")), "Birch Ruins runtime art was requested");
+  assert.ok([...requested].some((p) => p.endsWith("/art/birch-ruins-clean.png")), "clean Birch Ruins environment art was requested");
+  assert.ok([...requested].some((p) => p.endsWith("/art/ember-idle-runtime.svg")), "runtime companion remains separate from Journey background art");
   const beforeReload = await page.evaluate(() => {
     const save = JSON.parse(localStorage.getItem("kindlingState") || "null");
     return { walk: save?.walk, fuel: save?.fuel, seen: save?.seen };
@@ -110,7 +110,7 @@ try {
   assert.equal(beforeReload.seen, true, "intro dismissal survived hydration");
 
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
+  await page.getByRole("heading", { name: "2 / 7 care tasks" }).waitFor();
   assert.equal(await page.getByRole("button", { name: "Tend the fire" }).count(), 0, "intro does not return after reload");
   assert.equal(await page.getByText(/Ember is on the path\./).count(), 1, "active Journey is visible immediately after reload");
   assert.match(await page.locator("canvas").getAttribute("aria-label"), /^The bonfire$/, "away companion is not presented as being at camp");
@@ -122,7 +122,7 @@ try {
   assert.equal(afterReload.endsAt, beforeReload.walk.endsAt, "reload does not reroll Journey finish");
 
   await page.getByRole("button", { name: "Today" }).click();
-  await page.getByRole("heading", { name: "2 / 5 tended" }).waitFor();
+  await page.getByRole("heading", { name: "2 / 7 care tasks" }).waitFor();
   assert.equal(await page.getByText(/Ember is on the path\./).count(), 1, "Journey status remains visible from Today");
   const actionableErrors = allowStaticHydration
     ? errors.filter((error) => !error.includes("Minified React error #418"))

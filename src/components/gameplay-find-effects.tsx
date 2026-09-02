@@ -28,6 +28,7 @@ export function GameplayFindEffects() {
   const careMarker = `fire-care:${dayKey()}`;
   const caredWithFire = s.sheet.bonus.includes(careMarker);
   const hasProgressiveOpportunity = progressiveOpportunities(s).length > 0;
+  const hasIncompleteCareTask = s.tasks.some((task) => !s.sheet.done.includes(task.id));
 
   useEffect(() => {
     setChoiceHidden(false);
@@ -128,6 +129,12 @@ export function GameplayFindEffects() {
             </div>
             {growth ? <span className="shrink-0 rounded-full border border-fire/25 px-2 py-1 text-xs text-fire">Combat {growth.rankLabel}</span> : null}
           </div>
+          {growth ? (
+            <div className="mt-2 rounded-md border border-fire/15 bg-coal/70 px-2.5 py-2">
+              <p className="text-xs font-medium text-fire">{growth.identity}</p>
+              <p className="text-[11px] leading-snug text-bone/65">{growth.identitySummary}</p>
+            </div>
+          ) : null}
           <div className="mt-3 grid grid-cols-3 gap-2">
             {(["strike", "guard", "skill"] as const).map((verb) => (
               <div key={verb} className="rounded-md border border-ash/70 bg-stone/75 px-2 py-2 text-center">
@@ -149,7 +156,7 @@ export function GameplayFindEffects() {
     return <JourneyDecision startedAt={s.walk.startedAt} pathId={s.walk.pathId} />;
   }
 
-  const showChoice = s.hydrated && s.tab === "today" && !!s.companion && s.fuel >= CARE_COST && !choiceHidden && !caredWithFire && !hasProgressiveOpportunity;
+  const showChoice = s.hydrated && s.tab === "today" && !!s.companion && !s.egg && s.fuel >= CARE_COST && !choiceHidden && !caredWithFire && !hasProgressiveOpportunity && !hasIncompleteCareTask;
   if (!showChoice) return null;
 
   return (

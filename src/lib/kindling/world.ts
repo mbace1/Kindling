@@ -12,10 +12,10 @@ export type WorldPath = (typeof PATHS)[number] & {
   crop: string;
 };
 
-// Keep the legacy route ids for save compatibility. The ordered world names are
-// the player-facing canon. Each region owns a runtime art slot. Birch Ruins now
-// uses the approved high-res Journey scene; later regions deliberately share the
-// approved path PNG until their dedicated production layers are ready.
+// Keep the legacy route ids for save compatibility. Player-facing Journey art
+// must never rely on the baked character: Birch uses a clean plate, while the
+// temporary shared plate is cropped to its environment-only right side until
+// dedicated region art replaces it.
 export const WORLD_PATHS: WorldPath[] = [
   {
     ...source.ruin,
@@ -24,8 +24,8 @@ export const WORLD_PATHS: WorldPath[] = [
     worldBlurb: "White trunks, broken arches, and the first road away from the fire.",
     unlockAfter: null,
     artDirection: "cool birch woodland, broken pale stone, open daylight path",
-    art: "art/birch-ruins.png",
-    crop: "50% 58%",
+    art: "art/birch-ruins-clean.png",
+    crop: "50% 55%",
   },
   {
     ...source.forest,
@@ -35,7 +35,7 @@ export const WORLD_PATHS: WorldPath[] = [
     unlockAfter: "ruin",
     artDirection: "wet courtyard, roots and moss, shallow water, overgrown masonry",
     art: "art/path.png",
-    crop: "54% center",
+    crop: "82% center",
   },
   {
     ...source.road,
@@ -45,7 +45,7 @@ export const WORLD_PATHS: WorldPath[] = [
     unlockAfter: "forest",
     artDirection: "ruined keep approach, hanging banners, tower silhouette, windy high path",
     art: "art/path.png",
-    crop: "60% center",
+    crop: "88% center",
   },
   {
     ...source.ash,
@@ -55,7 +55,7 @@ export const WORLD_PATHS: WorldPath[] = [
     unlockAfter: "road",
     artDirection: "burnt woodland, ash ground, ember traces, open dead-tree path",
     art: "art/path.png",
-    crop: "42% center",
+    crop: "78% center",
   },
 ];
 
