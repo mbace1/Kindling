@@ -1,4 +1,5 @@
 import { PATHS, type KindlingSave } from "./model";
+import { REGION_CONTENT, regionContent } from "./world-content";
 
 const source = Object.fromEntries(PATHS.map((path) => [path.id, path])) as Record<string, (typeof PATHS)[number]>;
 
@@ -10,53 +11,22 @@ export type WorldPath = (typeof PATHS)[number] & {
   artDirection: string;
   art: string;
   crop: string;
+  ambience: string;
 };
 
-// Keep legacy route ids for save compatibility. Every playable Journey region
-// owns a character-free environment plate; the runtime companion is always
-// layered separately on top of the world art.
-export const WORLD_PATHS: WorldPath[] = [
-  {
-    ...source.ruin,
-    chapter: 1,
-    displayName: "Birch Ruins",
-    worldBlurb: "White trunks, broken arches, and the first road away from the fire.",
-    unlockAfter: null,
-    artDirection: "cool birch woodland, broken pale stone, open daylight path",
-    art: "art/birch-ruins-clean.svg",
-    crop: "50% 55%",
-  },
-  {
-    ...source.forest,
-    chapter: 2,
-    displayName: "Drowned Courtyard",
-    worldBlurb: "Roots have split the old court. Water sits where people once did.",
-    unlockAfter: "ruin",
-    artDirection: "wet courtyard, roots and moss, shallow water, overgrown masonry",
-    art: "art/drowned-courtyard-clean.svg",
-    crop: "50% center",
-  },
-  {
-    ...source.road,
-    chapter: 3,
-    displayName: "Bell Keep",
-    worldBlurb: "A road of old banners climbs toward a bell that no one rings.",
-    unlockAfter: "forest",
-    artDirection: "ruined keep approach, hanging banners, tower silhouette, windy high path",
-    art: "art/bell-keep-clean.svg",
-    crop: "50% center",
-  },
-  {
-    ...source.ash,
-    chapter: 4,
-    displayName: "Ashwood",
-    worldBlurb: "Black trees, pale ground, and warmth trapped under the dust.",
-    unlockAfter: "road",
-    artDirection: "burnt woodland, ash ground, ember traces, open dead-tree path",
-    art: "art/ashwood-clean.svg",
-    crop: "50% center",
-  },
-];
+// Legacy path ids stay stable for save compatibility. Presentation and region
+// metadata live in world-content.ts so new roads do not require component edits.
+export const WORLD_PATHS: WorldPath[] = REGION_CONTENT.map((region) => ({
+  ...source[region.id],
+  chapter: region.chapter,
+  displayName: region.displayName,
+  worldBlurb: region.worldBlurb,
+  unlockAfter: region.unlockAfter,
+  artDirection: region.artDirection,
+  art: region.art,
+  crop: region.crop,
+  ambience: region.ambience,
+}));
 
 export const OLD_GATE = {
   chapter: 5,
@@ -67,6 +37,8 @@ export const OLD_GATE = {
   artDirection: "monumental ancient gate, distant warm slit of light, forest ending at stone",
   art: "art/ashwood-clean.svg",
 } as const;
+
+export { regionContent };
 
 export function pathCleared(s: Pick<KindlingSave, "found">, pathId: string) {
   return s.found.some((item) => item.from === pathId);
