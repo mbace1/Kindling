@@ -53,8 +53,9 @@ for (const relative of required) {
     assert.ok(ratio > 1.35 && ratio < 2.2, `${relative} environment aspect ratio ${ratio.toFixed(2)} is outside the landscape contract`);
   }
   if (relative.includes("idle-runtime")) {
-    const ratio = dimensions.width / dimensions.height;
-    assert.ok(Math.abs(ratio - (8 / 2)) < 0.35, `${relative} does not match the 8x2 atlas contract`);
+    assert.equal(dimensions.width % 8, 0, `${relative} width must divide into 8 atlas columns`);
+    assert.equal(dimensions.height % 2, 0, `${relative} height must divide into 2 atlas rows`);
+    assert.ok(dimensions.width / 8 >= 8 && dimensions.height / 2 >= 8, `${relative} atlas cells are implausibly small`);
   }
   report.push({ file: relative, bytes: info.size, ...dimensions, sha256: hash.slice(0, 12) });
 }
