@@ -34,6 +34,12 @@ try {
   await page.evaluate(() => {
     const s = JSON.parse(localStorage.getItem("kindlingState") || "null");
     s.found = [{ id: "gate-ruin", name: "old birch token", kind: "relic", from: "ruin", date: s.sheet.date }, ...(s.found || [])];
+    // The full-loop gate verifies plumbing, not low-rank balance variance. Use an
+    // Elder Ember so a correct counter-reading path has a deterministic win/reward.
+    if (s.companion) {
+      s.companion.bondXp = 1600;
+      s.roster = (s.roster || []).map((member) => member.id === s.companion.id ? { ...member, bondXp: 1600 } : member);
+    }
     localStorage.setItem("kindlingState", JSON.stringify(s));
   });
   await page.reload({ waitUntil: "domcontentloaded" });
