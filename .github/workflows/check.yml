@@ -7,7 +7,7 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,6 +16,10 @@ jobs:
           cache: npm
       - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npm test
+      - name: Headless combat and progression balance
+        run: npm run balance
+      - name: Environment and UI asset validation
+        run: npm run assets:validate
       - run: npm run build:dev
       - run: npm run typecheck
       - run: npx playwright install chromium
@@ -30,6 +34,8 @@ jobs:
           exit 1
       - name: Sprite inspector smoke
         run: node scripts/sprite-inspector-browser-smoke.mjs http://127.0.0.1:8080/
+      - name: Deterministic full-play smoke
+        run: node scripts/full-play-browser-smoke.mjs http://127.0.0.1:8080/
       - name: Mobile care and Journey smoke
         run: node scripts/betterment-browser-smoke.mjs http://127.0.0.1:8080/ artifacts/betterment-mobile.png
       - name: Mobile Journey return smoke

@@ -7,68 +7,15 @@ import {
   combatFor,
   dayKey,
   pickTelegraph,
-  type FindKind,
 } from "@/lib/kindling/model";
 import { hasCampBuild } from "@/lib/kindling/camp-construction";
 import { journeyTraitForCompanion } from "@/lib/kindling/companion-journey";
+import { journeyContent } from "@/lib/kindling/world-content";
 import { useKindling } from "@/lib/kindling/store";
 
 const CHOICE_AT_MS = 31_000;
 const markerPrefix = (startedAt: number) => `journey-choice:${startedAt}:`;
-
 type ChoiceId = "investigate" | "rest" | "shortcut";
-type RoadEvent = {
-  eyebrow: string;
-  title: string;
-  copy: string;
-  investigate: { label: string; detail: string; toast: string; findKind: FindKind; time: number };
-  rest: { label: string; detail: string; toast: string; bond: number; time: number };
-  shortcut: { label: string; detail: string; toast: string; time: number; ambush: number };
-};
-
-const ROAD_EVENTS: Record<string, RoadEvent> = {
-  ruin: {
-    eyebrow: "Birch Ruins · broken arch",
-    title: "A pale glint sits beneath a fallen stone.",
-    copy: "The direct path is open, but the ruin is full of small hiding places.",
-    investigate: { label: "Lift the stone", detail: "Guaranteed relic · +15s", toast: "Something was hidden under the stone.", findKind: "relic", time: 15_000 },
-    rest: { label: "Sit beneath the arch", detail: "+20 Bond XP · +8s", toast: "The old stones make a quiet shelter.", bond: 20, time: 8_000 },
-    shortcut: { label: "Cross the collapsed wall", detail: "Get home 20s sooner", toast: "The broken wall saves time.", time: -20_000, ambush: 0 },
-  },
-  forest: {
-    eyebrow: "Drowned Courtyard · root pool",
-    title: "Something moves under the black water.",
-    copy: "Roots knot around the safer trail. The flooded middle is faster.",
-    investigate: { label: "Search the roots", detail: "Guaranteed moss find · +20s", toast: "The roots were holding something soft.", findKind: "moss", time: 20_000 },
-    rest: { label: "Wait by the dry roots", detail: "+30 Bond XP · +12s", toast: "You wait together until the water stills.", bond: 30, time: 12_000 },
-    shortcut: { label: "Wade through", detail: "Get home 25s sooner · ambush risk", toast: "The flooded middle is cold, but quick.", time: -25_000, ambush: 0.35 },
-  },
-  road: {
-    eyebrow: "Bell Keep · hanging banners",
-    title: "A torn banner marks a narrow side stair.",
-    copy: "The main road is exposed. The stair disappears behind the old wall.",
-    investigate: { label: "Follow the banner thread", detail: "Guaranteed memory · +18s", toast: "The banner leads to something remembered.", findKind: "memory", time: 18_000 },
-    rest: { label: "Listen at the wall", detail: "+20 Bond XP · +5s", toast: "For a moment, even the keep is quiet.", bond: 20, time: 5_000 },
-    shortcut: { label: "Take the side stair", detail: "Get home 30s sooner · high ambush risk", toast: "The hidden stair cuts across the keep.", time: -30_000, ambush: 0.45 },
-  },
-  ash: {
-    eyebrow: "Ashwood · warm fissure",
-    title: "Heat breathes through a crack in the ground.",
-    copy: "The ash is thin here. Something below is still warm.",
-    investigate: { label: "Dig into the warm ash", detail: "Guaranteed ash find · +25s", toast: "There is still something warm beneath the ash.", findKind: "ash", time: 25_000 },
-    rest: { label: "Warm yourselves here", detail: "+40 Bond XP · +15s", toast: "You stay beside the buried heat a little longer.", bond: 40, time: 15_000 },
-    shortcut: { label: "Run the cooling ridge", detail: "Get home 20s sooner · ambush risk", toast: "The ridge holds long enough to cross.", time: -20_000, ambush: 0.3 },
-  },
-};
-
-const FALLBACK_EVENT: RoadEvent = {
-  eyebrow: "A fork in the road",
-  title: "Something changes the journey.",
-  copy: "Choose once. The road remembers.",
-  investigate: { label: "Investigate", detail: "Guaranteed material · +20s", toast: "A closer look found something.", findKind: "relic", time: 20_000 },
-  rest: { label: "Rest together", detail: "+20 Bond XP · +10s", toast: "A quiet rest.", bond: 20, time: 10_000 },
-  shortcut: { label: "Take the shortcut", detail: "Get home 25s sooner · ambush risk", toast: "Shortcut taken.", time: -25_000, ambush: 0.25 },
-};
 
 function persistCurrent() {
   if (typeof localStorage === "undefined") return;
@@ -94,7 +41,7 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
   const prefix = markerPrefix(startedAt);
   const resolved = s.sheet.bonus.find((entry) => entry.startsWith(prefix));
   const ready = now - startedAt >= CHOICE_AT_MS;
-  const event = ROAD_EVENTS[pathId] ?? FALLBACK_EVENT;
+  const event = journeyContent(pathId);
   const hasWaymarker = hasCampBuild(s, "relic");
   const hasLens = hasCampBuild(s, "shard");
   const hasMossBed = hasCampBuild(s, "moss");
@@ -150,7 +97,7 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
         bonusCopy += " Story Stone · +20 Bond XP.";
       }
 
-      const investigateTime = Math.max(3_000, event.investigate.time + (currentTrait?.investigateTimeDelta ?? 0));
+      const investigateTime = Math.max(3_000, event.investigate.timeMs + (currentTrait?.investigateTimeDelta ?? 0));
       useKindling.setState({
         found,
         companion,
@@ -163,8 +110,8 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
     } else if (choice === "rest") {
       const campRestBonus = (hasMossBed ? 10 : 0) + (pathId === "ash" && hasEmberBowl ? 10 : 0);
       const companionRestBonus = currentTrait?.restBondBonus ?? 0;
-      const totalBond = event.rest.bond + campRestBonus + companionRestBonus;
-      const restTime = Math.max(3_000, event.rest.time + (currentTrait?.restTimeDelta ?? 0));
+      const totalBond = event.rest.bondXp + campRestBonus + companionRestBonus;
+      const restTime = Math.max(3_000, event.rest.timeMs + (currentTrait?.restTimeDelta ?? 0));
       const companion = current.companion
         ? { ...current.companion, bondXp: current.companion.bondXp + totalBond }
         : null;
@@ -178,7 +125,7 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
       });
     } else {
       const path = PATHS.find((entry) => entry.id === pathId);
-      const ambushChance = event.shortcut.ambush * (currentTrait?.ambushMultiplier ?? 1);
+      const ambushChance = event.shortcut.ambushChance * (currentTrait?.ambushMultiplier ?? 1);
       const ambushed = Boolean(path?.enemy)
         && !shortcutProtected
         && consequenceRoll(pathId, startedAt) < ambushChance;
@@ -208,13 +155,13 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
           lastToast: "The shortcut was faster. It was not safer.",
         });
       } else {
-        const shortcutTime = event.shortcut.time + (currentTrait?.shortcutTimeDelta ?? 0);
+        const shortcutTime = event.shortcut.timeMs + (currentTrait?.shortcutTimeDelta ?? 0);
         const seconds = Math.abs(Math.round(shortcutTime / 1000));
         useKindling.setState({
           sheet,
           walk: { ...walk, endsAt: Math.max(Date.now() + 3_000, walk.endsAt + shortcutTime) },
           updatedAt,
-          lastToast: `${event.shortcut.toast} · −${seconds}s${shortcutProtected && event.shortcut.ambush > 0 ? " · route scouted" : ""}${currentTrait?.shortcutTimeDelta ? " · companion pace" : ""}`,
+          lastToast: `${event.shortcut.toast} · −${seconds}s${shortcutProtected && event.shortcut.ambushChance > 0 ? " · route scouted" : ""}${currentTrait?.shortcutTimeDelta ? " · companion pace" : ""}`,
         });
       }
     }
@@ -222,19 +169,18 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
     queueMicrotask(persistCurrent);
   };
 
-  const investigateTime = Math.max(3_000, event.investigate.time + (trait?.investigateTimeDelta ?? 0));
-  const investigateDetailBase = event.investigate.detail.replace(/\+\d+s/, `+${Math.round(investigateTime / 1000)}s`);
-  const investigateDetail = `${investigateDetailBase}${hasWaymarker ? " · Waymarker may reveal extra" : trait?.investigateExtra ? " · companion may reveal extra" : ""}`;
+  const investigateTime = Math.max(3_000, event.investigate.timeMs + (trait?.investigateTimeDelta ?? 0));
+  const investigateDetail = `Guaranteed ${event.investigate.findKind} · +${Math.round(investigateTime / 1000)}s${hasWaymarker ? " · Waymarker may reveal extra" : trait?.investigateExtra ? " · companion may reveal extra" : ""}`;
   const campRestBonus = (hasMossBed ? 10 : 0) + (pathId === "ash" && hasEmberBowl ? 10 : 0);
   const companionRestBonus = trait?.restBondBonus ?? 0;
-  const restTime = Math.max(3_000, event.rest.time + (trait?.restTimeDelta ?? 0));
-  const restDetail = `+${event.rest.bond + campRestBonus + companionRestBonus} Bond XP · +${Math.round(restTime / 1000)}s${campRestBonus ? " · camp bonus" : ""}${companionRestBonus ? " · companion bonus" : ""}`;
-  const shortcutTime = event.shortcut.time + (trait?.shortcutTimeDelta ?? 0);
+  const restTime = Math.max(3_000, event.rest.timeMs + (trait?.restTimeDelta ?? 0));
+  const restDetail = `+${event.rest.bondXp + campRestBonus + companionRestBonus} Bond XP · +${Math.round(restTime / 1000)}s${campRestBonus ? " · camp bonus" : ""}${companionRestBonus ? " · companion bonus" : ""}`;
+  const shortcutTime = event.shortcut.timeMs + (trait?.shortcutTimeDelta ?? 0);
   const shortcutSeconds = Math.abs(Math.round(shortcutTime / 1000));
-  const baseShortcutRisk = shortcutProtected && event.shortcut.ambush > 0
+  const baseShortcutRisk = shortcutProtected && event.shortcut.ambushChance > 0
     ? "scouted safe"
-    : event.shortcut.ambush > 0
-      ? `${Math.round(event.shortcut.ambush * (trait?.ambushMultiplier ?? 1) * 100)}% ambush risk`
+    : event.shortcut.ambushChance > 0
+      ? `${Math.round(event.shortcut.ambushChance * (trait?.ambushMultiplier ?? 1) * 100)}% ambush risk`
       : "safe route";
   const shortcutDetail = `Get home ${shortcutSeconds}s sooner · ${baseShortcutRisk}`;
 

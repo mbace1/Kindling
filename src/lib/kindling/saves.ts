@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getSql } from "@/lib/db";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { normalizeSave, type KindlingSave } from "./model";
+import { migrateSavePayload } from "./save-recovery";
 
 export const loadCloudSave = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
@@ -14,7 +15,8 @@ export const loadCloudSave = createServerFn({ method: "GET" })
     const row = rows[0];
     if (!row) return null;
     const raw = typeof row.save === "string" ? JSON.parse(row.save) : row.save;
-    return normalizeSave(raw);
+    const migrated = migrateSavePayload(raw);
+    return migrated.ok ? normalizeSave(migrated.value) : null;
   });
 
 export const writeCloudSave = createServerFn({ method: "POST" })
