@@ -76,12 +76,12 @@ try {
     saved = await page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
     if (saved.combat?.result) break;
     const action = counter(saved.combat.telegraph);
-    await page.getByRole("button", { name: action, exact: true }).click();
+    await page.getByRole("button", { name: new RegExp(`^${action}`) }).click();
   }
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
   assert.equal(saved.combat?.result, "win", "counter-reading loop wins the deterministic encounter");
   assert.ok(saved.found.length > rewardsBefore, "combat victory grants a Journey reward");
-  await page.getByRole("button", { name: "Back to camp" }).click();
+  await page.getByRole("button", { name: "Back to the paths" }).click();
   await page.getByRole("button", { name: "Today" }).click();
   saved = await page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
   assert.equal(saved.combat, null, "full loop returns from combat to camp");
