@@ -5,6 +5,7 @@ import { COMBAT_ACTION_COPY, actionStat, intentCopy } from "@/components/combat-
 import { ERRAND_COST, FLAMES_PER_FUEL, SAVE_KEY, dayKey, progressiveOpportunities, stageOfCompanion } from "@/lib/kindling/model";
 import { combatStatsForCompanion, companionCombatGrowth } from "@/lib/kindling/companion-combat";
 import { journeyBondBonus, unlockedFindKinds } from "@/lib/kindling/find-progression";
+import { combatGrowthOpening, counterTo, shouldOfferFireChoice } from "@/lib/kindling/gameplay-rules";
 import { useKindling } from "@/lib/kindling/store";
 import { cn } from "@/lib/utils";
 
@@ -22,21 +23,13 @@ function persistCurrent() {
   }
 }
 
-function counterTo(intent: "strike" | "guard" | "skill") {
-  if (intent === "strike") return "guard";
-  if (intent === "guard") return "skill";
-  return "strike";
-}
-
 export function GameplayFindEffects() {
   const s = useKindling();
   const [choiceHidden, setChoiceHidden] = useState(false);
   const previousStage = useRef<string | null>(null);
   const hasLens = unlockedFindKinds(s).has("shard");
   const careMarker = `fire-care:${dayKey()}`;
-  const caredWithFire = s.sheet.bonus.includes(careMarker);
   const hasProgressiveOpportunity = progressiveOpportunities(s).length > 0;
-  const hasIncompleteCareTask = s.tasks.some((task) => !s.sheet.done.includes(task.id));
 
   useEffect(() => {
     setChoiceHidden(false);
@@ -84,14 +77,14 @@ export function GameplayFindEffects() {
     if (!s.hydrated || !combat || combat.result || !growth || growth.rank <= 0) return;
     if (combat.log.some((line) => line.startsWith(COMBAT_GROWTH_MARK))) return;
 
-    const openingDamage = Math.min(growth.openingDamage, Math.max(0, combat.enemyHp - 1));
+    const opening = combatGrowthOpening(combat, growth);
     useKindling.setState({
       combat: {
         ...combat,
-        playerHp: combat.playerHp + growth.hpBonus,
-        playerMax: combat.playerMax + growth.hpBonus,
-        enemyHp: Math.max(1, combat.enemyHp - openingDamage),
-        log: [`${COMBAT_GROWTH_MARK} ${growth.rankLabel} · +${growth.hpBonus} Vitality${openingDamage ? ` · ${openingDamage} opening pressure` : ""}.`, ...combat.log],
+        playerHp: opening.playerHp,
+        playerMax: opening.playerMax,
+        enemyHp: opening.enemyHp,
+        log: [`${COMBAT_GROWTH_MARK} ${growth.rankLabel} · +${growth.hpBonus} Vitality${opening.openingDamage ? ` · ${opening.openingDamage} opening pressure` : ""}.`, ...combat.log],
       },
       updatedAt: Date.now(),
     });
@@ -172,7 +165,12 @@ export function GameplayFindEffects() {
 
   if (s.hydrated && s.tab === "journey" && s.walk) return <JourneyDecision startedAt={s.walk.startedAt} pathId={s.walk.pathId} />;
 
-  const showChoice = s.hydrated && s.tab === "today" && !!s.companion && !s.egg && s.fuel >= CARE_COST && !choiceHidden && !caredWithFire && !hasProgressiveOpportunity && !hasIncompleteCareTask;
+  const showChoice = s.hydrated && s.tab === "today" && shouldOfferFireChoice(s, {
+    careCost: CARE_COST,
+    careMarker,
+    hasProgressiveOpportunity,
+    hidden: choiceHidden,
+  });
   if (!showChoice) return null;
 
   return (
