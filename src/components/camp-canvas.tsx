@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { FULL_DAY, assetSrc, atlasSrc, portraitSrc, warningState, warmth, type KindlingSave, type SpeciesId } from "@/lib/kindling/model";
+import { animationSpec, frameCell } from "@/lib/kindling/companion-animation";
 import { campKeepsakes, type CampKeepsake } from "@/lib/kindling/camp-find-effects";
 
 type Props = {
@@ -86,23 +87,17 @@ export function CampCanvas({ save, tall }: Props) {
 
       if (!reduced && heat > 0.05) {
         if (Math.random() < heat * 0.35) {
-          sparks.push({
-            x: fx + (Math.random() - 0.5) * 18,
-            y: fy - 8,
-            vx: (Math.random() - 0.5) * 12,
-            vy: -20 - Math.random() * 30,
-            life: 0.8 + Math.random() * 0.6,
-          });
+          sparks.push({ x: fx + (Math.random() - 0.5) * 18, y: fy - 8, vx: (Math.random() - 0.5) * 12, vy: -20 - Math.random() * 30, life: 0.8 + Math.random() * 0.6 });
         }
         for (let i = sparks.length - 1; i >= 0; i--) {
-          const s = sparks[i];
-          s.x += s.vx * dt;
-          s.y += s.vy * dt;
-          s.life -= dt;
-          if (s.life <= 0) sparks.splice(i, 1);
+          const spark = sparks[i];
+          spark.x += spark.vx * dt;
+          spark.y += spark.vy * dt;
+          spark.life -= dt;
+          if (spark.life <= 0) sparks.splice(i, 1);
           else {
-            ctx.fillStyle = `rgba(255, 122, 42, ${s.life})`;
-            ctx.fillRect(s.x, s.y, 2, 2);
+            ctx.fillStyle = `rgba(255, 122, 42, ${spark.life})`;
+            ctx.fillRect(spark.x, spark.y, 2, 2);
           }
         }
       }
@@ -124,21 +119,10 @@ export function CampCanvas({ save, tall }: Props) {
     <div data-camp-scene="native-16x9" className="relative w-full overflow-hidden bg-night" style={{ aspectRatio: "16 / 9" }}>
       <div data-camp-plate="clean-night" className="absolute inset-0 grid grid-cols-2 grid-rows-2">
         {["camp-q1.png", "camp-q2.png", "camp-q3.png", "camp-q4.png"].map((name) => (
-          <img
-            key={name}
-            src={assetSrc(`art/camp/${name}`)}
-            alt=""
-            aria-hidden="true"
-            data-camp-tile={name}
-            className="h-full w-full [image-rendering:pixelated]"
-          />
+          <img key={name} src={assetSrc(`art/camp/${name}`)} alt="" aria-hidden="true" data-camp-tile={name} className="h-full w-full [image-rendering:pixelated]" />
         ))}
       </div>
-      <canvas
-        ref={ref}
-        className="absolute inset-0 h-full w-full"
-        aria-label={save.companion && !save.walk && !save.combat ? `${save.companion.name} by the bonfire, with ${Math.min(save.found.length, 4)} journey keepsakes` : "The bonfire"}
-      />
+      <canvas ref={ref} className="absolute inset-0 h-full w-full" aria-label={save.companion && !save.walk && !save.combat ? `${save.companion.name} by the bonfire, with ${Math.min(save.found.length, 4)} journey keepsakes` : "The bonfire"} />
     </div>
   );
 }
@@ -195,15 +179,7 @@ function drawKeepsakes(ctx: CanvasRenderingContext2D, keepsakes: CampKeepsake[],
   }
 }
 
-function drawFire(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  x: number,
-  y: number,
-  heat: number,
-  t: number,
-  reduced: boolean,
-) {
+function drawFire(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, heat: number, t: number, reduced: boolean) {
   const care = Math.max(0, Math.min(FULL_DAY, Math.round(heat * FULL_DAY)));
   const cell = img.complete && img.naturalWidth ? img.naturalWidth / 5 : 0;
   const cellH = img.complete && img.naturalHeight ? img.naturalHeight : 0;
@@ -217,9 +193,7 @@ function drawFire(
     ctx.save();
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(img, state * cell, 0, cell, cellH, x - drawW / 2, top, drawW, drawH);
-    if (care >= FULL_DAY) {
-      ctx.drawImage(img, 4 * cell, 0, cell, cellH, x - drawW / 2, top, drawW, drawH);
-    }
+    if (care >= FULL_DAY) ctx.drawImage(img, 4 * cell, 0, cell, cellH, x - drawW / 2, top, drawW, drawH);
     ctx.restore();
   }
 
@@ -243,27 +217,12 @@ function drawAshMark(ctx: CanvasRenderingContext2D, x: number, y: number, t: num
   ctx.fillRect(x - 1, y - 1, 2, 2);
 }
 
-function drawCompanion(
-  ctx: CanvasRenderingContext2D,
-  id: SpeciesId,
-  x: number,
-  y: number,
-  t: number,
-  reduced: boolean,
-  heat: number,
-) {
+function drawCompanion(ctx: CanvasRenderingContext2D, id: SpeciesId, x: number, y: number, t: number, reduced: boolean, heat: number) {
   const img = atlasSheet(id);
+  const spec = animationSpec(id);
   const ember = id === "ember";
-  const frame = reduced
-    ? 0
-    : ember
-      ? Math.floor(t * 5) % 16
-      : heat <= 0.2
-        ? 14 + (Math.floor(t * 2) % 2)
-        : Math.floor(t * 5) % 8;
-  const cols = 8;
-  const col = frame % cols;
-  const row = Math.floor(frame / cols);
+  const frame = reduced ? 0 : ember ? Math.floor(t * 5) % 16 : heat <= 0.2 ? 14 + (Math.floor(t * 2) % 2) : Math.floor(t * 5) % 8;
+  const { col, row, cols, rows } = frameCell(id, frame);
   const size = id === "mossknight" ? 58 : id === "ashling" ? 44 : ember ? 56 : 52;
   const energy = 0.45 + heat * 0.55;
   const breath = !reduced ? 1 + Math.sin(t * 2.1) * 0.015 * energy : 1;
@@ -276,7 +235,7 @@ function drawCompanion(
   const glow = 0.18 + heat * 0.28;
 
   ctx.save();
-  ctx.imageSmoothingEnabled = !ember;
+  ctx.imageSmoothingEnabled = spec.smoothing;
   ctx.fillStyle = "rgba(8, 10, 14, 0.45)";
   ctx.beginPath();
   ctx.ellipse(x, y + 4, size * 0.28 * (1 - hopPhase * 0.035), 7 * (1 - hopPhase * 0.04), 0, 0, Math.PI * 2);
@@ -290,13 +249,11 @@ function drawCompanion(
 
   if (img.complete && img.naturalWidth) {
     const cw = img.naturalWidth / cols;
-    const ch = img.naturalHeight / 2;
+    const ch = img.naturalHeight / rows;
     ctx.drawImage(img, col * cw, row * ch, cw, ch, -size / 2, -size + bob, size, size);
   } else {
-    const p = load(portraitSrc(id));
-    if (p.complete && p.naturalWidth) {
-      ctx.drawImage(p, -size / 2, -size + bob, size, size);
-    }
+    const portrait = load(portraitSrc(id));
+    if (portrait.complete && portrait.naturalWidth) ctx.drawImage(portrait, -size / 2, -size + bob, size, size);
   }
 
   if (ember && heat > 0.6) {
