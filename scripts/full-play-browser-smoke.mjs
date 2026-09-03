@@ -19,7 +19,14 @@ function counter(v) { return v === "strike" ? "Guard" : v === "guard" ? "Skill" 
 
 try {
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45_000 });
-  if (await page.getByRole("button", { name: "Tend the fire" }).count()) await page.getByRole("button", { name: "Tend the fire" }).click();
+  const intro = page.getByRole("button", { name: "Tend the fire" });
+  if (await intro.count()) {
+    await intro.waitFor({ state: "visible" });
+    await intro.click();
+    await intro.waitFor({ state: "detached" });
+  }
+  await page.getByRole("heading", { name: /0 \/ 6 care tasks/ }).waitFor();
+
   for (const name of ["Drank some water", "Stepped outside", "Moved your body"]) {
     await page.getByRole("button", { name: new RegExp(`^${name}`) }).first().click();
   }
