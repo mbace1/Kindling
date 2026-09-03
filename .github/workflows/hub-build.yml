@@ -50,7 +50,7 @@ jobs:
             sleep 1
           done
           npx playwright install chromium
-          node scripts/sprite-inspector-browser-smoke.mjs http://127.0.0.1:8081/Suds-Jack/kindling/
+          # /dev/sprites is intentionally source-only; its atlas contract is enforced in source CI.
           node scripts/full-play-browser-smoke.mjs http://127.0.0.1:8081/Suds-Jack/kindling/
           node scripts/betterment-browser-smoke.mjs http://127.0.0.1:8081/Suds-Jack/kindling/ artifacts/hub-mobile.png --allow-static-hydration
       - uses: actions/upload-artifact@v4
