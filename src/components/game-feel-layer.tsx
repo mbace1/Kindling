@@ -14,7 +14,8 @@ export function GameFeelLayer() {
 
   useEffect(() => subscribeGameFeel((next) => {
     setEvent(next);
-    const timer = window.setTimeout(() => setEvent(null), next.type === "victory" || next.type === "bond-level-up" ? 850 : 520);
+    const long = next.type === "victory" || next.type === "bond-level-up" || next.type === "discovery";
+    const timer = window.setTimeout(() => setEvent(null), long ? 980 : 580);
     return () => window.clearTimeout(timer);
   }), []);
 
@@ -47,13 +48,45 @@ export function GameFeelLayer() {
   }, [s.companion?.id, s.companion?.bondXp]);
 
   if (!event) return null;
-  const text = event.type === "combat-hit" ? `−${event.amount}` : event.type === "victory" ? "Victory" : event.type === "discovery" ? (event.label ?? "Found") : event.type === "bond-level-up" ? `Bond · ${event.label ?? "grew"}` : "Guard";
+
+  const isHit = event.type === "combat-hit";
+  const isPlayerHit = isHit && event.side === "player";
+  const isEnemyHit = isHit && event.side === "enemy";
+  const text = isHit
+    ? `−${event.amount}`
+    : event.type === "victory"
+      ? "Path held"
+      : event.type === "discovery"
+        ? (event.label ?? "Found")
+        : event.type === "bond-level-up"
+          ? `Bond · ${event.label ?? "grew"}`
+          : "Guard";
+
   return (
-    <div aria-live="polite" className="pointer-events-none fixed inset-0 z-[80] grid place-items-center overflow-hidden">
-      <div className={`rounded-full border px-4 py-2 font-display text-lg shadow-2xl backdrop-blur-sm ${event.type === "combat-hit" ? "border-bone/25 bg-night/80 text-bone" : "border-fire/40 bg-night/88 text-fire"}`}>
-        {text}
+    <div
+      aria-live="polite"
+      data-game-feel={event.type}
+      className={`pointer-events-none fixed inset-0 z-[80] overflow-hidden ${isHit ? "animate-[kindling-hit-shake_180ms_ease-out_1]" : ""}`}
+    >
+      {isPlayerHit ? <div className="absolute inset-y-0 left-0 w-1/2 bg-[linear-gradient(to_right,rgba(191,60,42,0.26),transparent)]" /> : null}
+      {isEnemyHit ? <div className="absolute inset-y-0 right-0 w-1/2 bg-[linear-gradient(to_left,rgba(255,181,78,0.22),transparent)]" /> : null}
+      {event.type === "victory" ? (
+        <div className="absolute inset-0 animate-[kindling-reward-bloom_920ms_ease-out_1] bg-[radial-gradient(circle_at_center,rgba(255,181,78,0.24),rgba(255,122,42,0.06)_32%,transparent_62%)]" />
+      ) : null}
+      {event.type === "bond-level-up" ? (
+        <div className="absolute inset-0 animate-[kindling-reward-bloom_920ms_ease-out_1] bg-[radial-gradient(circle_at_50%_42%,rgba(255,205,122,0.22),transparent_52%)]" />
+      ) : null}
+      <div className={`absolute left-1/2 -translate-x-1/2 ${isHit ? (isPlayerHit ? "bottom-[31%] -translate-x-[120%]" : "bottom-[31%] translate-x-[20%]") : "top-[42%]"}`}>
+        <div
+          className={`rounded-full border px-4 py-2 font-display shadow-2xl backdrop-blur-sm ${
+            isHit
+              ? "animate-[kindling-damage-pop_560ms_ease-out_1] border-bone/20 bg-night/88 text-2xl font-semibold text-bone"
+              : "animate-[kindling-reward-rise_920ms_ease-out_1] border-fire/45 bg-night/92 text-xl text-fire"
+          }`}
+        >
+          {text}
+        </div>
       </div>
-      {event.type === "victory" || event.type === "bond-level-up" ? <div className="absolute inset-0 animate-[pulse_650ms_ease-out_1] bg-[radial-gradient(circle_at_center,rgba(255,181,78,0.14),transparent_48%)]" /> : null}
     </div>
   );
 }
