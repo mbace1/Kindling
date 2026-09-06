@@ -13,6 +13,7 @@ import { CompanionScreen } from "@/components/companion-screen";
 import { GameplayFindEffects } from "@/components/gameplay-find-effects";
 import { JourneyWorldScreen } from "@/components/journey-world-screen";
 import { PackResponsive } from "@/components/pack-responsive";
+import { ProgressionCelebration } from "@/components/progression-celebration";
 import { TodayResponsive } from "@/components/today-responsive";
 import { UiAtlasSprite } from "@/components/ui-atlas-sprite";
 import {
@@ -116,6 +117,7 @@ export function AppShell() {
   return (
     <div className="relative mx-auto flex min-h-dvh max-w-lg flex-col overflow-x-hidden bg-night text-bone shadow-[0_0_80px_rgba(0,0,0,0.35)] before:pointer-events-none before:absolute before:inset-0 before:z-0 before:bg-[radial-gradient(circle_at_50%_-10%,rgba(255,181,78,0.07),transparent_32%),linear-gradient(to_bottom,transparent_0%,rgba(0,0,0,0.12)_100%)]">
       <GameplayFindEffects />
+      <ProgressionCelebration />
       <header
         className={cn(
           "relative z-10 flex items-center justify-between border-b border-bone/10 bg-night/82 px-4 pb-3 shadow-[0_8px_28px_rgba(0,0,0,0.15)] backdrop-blur-md",
