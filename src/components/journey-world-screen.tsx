@@ -8,7 +8,14 @@ import {
   verbLabel,
   type SpeciesId,
 } from "@/lib/kindling/model";
-import { combatMove, counterAdvice } from "@/lib/kindling/combat-moves";
+import { combatMove } from "@/lib/kindling/combat-moves";
+import {
+  companionSkillUnlocks,
+  enemyArchetype,
+  patternLabel,
+  recommendedCounter,
+  patternAdvice,
+} from "@/lib/kindling/combat-depth";
 import { companionCombatGrowth, combatStatsForCompanion } from "@/lib/kindling/companion-combat";
 import { unlockedFindKinds } from "@/lib/kindling/find-progression";
 import { useKindling } from "@/lib/kindling/store";
@@ -177,6 +184,16 @@ export function JourneyWorldScreen() {
       <div className="px-4 pt-4">
         <p className="text-xs uppercase tracking-[0.2em] text-mute">Journey</p>
         <h2 className="font-display text-2xl font-semibold">The road keeps opening.</h2>
+        {s.roadEcho ? (
+          <button
+            type="button"
+            onClick={() => s.clearRoadEcho()}
+            className="mt-3 w-full rounded-lg border border-fire/25 bg-night/70 px-3 py-2 text-left text-sm text-bone/80"
+          >
+            <span className="block text-[10px] uppercase tracking-[0.16em] text-fire">After the fight</span>
+            <span className="mt-0.5 block">{s.roadEcho}</span>
+          </button>
+        ) : null}
       </div>
 
       <div className="space-y-4 px-4 pb-28 pt-4">
@@ -282,9 +299,14 @@ function CombatWorldScreen() {
   const enemy = SPECIES[c.enemy];
   const path = WORLD_PATHS.find((p) => p.id === c.pathId);
   const done = Boolean(c.result);
-  const recommended = counterTo(c.telegraph);
+  const pattern = c.pattern || "steady";
+  const recommended = recommendedCounter(pattern, c.telegraph);
   const growth = companionCombatGrowth(companion);
   const stats = combatStatsForCompanion(companion);
+  const skills = companionSkillUnlocks(companion);
+  const archetype = enemyArchetype(c.pathId);
+  const nerve = Number.isFinite(c.nerve) ? c.nerve : c.nerveMax || 3;
+  const nerveMax = c.nerveMax || 3;
 
   return (
     <div className="relative min-h-[72vh] overflow-hidden pb-28">
@@ -298,6 +320,7 @@ function CombatWorldScreen() {
           <div>
             <h2 className="font-display text-3xl font-semibold">{enemy.name}</h2>
             <p className="text-sm text-bone/70">{enemy.blurb}</p>
+            <p className="mt-1 text-[11px] text-fire/75">{archetype.label} · {archetype.regionHint}</p>
           </div>
           {growth ? <span className="mt-1 shrink-0 rounded-full border border-fire/25 bg-night/70 px-2 py-1 text-[10px] text-fire">{growth.identity} {growth.rankLabel}</span> : null}
         </div>
@@ -309,10 +332,21 @@ function CombatWorldScreen() {
 
         {!done ? (
           <div className="mt-3 rounded-lg border border-fire/25 bg-night/78 px-3 py-2 text-sm shadow-lg">
-            <span className="text-mute">Intent · </span><span className="font-medium text-bone">{combatMove(c.enemy, c.telegraph).name}</span>
-            <span className="ml-2 rounded-full bg-fire/10 px-2 py-0.5 text-xs text-fire">Counter: {verbLabel(recommended)}</span>
-            <p className="mt-1 text-[11px] text-bone/70">{combatMove(c.enemy, c.telegraph).telegraph}</p>
-            <p className="mt-1 text-[11px] text-fire/80">{counterAdvice(c.telegraph)}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-mute">Intent · </span>
+              <span className="font-medium text-bone">{combatMove(c.enemy, c.telegraph).name}</span>
+              <span className="rounded-full border border-bone/15 bg-night/60 px-2 py-0.5 text-[10px] uppercase tracking-wide text-bone/70">{patternLabel(pattern)}</span>
+              <span className="rounded-full bg-fire/10 px-2 py-0.5 text-xs text-fire">Counter: {verbLabel(recommended)}</span>
+            </div>
+            <p className="mt-1 text-[11px] text-bone/70">
+              {pattern === "charging"
+                ? `They gather weight for a delayed ${c.telegraph}.`
+                : pattern === "feint"
+                  ? `It looks like ${c.telegraph}, but the wind-up feels false.`
+                  : combatMove(c.enemy, c.telegraph).telegraph}
+            </p>
+            <p className="mt-1 text-[11px] text-fire/80">{patternAdvice(pattern, c.telegraph)}</p>
+            <p className="mt-2 text-[11px] text-bone/55">Nerve {nerve}/{nerveMax} · Skill spends · Guard restores</p>
           </div>
         ) : (
           <p className="mt-4 rounded-lg border border-fire/20 bg-coal/75 px-3 py-2 text-sm font-medium text-bone">{c.result === "win" ? "The path opens." : "You walk home. The fire is still there."}</p>
@@ -322,7 +356,17 @@ function CombatWorldScreen() {
           <div className="mt-3 rounded-lg border border-bone/10 bg-night/55 p-3">
             <p className="text-[10px] uppercase tracking-[0.16em] text-fire">Latest exchange</p>
             <p className="mt-1 text-sm text-bone/80">{c.log[0]}</p>
-            {c.log.slice(1, 4).map((line, i) => <p key={i} className="mt-1 text-xs text-bone/45">{line}</p>)}
+            {c.log.slice(1, 5).map((line, i) => <p key={i} className="mt-1 text-xs text-bone/45">{line}</p>)}
+          </div>
+        ) : null}
+
+        {skills.length && !done ? (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {skills.map((skill) => (
+              <span key={skill.id} className="rounded-full border border-fire/20 bg-coal/70 px-2 py-0.5 text-[10px] text-fire" title={skill.summary}>
+                {skill.name}
+              </span>
+            ))}
           </div>
         ) : null}
 
@@ -367,6 +411,8 @@ function CombatWorldScreen() {
                   <span className={cn("text-xs font-semibold uppercase tracking-[0.12em]", isCounter ? "text-fire" : "text-bone/65")}>{verbLabel(verb)}</span>
                   <span className="mt-0.5 px-1 text-center text-[10px] leading-tight text-bone/55">{combatMove(companion.species, verb).name}</span>
                   {stats ? <span className="text-[10px] text-fire/80">{verb === "strike" ? stats.strike : verb === "guard" ? stats.guard : stats.skill}</span> : null}
+                  {verb === "skill" ? <span className="text-[9px] text-bone/45">{nerve > 0 ? "−1 Nerve" : "strained"}</span> : null}
+                  {verb === "guard" ? <span className="text-[9px] text-bone/45">+Nerve</span> : null}
                 </button>
               );
             })}

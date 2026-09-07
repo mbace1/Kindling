@@ -117,6 +117,8 @@ try {
   assert.equal(loseAfter.encounters.losses, 1, "defeat increments only encounter loss history");
   assert.deepEqual(wellness(loseAfter), wellness(loseBefore), "defeat cannot change wellness, Flames, Bond, or lineage");
   assert.equal(loseAfter.found.length, 0, "defeat awards no loot");
+  assert.ok(typeof loseAfter.roadEcho === "string" && loseAfter.roadEcho.length > 0, "defeat leaves a road echo for Journey");
+  assert.ok(loseAfter.combat.nerveMax >= 3, "combat carries Nerve");
   await loseRun.page.screenshot({ path: "artifacts/betterment-combat-defeat.png", fullPage: true });
   assert.deepEqual(loseRun.errors, [], `defeat browser errors: ${loseRun.errors.join(" | ")}`);
   await loseRun.context.close();
@@ -139,6 +141,7 @@ try {
   assert.equal(won.encounters.wins, 1, "victory increments encounter win history");
   assert.equal(won.found.length, 1, "victory can add one route reward");
   assert.deepEqual(wellness(won), wellness(winBefore), "victory reward cannot alter wellness, Flames, Bond, or lineage");
+  assert.ok(typeof won.roadEcho === "string" && won.roadEcho.length > 0, "victory leaves a road echo for Journey");
   await winRun.page.getByRole("button", { name: "Keep them by the fire" }).click();
   await winRun.page.getByRole("heading", { name: "Ember", exact: true }).waitFor();
   const captured = await winRun.page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));

@@ -63,3 +63,9 @@ test("canonical invariants still name the breed\/egg contract", () => {
   assert.match(canonical, /egg warmth accumulates; missed time does not reduce it/);
   assert.match(canonical, /combat loss never removes wellness progress/);
 });
+
+test("combat still names moves and now carries Nerve commitment", () => {
+  assert.match(moves, /Hearth Strike/);
+  assert.match(store, /nerveMaxFor|nerve:/);
+  assert.match(store, /combatStatsForCompanion/);
+});
