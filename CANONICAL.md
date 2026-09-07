@@ -92,7 +92,8 @@ Fire height/light remains gameplay-owned and must not be replaced by a static re
 - absence never removes loot, Flames, world progress or other companions
 - Journey is real-time and resolves while away
 - combat loss never removes wellness progress
-- breeding never consumes either parent
+- breeding / combining never consumes either parent
+- combining is the player-facing beat for the same save contract as breeding (both parents remain; lineage remains)
 - egg warmth accumulates; missed time does not reduce it
 
 ## Economy naming

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Flame, Footprints, Heart, X } from "lucide-react";
 import { JourneyDecision } from "@/components/journey-decision";
-import { COMBAT_ACTION_COPY, actionStat, intentCopy } from "@/components/combat-readability";
+import { COMBAT_ACTION_COPY, actionStat, moveLabel, previewExchangeHint, telegraphPanelCopy } from "@/components/combat-readability";
 import { ERRAND_COST, FLAMES_PER_FUEL, SAVE_KEY, dayKey, progressiveOpportunities, stageOfCompanion } from "@/lib/kindling/model";
 import { combatStatsForCompanion, companionCombatGrowth } from "@/lib/kindling/companion-combat";
 import { journeyBondBonus, unlockedFindKinds } from "@/lib/kindling/find-progression";
@@ -84,7 +84,10 @@ export function GameplayFindEffects() {
         playerHp: opening.playerHp,
         playerMax: opening.playerMax,
         enemyHp: opening.enemyHp,
-        log: [`${COMBAT_GROWTH_MARK} ${growth.rankLabel} · +${growth.hpBonus} Vitality${opening.openingDamage ? ` · ${opening.openingDamage} opening pressure` : ""}.`, ...combat.log],
+        log: [
+          `${COMBAT_GROWTH_MARK} ${growth.rankLabel} · ${growth.identity} carries +${opening.vitalityBonus} Vitality${opening.openingDamage ? ` · ${opening.openingDamage} opening pressure` : ""}.`,
+          ...combat.log,
+        ],
       },
       updatedAt: Date.now(),
     });
@@ -119,17 +122,21 @@ export function GameplayFindEffects() {
   };
 
   if (s.hydrated && s.tab === "journey" && s.combat && !s.combat.result && s.companion) {
-    const stats = combatStatsForCompanion(s.companion);
-    const growth = companionCombatGrowth(s.companion);
-    const recommended = counterTo(s.combat.telegraph);
+    const companion = s.companion;
+    const combat = s.combat;
+    const stats = combatStatsForCompanion(companion);
+    const growth = companionCombatGrowth(companion);
+    const recommended = counterTo(combat.telegraph);
+    const telegraph = telegraphPanelCopy(combat.enemy, combat.telegraph);
     if (stats) {
       return (
         <section className="fixed inset-x-3 top-20 z-30 mx-auto max-w-md overflow-hidden rounded-xl border border-fire/30 bg-gradient-to-b from-night/95 to-coal/95 p-3 shadow-2xl backdrop-blur">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-fire">Enemy intent</p>
-              <p className="mt-0.5 text-sm font-medium text-bone">{COMBAT_ACTION_COPY[s.combat.telegraph].title}</p>
-              <p className="text-xs text-mute">{intentCopy(s.combat.telegraph)}</p>
+              <p className="mt-0.5 text-sm font-medium text-bone">{telegraph.title}</p>
+              <p className="text-xs text-mute">{telegraph.intent}</p>
+              <p className="mt-1 text-[11px] text-fire/80">{telegraph.advice}</p>
             </div>
             {growth ? <span className="shrink-0 rounded-full border border-fire/25 bg-fire/5 px-2 py-1 text-xs text-fire">Combat {growth.rankLabel}</span> : null}
           </div>
@@ -145,17 +152,18 @@ export function GameplayFindEffects() {
               return (
                 <div key={verb} className={cn("relative rounded-md border px-2 py-2 text-center", isCounter ? "border-fire bg-fire/10" : "border-ash/70 bg-stone/75")}>
                   {isCounter ? <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-fire px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-night">Counter</span> : null}
-                  <p className="text-xs font-medium text-bone">{COMBAT_ACTION_COPY[verb].title}</p>
+                  <p className="text-[10px] font-medium text-bone">{COMBAT_ACTION_COPY[verb].title}</p>
+                  <p className="mt-0.5 text-[11px] leading-tight text-fire/90">{moveLabel(companion.species, verb)}</p>
                   <p className="mt-0.5 text-lg font-semibold text-fire">{actionStat(verb, stats)}</p>
-                  <p className="text-[10px] leading-tight text-mute">{COMBAT_ACTION_COPY[verb].hint}</p>
+                  <p className="text-[10px] leading-tight text-mute">{previewExchangeHint(verb, combat.telegraph)}</p>
                 </div>
               );
             })}
           </div>
-          {s.combat.log.length ? (
+          {combat.log.length ? (
             <div className="mt-2 border-t border-ash/60 pt-2">
               <p className="text-[9px] uppercase tracking-[0.16em] text-mute">Latest exchange</p>
-              <p className="mt-0.5 text-xs leading-snug text-bone/80">{s.combat.log[0]}</p>
+              <p className="mt-0.5 text-xs leading-snug text-bone/80">{combat.log[0]}</p>
             </div>
           ) : null}
         </section>

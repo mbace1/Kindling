@@ -653,7 +653,11 @@ export function resolveRound(player: CombatVerb, enemy: CombatVerb, pc: Species[
     if (enemy === "skill") pDmg += 1;
   }
   if (player === "guard" && enemy === "strike") pDmg = Math.max(0, pDmg - 2);
-  return { pDmg, eDmg };
+  const countered =
+    (player === "guard" && enemy === "strike") ||
+    (player === "skill" && enemy === "guard") ||
+    (player === "strike" && enemy === "skill");
+  return { pDmg, eDmg, countered };
 }
 
 export function assetSrc(path: string) {

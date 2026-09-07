@@ -16,6 +16,8 @@ import { useKindling } from "@/lib/kindling/store";
 import { companionVisualState } from "@/lib/kindling/find-progression";
 import { cn } from "@/lib/utils";
 import { CompanionAtlasSprite } from "@/components/ember-atlas-sprite";
+import { FingerTouchCombine } from "@/components/finger-touch-combine";
+import { companionCombatGrowth } from "@/lib/kindling/companion-combat";
 
 function traitEffects(trait: NonNullable<ReturnType<typeof journeyTraitForCompanion>>) {
   const effects: string[] = [];
@@ -35,6 +37,7 @@ export function CompanionResponsive() {
   const [name, setName] = useState(s.companion?.name ?? "");
   const [rosterOpen, setRosterOpen] = useState(false);
   const [lineageOpen, setLineageOpen] = useState(false);
+  const [pendingCombine, setPendingCombine] = useState<{ a: typeof s.roster[number]; b: typeof s.roster[number]; child: (typeof s.roster)[number]["species"] } | null>(null);
   const warmthNow = eggWarmth(s);
   const ready = eggReady(s);
   const maturePairs = useMemo(
@@ -109,6 +112,11 @@ export function CompanionResponsive() {
 
       <p className="mt-4 text-sm text-mute">{SPECIES[s.companion.species].blurb}</p>
       <p className="mt-1 text-sm text-mute">{SPECIES[s.companion.species].combat.tendency.replace("-", " ")}</p>
+      {companionCombatGrowth(s.companion) ? (
+        <p className="mt-1 text-xs text-fire/80">
+          {companionCombatGrowth(s.companion)?.identity} {companionCombatGrowth(s.companion)?.rankLabel} · Bond hardens the numbers they carry into a fight.
+        </p>
+      ) : null}
 
       {journeyTrait ? (
         <section className="mt-6 rounded-lg border border-fire/30 bg-coal/70 p-4">
@@ -156,7 +164,7 @@ export function CompanionResponsive() {
             ))}
           </div>
           <p className="mt-2 text-sm text-mute">
-            {ready ? "Warm enough to hatch whenever you are ready." : `${warmthNow} / ${s.egg.required} ordinary care actions warmed the egg.`}
+            {ready ? "Warm enough to hatch whenever you are ready." : `${warmthNow} / ${s.egg.required} ordinary care actions warmed the egg. Missed days do not cool it.`}
           </p>
           {ready ? (
             <button type="button" onClick={() => s.hatchEgg()} className="mt-3 min-h-12 w-full rounded-md bg-fire px-4 font-medium text-night">Hatch</button>
@@ -206,19 +214,19 @@ export function CompanionResponsive() {
       ) : null}
 
       {!s.egg && maturePairs.length > 0 && s.roster.length < 6 ? (
-        <section className="mt-6 rounded-lg border border-ash bg-stone/60 p-3 sm:bg-transparent sm:p-0">
-          <h3 className="font-display text-xl">Lineage</h3>
-          <p className="text-sm text-mute">Two tender-or-older companions can leave an egg in the coals.</p>
+        <section className="mt-6 rounded-lg border border-fire/25 bg-coal/50 p-3 sm:bg-transparent sm:p-0">
+          <h3 className="font-display text-xl">Combine</h3>
+          <p className="text-sm text-mute">Two tender-or-older companions can combine. They reach fingertip to fingertip; fusion energy settles as an egg. Both stay by the fire.</p>
           <ul className="mt-3 space-y-2">
             {maturePairs.map((p) => (
               <li key={p.a.id + p.b.id}>
                 <button
                   type="button"
-                  onClick={() => s.breed(p.a.id, p.b.id)}
+                  onClick={() => setPendingCombine(p)}
                   className="flex min-h-14 w-full items-center justify-between rounded-md border border-ash bg-stone px-3 py-2 text-left"
                 >
                   <span className="text-sm">{p.a.name} · {p.b.name}</span>
-                  <span className="text-xs text-fire">Egg · {SPECIES[p.child].name}</span>
+                  <span className="text-xs text-fire">Combine · {SPECIES[p.child].name}</span>
                 </button>
               </li>
             ))}
@@ -227,8 +235,21 @@ export function CompanionResponsive() {
       ) : null}
 
       {!s.egg && s.roster.length > 1 && maturePairs.length === 0 ? (
-        <p className="mt-6 text-sm text-mute">Pairing opens when two companions have reached tender.</p>
+        <p className="mt-6 text-sm text-mute">Combine opens when two companions have reached tender.</p>
       ) : null}
+
+      <FingerTouchCombine
+        a={pendingCombine?.a ?? s.companion}
+        b={pendingCombine?.b ?? s.companion}
+        child={pendingCombine?.child ?? s.companion.species}
+        open={Boolean(pendingCombine)}
+        onComplete={() => {
+          if (!pendingCombine) return;
+          s.combine(pendingCombine.a.id, pendingCombine.b.id);
+          setPendingCombine(null);
+        }}
+        onCancel={() => setPendingCombine(null)}
+      />
 
       <section className="mt-6">
         <button

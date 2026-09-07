@@ -15,12 +15,18 @@ export function shouldOfferFireChoice(
   return !s.tasks.some((task) => !s.sheet.done.includes(task.id));
 }
 
-export function combatGrowthOpening(current: { playerHp: number; playerMax: number; enemyHp: number }, growth: { hpBonus: number; openingDamage: number }) {
+/** Opening pressure after Bond-hardened vitality is already present on the combatant. */
+export function combatGrowthOpening(
+  current: { playerHp: number; playerMax: number; enemyHp: number },
+  growth: { hpBonus: number; openingDamage: number },
+) {
   const openingDamage = Math.min(growth.openingDamage, Math.max(0, current.enemyHp - 1));
   return {
-    playerHp: current.playerHp + growth.hpBonus,
-    playerMax: current.playerMax + growth.hpBonus,
+    playerHp: current.playerHp,
+    playerMax: current.playerMax,
     enemyHp: Math.max(1, current.enemyHp - openingDamage),
     openingDamage,
+    vitalityBonus: growth.hpBonus,
   };
 }
+

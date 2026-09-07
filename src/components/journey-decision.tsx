@@ -4,10 +4,11 @@ import {
   PATHS,
   SAVE_KEY,
   SPECIES,
-  combatFor,
   dayKey,
   pickTelegraph,
 } from "@/lib/kindling/model";
+import { combatStatsForCompanion } from "@/lib/kindling/companion-combat";
+import { combatMove } from "@/lib/kindling/combat-moves";
 import { hasCampBuild } from "@/lib/kindling/camp-construction";
 import { journeyTraitForCompanion } from "@/lib/kindling/companion-journey";
 import { journeyContent } from "@/lib/kindling/world-content";
@@ -131,9 +132,10 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
         && consequenceRoll(pathId, startedAt) < ambushChance;
 
       if (ambushed && path?.enemy && current.companion) {
-        const pc = combatFor(current.companion.species);
-        const ec = combatFor(path.enemy);
+        const pc = combatStatsForCompanion(current.companion) ?? SPECIES[current.companion.species].combat;
+        const ec = SPECIES[path.enemy].combat;
         const guard = currentTrait?.ambushGuard ?? 0;
+        const telegraph = pickTelegraph(path.enemy);
         useKindling.setState({
           sheet,
           walk: null,
@@ -144,9 +146,10 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
             playerMax: pc.hp + guard,
             enemyHp: ec.hp,
             enemyMax: ec.hp,
-            telegraph: pickTelegraph(path.enemy),
+            telegraph,
             log: [
               `The shortcut was watched. ${SPECIES[path.enemy].name} cuts you off.`,
+              combatMove(path.enemy, telegraph).telegraph,
               ...(guard ? [`${current.companion.name} braces first. +${guard} Guard.`] : []),
             ],
             result: null,
