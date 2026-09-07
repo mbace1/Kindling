@@ -86,6 +86,8 @@ export type EggState = {
   trait?: string;
 };
 
+export type CombatPattern = "steady" | "charging" | "feint";
+
 export type CombatState = {
   enemy: SpeciesId;
   pathId: string;
@@ -96,6 +98,14 @@ export type CombatState = {
   telegraph: CombatVerb;
   log: string[];
   result: null | "win" | "lose";
+  /** Commitment resource for Skill. Guard restores it. Never touches wellness. */
+  nerve: number;
+  nerveMax: number;
+  /** steady RPS, delayed heavy, or false telegraph. */
+  pattern: CombatPattern;
+  /** Verb that lands if a charge is not interrupted. */
+  chargeVerb: CombatVerb | null;
+  round: number;
 };
 
 export type WalkState = {
@@ -130,6 +140,8 @@ export type KindlingSave = {
   encounters: { wins: number; losses: number };
   roster: Companion[];
   walkedOnce: boolean;
+  /** Soft Journey flavor after a fight. Cleared when shown. Never wellness. */
+  roadEcho: string | null;
 };
 
 export type Species = {
@@ -387,6 +399,7 @@ export function freshSave(): KindlingSave {
     encounters: { wins: 0, losses: 0 },
     roster: [companion],
     walkedOnce: false,
+    roadEcho: null,
   };
 }
 
@@ -536,6 +549,35 @@ function normalizedCompanion(raw: unknown, fallbackBondXp = 0): Companion | null
   };
 }
 
+
+export function normalizeCombat(raw: unknown): CombatState | null {
+  if (!raw || typeof raw !== "object") return null;
+  const c = raw as Partial<CombatState>;
+  if (!c.enemy || !SPECIES[c.enemy as SpeciesId]) return null;
+  const telegraph = c.telegraph === "strike" || c.telegraph === "guard" || c.telegraph === "skill" ? c.telegraph : "strike";
+  const pattern = c.pattern === "charging" || c.pattern === "feint" || c.pattern === "steady" ? c.pattern : "steady";
+  const chargeVerb =
+    c.chargeVerb === "strike" || c.chargeVerb === "guard" || c.chargeVerb === "skill" ? c.chargeVerb : null;
+  const nerveMax = Number.isFinite(c.nerveMax) ? Math.max(1, Number(c.nerveMax)) : 3;
+  const nerve = Number.isFinite(c.nerve) ? Math.max(0, Math.min(nerveMax, Number(c.nerve))) : nerveMax;
+  return {
+    enemy: c.enemy as SpeciesId,
+    pathId: typeof c.pathId === "string" ? c.pathId : "road",
+    playerHp: Math.max(0, Number(c.playerHp) || 0),
+    playerMax: Math.max(1, Number(c.playerMax) || 1),
+    enemyHp: Math.max(0, Number(c.enemyHp) || 0),
+    enemyMax: Math.max(1, Number(c.enemyMax) || 1),
+    telegraph,
+    log: Array.isArray(c.log) ? c.log.map(String) : [],
+    result: c.result === "win" || c.result === "lose" ? c.result : null,
+    nerve,
+    nerveMax,
+    pattern,
+    chargeVerb: pattern === "charging" ? chargeVerb ?? telegraph : null,
+    round: Number.isFinite(c.round) ? Math.max(1, Number(c.round)) : 1,
+  };
+}
+
 export function normalizeSave(raw: unknown): KindlingSave {
   const base = freshSave();
   if (!raw || typeof raw !== "object") return applyRollover(base);
@@ -580,6 +622,8 @@ export function normalizeSave(raw: unknown): KindlingSave {
     roster,
     walkedOnce: Boolean(r.walkedOnce),
     egg: r.egg && typeof r.egg === "object" ? { ...r.egg } as EggState : null,
+    roadEcho: typeof r.roadEcho === "string" ? r.roadEcho : null,
+    combat: normalizeCombat(r.combat),
   };
 
   if (!s.companion && !s.awaitingHatch && !s.kindlingPending) {

@@ -8,11 +8,12 @@ const SPECIES = {
   mossknight: { hp: 48, strike: 9, guard: 10, skill: 3, speed: 2, tendency: "counterattacker" },
 };
 
+// Keep aligned with src/lib/kindling/companion-combat.ts — runtime is source of truth.
 const GROWTH = {
-  ember: (r) => ({ hp: r * 2, strike: r, guard: Math.floor(r / 2), skill: r, speed: 0 }),
-  mossling: (r) => ({ hp: r * 2, strike: Math.floor(r / 2), guard: r, skill: r, speed: Math.floor((r + 1) / 2) }),
-  ashling: (r) => ({ hp: r, strike: r, guard: Math.floor(r / 2), skill: r, speed: r }),
-  mossknight: (r) => ({ hp: r * 3, strike: Math.floor(r / 2), guard: r, skill: Math.floor(r / 2), speed: 0 }),
+  ember: (r) => ({ hp: r * 2, strike: r, guard: r, skill: r * 2, speed: r }),
+  mossling: (r) => ({ hp: r * 3, strike: 0, guard: r * 2, skill: r * 2, speed: 0 }),
+  ashling: (r) => ({ hp: r, strike: r * 2, guard: 0, skill: r, speed: r * 2 }),
+  mossknight: (r) => ({ hp: r * 4, strike: r, guard: r * 2, skill: 0, speed: 0 }),
 };
 
 function rng(seed) {
@@ -84,4 +85,18 @@ for (const [id, ranks] of Object.entries(report)) {
   assert.ok(ranks[0].avgTurns > 0 && ranks[4].avgTurns > 0, `${id} produced invalid combat length`);
   assert.ok(ranks[4].avgHp >= ranks[0].avgHp || ranks[4].winRate > ranks[0].winRate, `${id} growth has no measurable combat benefit`);
 }
-console.log(JSON.stringify({ ok: true, simulations: ids.length * 5 * 3 * 400, report }, null, 2));
+// Spot-check Sparks vs Elders carry the same deltas as companion-combat.ts.
+const expected = {
+  ember: { hp: 8, strike: 4, guard: 4, skill: 8, speed: 4 },
+  mossling: { hp: 12, strike: 0, guard: 8, skill: 8, speed: 0 },
+  ashling: { hp: 4, strike: 8, guard: 0, skill: 4, speed: 8 },
+  mossknight: { hp: 16, strike: 4, guard: 8, skill: 0, speed: 0 },
+};
+for (const id of ids) {
+  const g = GROWTH[id](4);
+  for (const [k, v] of Object.entries(expected[id])) {
+    assert.equal(g[k], v, `${id} growth.${k} drifted from companion-combat.ts`);
+  }
+}
+
+console.log(JSON.stringify({ ok: true, alignedGrowth: true, simulations: ids.length * 5 * 3 * 400, report }, null, 2));

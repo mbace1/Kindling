@@ -6,6 +6,14 @@
      it reads each project's VERSIONS.md and nothing else. Keeping the log with
      the SOURCE is what stops the number and the build disagreeing. -->
 
+## v18 — 2026-09-08
+**Encounters feel like a short duel, not only labeled RPS**
+- Nerve commitment: Skill spends Nerve, Guard restores it, spent Skill still lands thin — never touches wellness
+- region archetypes add charge telegraphs and feints that reward reading (Strike interrupts wind-ups and catches feints)
+- Bond/stage unlocks companion skills that meaningfully change the exchange (Hearth Focus, Spore Breath, Cinder Step, Toll Guard, …)
+- victory and defeat leave a soft road echo and journal line for Journey — no scolding, no care progress loss
+- `combat-balance.mjs` growth table realigned to runtime `companion-combat.ts`
+
 ## v17 — 2026-09-08
 **Fights read clearer, and combining becomes a fingertip beat**
 - combat now names each Strike / Guard / Skill, telegraphs the enemy move, and explains the counter in the same breath

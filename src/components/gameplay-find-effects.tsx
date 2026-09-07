@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Flame, Footprints, Heart, X } from "lucide-react";
 import { JourneyDecision } from "@/components/journey-decision";
 import { COMBAT_ACTION_COPY, actionStat, moveLabel, previewExchangeHint, telegraphPanelCopy } from "@/components/combat-readability";
+import { companionSkillUnlocks, enemyArchetype, recommendedCounter } from "@/lib/kindling/combat-depth";
 import { ERRAND_COST, FLAMES_PER_FUEL, SAVE_KEY, dayKey, progressiveOpportunities, stageOfCompanion } from "@/lib/kindling/model";
 import { combatStatsForCompanion, companionCombatGrowth } from "@/lib/kindling/companion-combat";
 import { journeyBondBonus, unlockedFindKinds } from "@/lib/kindling/find-progression";
-import { combatGrowthOpening, counterTo, shouldOfferFireChoice } from "@/lib/kindling/gameplay-rules";
+import { combatGrowthOpening, shouldOfferFireChoice } from "@/lib/kindling/gameplay-rules";
 import { useKindling } from "@/lib/kindling/store";
 import { cn } from "@/lib/utils";
 
@@ -126,17 +127,23 @@ export function GameplayFindEffects() {
     const combat = s.combat;
     const stats = combatStatsForCompanion(companion);
     const growth = companionCombatGrowth(companion);
-    const recommended = counterTo(combat.telegraph);
-    const telegraph = telegraphPanelCopy(combat.enemy, combat.telegraph);
+    const pattern = combat.pattern || "steady";
+    const recommended = recommendedCounter(pattern, combat.telegraph);
+    const telegraph = telegraphPanelCopy(combat.enemy, combat.telegraph, pattern);
+    const skills = companionSkillUnlocks(companion);
+    const archetype = enemyArchetype(combat.pathId);
+    const nerve = Number.isFinite(combat.nerve) ? combat.nerve : combat.nerveMax || 3;
+    const nerveMax = combat.nerveMax || 3;
     if (stats) {
       return (
         <section className="fixed inset-x-3 top-20 z-30 mx-auto max-w-md overflow-hidden rounded-xl border border-fire/30 bg-gradient-to-b from-night/95 to-coal/95 p-3 shadow-2xl backdrop-blur">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-fire">Enemy intent</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-fire">Enemy intent · {archetype.label}</p>
               <p className="mt-0.5 text-sm font-medium text-bone">{telegraph.title}</p>
               <p className="text-xs text-mute">{telegraph.intent}</p>
               <p className="mt-1 text-[11px] text-fire/80">{telegraph.advice}</p>
+              <p className="mt-1 text-[11px] text-bone/55">Nerve {nerve}/{nerveMax}</p>
             </div>
             {growth ? <span className="shrink-0 rounded-full border border-fire/25 bg-fire/5 px-2 py-1 text-xs text-fire">Combat {growth.rankLabel}</span> : null}
           </div>
@@ -144,6 +151,9 @@ export function GameplayFindEffects() {
             <div className="mt-2 rounded-md border border-fire/15 bg-coal/70 px-2.5 py-2">
               <p className="text-xs font-medium text-fire">{growth.identity}</p>
               <p className="text-[11px] leading-snug text-bone/65">{growth.identitySummary}</p>
+              {skills.length ? (
+                <p className="mt-1 text-[10px] text-fire/75">{skills.map((skill) => skill.name).join(" · ")}</p>
+              ) : null}
             </div>
           ) : null}
           <div className="mt-3 grid grid-cols-3 gap-2">
@@ -155,7 +165,7 @@ export function GameplayFindEffects() {
                   <p className="text-[10px] font-medium text-bone">{COMBAT_ACTION_COPY[verb].title}</p>
                   <p className="mt-0.5 text-[11px] leading-tight text-fire/90">{moveLabel(companion.species, verb)}</p>
                   <p className="mt-0.5 text-lg font-semibold text-fire">{actionStat(verb, stats)}</p>
-                  <p className="text-[10px] leading-tight text-mute">{previewExchangeHint(verb, combat.telegraph)}</p>
+                  <p className="text-[10px] leading-tight text-mute">{previewExchangeHint(verb, combat.telegraph, pattern)}</p>
                 </div>
               );
             })}

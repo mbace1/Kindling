@@ -27,15 +27,20 @@ import {
   normalizeSave,
   payOnce,
   PAY,
-  pickTelegraph,
   prevKey,
-  resolveRound,
   stageOf,
   warmth,
   offspringOf,
 } from "./model";
 import { combatStatsForCompanion } from "./companion-combat";
 import { combatMove, exchangeHeadline } from "./combat-moves";
+import {
+  combatAftermathCopy,
+  enemyArchetype,
+  nerveMaxFor,
+  pickEnemyIntent,
+  resolveDepthRound,
+} from "./combat-depth";
 import { playHit, playTick, unlockAudio } from "./audio";
 
 const WALK_DURATION_MS = 90_000;
@@ -62,6 +67,7 @@ type KindlingStore = KindlingSave & {
   finishWalk: () => void;
   playerAct: (verb: CombatVerb) => void;
   leaveCombat: () => void;
+  clearRoadEcho: () => void;
   confirmKindling: () => void;
   hatch: (species: SpeciesId) => void;
   hatchEgg: () => void;
@@ -111,6 +117,7 @@ function pick<T extends object>(s: T): KindlingSave {
     encounters,
     roster,
     walkedOnce,
+    roadEcho,
   } = s as KindlingSave;
   return {
     v,
@@ -138,6 +145,7 @@ function pick<T extends object>(s: T): KindlingSave {
     encounters,
     roster,
     walkedOnce,
+    roadEcho,
   };
 }
 
@@ -340,7 +348,15 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     if (fight && path.enemy && s.companion) {
       const pc = combatStatsForCompanion(s.companion) ?? SPECIES[s.companion.species].combat;
       const ec = SPECIES[path.enemy].combat;
-      const telegraph = pickTelegraph(path.enemy);
+      const intent = pickEnemyIntent(path.enemy, path.id);
+      const nerveMax = nerveMaxFor(s.companion);
+      const archetype = enemyArchetype(path.id);
+      const intentLine =
+        intent.pattern === "charging"
+          ? `They gather for a delayed ${intent.telegraph}.`
+          : intent.pattern === "feint"
+            ? `A false wind-up — it looks like ${intent.telegraph}.`
+            : combatMove(path.enemy, intent.telegraph).telegraph;
       s.combat = {
         enemy: path.enemy,
         pathId: path.id,
@@ -348,12 +364,17 @@ export const useKindling = create<KindlingStore>((set, get) => ({
         playerMax: pc.hp,
         enemyHp: ec.hp,
         enemyMax: ec.hp,
-        telegraph,
+        telegraph: intent.telegraph,
         log: [
-          `${SPECIES[path.enemy].name} holds the path.`,
-          combatMove(path.enemy, telegraph).telegraph,
+          `${SPECIES[path.enemy].name} holds the path · ${archetype.label}.`,
+          intentLine,
         ],
         result: null,
+        nerve: nerveMax,
+        nerveMax,
+        pattern: intent.pattern,
+        chargeVerb: intent.chargeVerb,
+        round: 1,
       };
       s.updatedAt = Date.now();
       persist(s);
@@ -385,10 +406,27 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     if (!c || c.result || !s.companion) return;
     const pc = combatStatsForCompanion(s.companion) ?? SPECIES[s.companion.species].combat;
     const ec = SPECIES[c.enemy].combat;
+    const nerveMax = c.nerveMax || nerveMaxFor(s.companion);
+    const nerve = Number.isFinite(c.nerve) ? c.nerve : nerveMax;
+    const pattern = c.pattern || "steady";
+    const depth = resolveDepthRound({
+      player: verb,
+      telegraph: c.telegraph,
+      pattern,
+      chargeVerb: c.chargeVerb ?? null,
+      nerve,
+      nerveMax,
+      pc,
+      ec,
+      companion: s.companion,
+    });
     const enemyVerb = c.telegraph;
-    const { pDmg, eDmg, countered } = resolveRound(verb, enemyVerb, pc, ec);
+    const { pDmg, eDmg, countered } = depth;
     c.enemyHp = Math.max(0, c.enemyHp - eDmg);
     c.playerHp = Math.max(0, c.playerHp - pDmg);
+    c.nerve = depth.nextNerve;
+    c.nerveMax = nerveMax;
+    c.round = (c.round || 1) + 1;
     const yours = combatMove(s.companion.species, verb);
     const theirs = combatMove(c.enemy, enemyVerb);
     c.log = [
@@ -403,13 +441,23 @@ export const useKindling = create<KindlingStore>((set, get) => ({
         countered,
       }),
       countered ? `Counter lands · ${yours.name} vs ${theirs.name}.` : `${yours.name} · ${yours.beat}`,
+      ...depth.beatLines,
       eDmg ? `${SPECIES[c.enemy].name} takes ${eDmg}.` : `${SPECIES[c.enemy].name} holds.`,
       pDmg ? `${s.companion.name} takes ${pDmg}.` : `${s.companion.name} holds.`,
+      `Nerve ${c.nerve}/${c.nerveMax}.`,
     ];
     if (c.enemyHp <= 0) {
       c.result = "win";
       s.encounters.wins += 1;
       if (get().sound) playHit();
+      const aftermath = combatAftermathCopy({
+        result: "win",
+        pathId: c.pathId,
+        enemy: c.enemy,
+        companionName: s.companion.name,
+      });
+      journalEntry(s).lines.push(aftermath.journal);
+      s.roadEcho = aftermath.roadEcho;
       if (SPECIES[c.enemy].capturable && !s.unlocked.includes(c.enemy)) {
         s.unlocked.push(c.enemy);
         c.log.push(`${SPECIES[c.enemy].name} will come if you ask.`);
@@ -433,10 +481,27 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     } else if (c.playerHp <= 0) {
       c.result = "lose";
       s.encounters.losses += 1;
+      const aftermath = combatAftermathCopy({
+        result: "lose",
+        pathId: c.pathId,
+        enemy: c.enemy,
+        companionName: s.companion.name,
+      });
+      journalEntry(s).lines.push(aftermath.journal);
+      s.roadEcho = aftermath.roadEcho;
       c.log.push("The path keeps what it wants. You walk home.");
     } else {
-      c.telegraph = pickTelegraph(c.enemy);
-      c.log.push(combatMove(c.enemy, c.telegraph).telegraph);
+      const intent = pickEnemyIntent(c.enemy, c.pathId);
+      c.telegraph = intent.telegraph;
+      c.pattern = intent.pattern;
+      c.chargeVerb = intent.chargeVerb;
+      const intentLine =
+        intent.pattern === "charging"
+          ? `They gather for a delayed ${intent.telegraph}.`
+          : intent.pattern === "feint"
+            ? `A false wind-up — it looks like ${intent.telegraph}.`
+            : combatMove(c.enemy, intent.telegraph).telegraph;
+      c.log.push(intentLine);
     }
     s.updatedAt = Date.now();
     persist(s);
@@ -449,6 +514,15 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     s.updatedAt = Date.now();
     persist(s);
     set({ ...s, tab: "journey" });
+  },
+
+  clearRoadEcho: () => {
+    const s = pick(get());
+    if (!s.roadEcho) return;
+    s.roadEcho = null;
+    s.updatedAt = Date.now();
+    persist(s);
+    set(s);
   },
 
   keepEncounter: () => {

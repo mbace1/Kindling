@@ -1,4 +1,5 @@
 import { companionCombatGrowth, combatStatsForCompanion } from "@/lib/kindling/companion-combat";
+import { companionSkillUnlocks } from "@/lib/kindling/combat-depth";
 import { SPECIES, nextStageBondXp } from "@/lib/kindling/model";
 import { useKindling } from "@/lib/kindling/store";
 
@@ -16,6 +17,7 @@ export function CompanionCombatGrowthPanel() {
   const base = SPECIES[companion.species].combat;
   if (!growth || !stats) return null;
 
+  const skills = companionSkillUnlocks(companion);
   const fullyGrown = growth.rank >= 4;
   const remaining = nextStageBondXp(s);
   const nextGrowth = fullyGrown || remaining <= 0
@@ -54,6 +56,19 @@ export function CompanionCombatGrowthPanel() {
       </div>
 
       <p className="mt-3 text-xs text-mute">Base: {base.hp} Vitality · {base.strike} Strike · {base.guard} Guard · {base.skill} Skill · {base.speed} Speed</p>
+      {skills.length ? (
+        <div className="mt-3 space-y-1.5 rounded-md border border-fire/15 bg-night/55 p-2.5">
+          <p className="text-[10px] uppercase tracking-[0.16em] text-fire">Unlocked skills</p>
+          {skills.map((skill) => (
+            <div key={skill.id}>
+              <p className="text-sm text-bone">{skill.name}</p>
+              <p className="text-[11px] text-mute">{skill.summary}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 text-xs text-mute">Bond a little further to unlock a fight skill that changes the exchange.</p>
+      )}
       <p className="mt-1 text-xs text-fire">
         {fullyGrown ? "Elder combat growth reached." : `${remaining} Bond XP until the next combat growth.`}
       </p>

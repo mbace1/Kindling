@@ -5,10 +5,10 @@ import {
   SAVE_KEY,
   SPECIES,
   dayKey,
-  pickTelegraph,
 } from "@/lib/kindling/model";
 import { combatStatsForCompanion } from "@/lib/kindling/companion-combat";
 import { combatMove } from "@/lib/kindling/combat-moves";
+import { enemyArchetype, nerveMaxFor, pickEnemyIntent } from "@/lib/kindling/combat-depth";
 import { hasCampBuild } from "@/lib/kindling/camp-construction";
 import { journeyTraitForCompanion } from "@/lib/kindling/companion-journey";
 import { journeyContent } from "@/lib/kindling/world-content";
@@ -135,7 +135,15 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
         const pc = combatStatsForCompanion(current.companion) ?? SPECIES[current.companion.species].combat;
         const ec = SPECIES[path.enemy].combat;
         const guard = currentTrait?.ambushGuard ?? 0;
-        const telegraph = pickTelegraph(path.enemy);
+        const intent = pickEnemyIntent(path.enemy, pathId);
+        const nerveMax = nerveMaxFor(current.companion);
+        const archetype = enemyArchetype(pathId);
+        const intentLine =
+          intent.pattern === "charging"
+            ? `They gather for a delayed ${intent.telegraph}.`
+            : intent.pattern === "feint"
+              ? `A false wind-up — it looks like ${intent.telegraph}.`
+              : combatMove(path.enemy, intent.telegraph).telegraph;
         useKindling.setState({
           sheet,
           walk: null,
@@ -146,13 +154,18 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
             playerMax: pc.hp + guard,
             enemyHp: ec.hp,
             enemyMax: ec.hp,
-            telegraph,
+            telegraph: intent.telegraph,
             log: [
-              `The shortcut was watched. ${SPECIES[path.enemy].name} cuts you off.`,
-              combatMove(path.enemy, telegraph).telegraph,
+              `The shortcut was watched. ${SPECIES[path.enemy].name} cuts you off · ${archetype.label}.`,
+              intentLine,
               ...(guard ? [`${current.companion.name} braces first. +${guard} Guard.`] : []),
             ],
             result: null,
+            nerve: nerveMax,
+            nerveMax,
+            pattern: intent.pattern,
+            chargeVerb: intent.chargeVerb,
+            round: 1,
           },
           updatedAt,
           lastToast: "The shortcut was faster. It was not safer.",
