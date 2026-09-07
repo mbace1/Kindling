@@ -323,3 +323,22 @@ Two consequences worth stating before they surprise anyone:
   distance. A PNG is already coloured, so firelight over it has to be a *tint
   pass* — which is why Requests A and C both say the fire and its light are not
   baked into any layer.
+
+---
+
+## R-combine. Optional fingertip-fusion stills (not blocking)
+
+*Added 2026-09-08. Interim ships with CSS/atlas animation of existing companion sheets.*
+
+If a later pass wants dedicated art for the combine beat:
+
+> **Two companions reaching until their fingertips touch, then a quiet flare.**
+>
+> - Same silhouette language as the live Ember / Mossling / Ashling / Moss Knight atlases.
+> - Side view, both characters in profile, hands/forelimbs extended toward center.
+> - One frame of the reach, one frame of the touch, one frame of a small fire-white flare at the contact point — not a beam struggle.
+> - Flat magenta `#FF00FF` background, no captions.
+> - Frames at least 256 × 256. This is a presentation beat, not a new species.
+>
+> Until then the Keep screen animates the existing runtime atlases toward each other.
+

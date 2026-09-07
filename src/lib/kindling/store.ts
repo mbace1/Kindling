@@ -15,7 +15,6 @@ import {
   applyRollover,
   bondUnits,
   caredToday,
-  combatFor,
   consecutiveMissed,
   dayKey,
   eggReady,
@@ -35,6 +34,8 @@ import {
   warmth,
   offspringOf,
 } from "./model";
+import { combatStatsForCompanion } from "./companion-combat";
+import { combatMove, exchangeHeadline } from "./combat-moves";
 import { playHit, playTick, unlockAudio } from "./audio";
 
 const WALK_DURATION_MS = 90_000;
@@ -68,6 +69,7 @@ type KindlingStore = KindlingSave & {
   keepEncounter: () => void;
   switchCompanion: (id: string) => void;
   breed: (aId: string, bId: string) => void;
+  combine: (aId: string, bId: string) => void;
   setBreatheOpen: (open: boolean) => void;
   setEditingGoals: (open: boolean) => void;
   snapshot: () => KindlingSave;
@@ -336,8 +338,9 @@ export const useKindling = create<KindlingStore>((set, get) => ({
 
     const fight = Boolean(path.enemy) && journeyRoll(path.id, departure.startedAt, 0) < path.encounter;
     if (fight && path.enemy && s.companion) {
-      const pc = combatFor(s.companion.species);
-      const ec = combatFor(path.enemy);
+      const pc = combatStatsForCompanion(s.companion) ?? SPECIES[s.companion.species].combat;
+      const ec = SPECIES[path.enemy].combat;
+      const telegraph = pickTelegraph(path.enemy);
       s.combat = {
         enemy: path.enemy,
         pathId: path.id,
@@ -345,8 +348,11 @@ export const useKindling = create<KindlingStore>((set, get) => ({
         playerMax: pc.hp,
         enemyHp: ec.hp,
         enemyMax: ec.hp,
-        telegraph: pickTelegraph(path.enemy),
-        log: [`${SPECIES[path.enemy].name} holds the path.`],
+        telegraph,
+        log: [
+          `${SPECIES[path.enemy].name} holds the path.`,
+          combatMove(path.enemy, telegraph).telegraph,
+        ],
         result: null,
       };
       s.updatedAt = Date.now();
@@ -377,13 +383,26 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     const s = pick(get());
     const c = s.combat;
     if (!c || c.result || !s.companion) return;
-    const pc = combatFor(s.companion.species);
-    const ec = combatFor(c.enemy);
-    const { pDmg, eDmg } = resolveRound(verb, c.telegraph, pc, ec);
+    const pc = combatStatsForCompanion(s.companion) ?? SPECIES[s.companion.species].combat;
+    const ec = SPECIES[c.enemy].combat;
+    const enemyVerb = c.telegraph;
+    const { pDmg, eDmg, countered } = resolveRound(verb, enemyVerb, pc, ec);
     c.enemyHp = Math.max(0, c.enemyHp - eDmg);
     c.playerHp = Math.max(0, c.playerHp - pDmg);
+    const yours = combatMove(s.companion.species, verb);
+    const theirs = combatMove(c.enemy, enemyVerb);
     c.log = [
-      `You ${verb}. They ${c.telegraph}.`,
+      exchangeHeadline({
+        playerName: s.companion.name,
+        playerSpecies: s.companion.species,
+        enemy: c.enemy,
+        player: verb,
+        enemyVerb,
+        pDmg,
+        eDmg,
+        countered,
+      }),
+      countered ? `Counter lands · ${yours.name} vs ${theirs.name}.` : `${yours.name} · ${yours.beat}`,
       eDmg ? `${SPECIES[c.enemy].name} takes ${eDmg}.` : `${SPECIES[c.enemy].name} holds.`,
       pDmg ? `${s.companion.name} takes ${pDmg}.` : `${s.companion.name} holds.`,
     ];
@@ -417,6 +436,7 @@ export const useKindling = create<KindlingStore>((set, get) => ({
       c.log.push("The path keeps what it wants. You walk home.");
     } else {
       c.telegraph = pickTelegraph(c.enemy);
+      c.log.push(combatMove(c.enemy, c.telegraph).telegraph);
     }
     s.updatedAt = Date.now();
     persist(s);
@@ -474,6 +494,7 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     if (!a || !b || bondUnits(a) < 18 || bondUnits(b) < 18) return;
     const child = offspringOf(a.species, b.species);
     if (!child) return;
+    // Combining never consumes either parent — both stay in roster/lineage.
     const inherited = a.trait ?? b.trait;
     const trait = Math.random() < 0.12
       ? ASH_TRAITS[Math.floor(Math.random() * ASH_TRAITS.length)]
@@ -488,10 +509,16 @@ export const useKindling = create<KindlingStore>((set, get) => ({
       required: EGG_WARMTH_REQUIRED,
       trait,
     };
-    journalEntry(s).lines.push(`${a.name} and ${b.name} left an egg in the coals.`);
+    journalEntry(s).lines.push(
+      `${a.name} and ${b.name} reached fingertip to fingertip. Fusion energy settled as an egg in the coals.`,
+    );
     s.updatedAt = Date.now();
     persist(s);
     set({ ...s, lastToast: "An Ember Egg rests in the coals.", tab: "companion" });
+  },
+
+  combine: (aId, bId) => {
+    get().breed(aId, bId);
   },
 
   hatchEgg: () => {

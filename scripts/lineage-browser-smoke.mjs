@@ -86,7 +86,9 @@ try {
   assert.match(await eggPage.locator("body").innerText(), /Mossling/, "second mature parent is present");
 
   await eggPage.getByRole("button", { name: /Ember · Mossling/ }).click();
-  await eggPage.getByText("Ember Egg", { exact: true }).waitFor();
+  await eggPage.getByRole("dialog", { name: /Ember and Mossling combine/ }).waitFor();
+  await eggPage.getByRole("heading", { name: "Fingertip to fingertip" }).waitFor();
+  await eggPage.getByText("Ember Egg", { exact: true }).waitFor({ timeout: 8_000 });
   const afterPair = await eggPage.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
   assert.equal(afterPair.roster.length, 2, "breeding consumes neither parent");
   assert.equal(afterPair.egg.species, "ashling", "Ember + Mossling produces an Ashling egg");

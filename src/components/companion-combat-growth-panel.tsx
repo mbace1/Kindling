@@ -39,7 +39,8 @@ export function CompanionCombatGrowthPanel() {
         <span className="rounded-full border border-fire/25 bg-fire/5 px-2 py-1 text-xs text-fire">Rank {growth.rankLabel}</span>
       </div>
 
-      <p className="mt-2 text-sm text-mute">Bond changes the numbers you actually carry into a fight.</p>
+      <p className="mt-2 text-sm text-fire">{growth.identity}</p>
+      <p className="text-sm text-mute">{growth.identitySummary} Bond changes the numbers they actually carry into a fight.</p>
 
       <div className="mt-3 grid grid-cols-5 gap-1.5">
         {rows.map(([label, value, bonus, next]) => (

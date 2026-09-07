@@ -328,7 +328,7 @@ function CombatScreen() {
 
       {!done ? (
         <p className="mt-4 text-sm text-mute">
-          They telegraph <span className="text-bone">{verbLabel(c.telegraph)}</span>.
+          They telegraph <span className="text-bone">{verbLabel(c.telegraph)}</span>. Read the intent, then answer it.
         </p>
       ) : (
         <p className="mt-4 text-sm text-bone">
@@ -526,7 +526,7 @@ export function CompanionScreen() {
             ))}
           </div>
           <p className="mt-2 text-sm text-mute">
-            {ready ? "Warm enough to hatch whenever you are ready." : `${warmthNow} / ${s.egg.required} ordinary care actions warmed the egg.`}
+            {ready ? "Warm enough to hatch whenever you are ready." : `${warmthNow} / ${s.egg.required} ordinary care actions warmed the egg. Missed days do not cool it.`}
           </p>
           {ready ? (
             <button
@@ -571,8 +571,8 @@ export function CompanionScreen() {
 
       {!s.egg && maturePairs.length > 0 && s.roster.length < 6 ? (
         <div className="mt-8">
-          <h3 className="font-display text-xl">Lineage</h3>
-          <p className="text-sm text-mute">Two tender-or-older companions can leave an egg in the coals.</p>
+          <h3 className="font-display text-xl">Combine</h3>
+          <p className="text-sm text-mute">Two tender-or-older companions can combine. They reach across the coals; fusion energy settles as an egg. Both stay by the fire.</p>
           <ul className="mt-3 space-y-2">
             {maturePairs.map((p) => (
               <li key={p.a.id + p.b.id}>
@@ -584,7 +584,7 @@ export function CompanionScreen() {
                   <span className="text-sm">
                     {p.a.name} · {p.b.name}
                   </span>
-                  <span className="text-xs text-fire">Egg · {SPECIES[p.child].name}</span>
+                  <span className="text-xs text-fire">Combine · {SPECIES[p.child].name}</span>
                 </button>
               </li>
             ))}
@@ -593,7 +593,7 @@ export function CompanionScreen() {
       ) : null}
 
       {!s.egg && s.roster.length > 1 && maturePairs.length === 0 ? (
-        <p className="mt-8 text-sm text-mute">Pairing opens when two companions have reached tender.</p>
+        <p className="mt-8 text-sm text-mute">Combine opens when two companions have reached tender.</p>
       ) : null}
 
       <h3 className="mt-8 font-display text-xl">Ancestors</h3>

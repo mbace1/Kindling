@@ -8,6 +8,8 @@ import {
   verbLabel,
   type SpeciesId,
 } from "@/lib/kindling/model";
+import { combatMove, counterAdvice } from "@/lib/kindling/combat-moves";
+import { companionCombatGrowth, combatStatsForCompanion } from "@/lib/kindling/companion-combat";
 import { unlockedFindKinds } from "@/lib/kindling/find-progression";
 import { useKindling } from "@/lib/kindling/store";
 import {
@@ -276,10 +278,13 @@ function CombatWorldScreen() {
   }, [c?.playerHp, c?.enemyHp]);
 
   if (!c || !s.companion) return null;
+  const companion = s.companion;
   const enemy = SPECIES[c.enemy];
   const path = WORLD_PATHS.find((p) => p.id === c.pathId);
   const done = Boolean(c.result);
   const recommended = counterTo(c.telegraph);
+  const growth = companionCombatGrowth(companion);
+  const stats = combatStatsForCompanion(companion);
 
   return (
     <div className="relative min-h-[72vh] overflow-hidden pb-28">
@@ -289,8 +294,13 @@ function CombatWorldScreen() {
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-night/35 via-night/68 to-night" />
       <div className="relative z-10 px-4 pt-4">
         <p className="text-xs uppercase tracking-[0.2em] text-bone/65">{path ? `Chapter ${path.chapter} · ${path.displayName}` : "On the path"}</p>
-        <h2 className="font-display text-3xl font-semibold">{enemy.name}</h2>
-        <p className="text-sm text-bone/70">{enemy.blurb}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-3xl font-semibold">{enemy.name}</h2>
+            <p className="text-sm text-bone/70">{enemy.blurb}</p>
+          </div>
+          {growth ? <span className="mt-1 shrink-0 rounded-full border border-fire/25 bg-night/70 px-2 py-1 text-[10px] text-fire">{growth.identity} {growth.rankLabel}</span> : null}
+        </div>
 
         <div className="mt-5 flex items-end justify-between gap-3 rounded-xl border border-bone/10 bg-night/45 px-3 pb-3 pt-4 shadow-2xl backdrop-blur-[2px] sm:mt-6 sm:gap-5 sm:pt-5">
           <Fighter name={s.companion.name} species={s.companion.species} hp={c.playerHp} max={c.playerMax} align="left" damage={playerDamage} result={c.result} />
@@ -299,9 +309,10 @@ function CombatWorldScreen() {
 
         {!done ? (
           <div className="mt-3 rounded-lg border border-fire/25 bg-night/78 px-3 py-2 text-sm shadow-lg">
-            <span className="text-mute">Intent · </span><span className="font-medium text-bone">{verbLabel(c.telegraph)}</span>
+            <span className="text-mute">Intent · </span><span className="font-medium text-bone">{combatMove(c.enemy, c.telegraph).name}</span>
             <span className="ml-2 rounded-full bg-fire/10 px-2 py-0.5 text-xs text-fire">Counter: {verbLabel(recommended)}</span>
-            <p className="mt-1 text-[11px] text-bone/55">{enemy.combat.tendency.replace("-", " ")} · read the intent, then answer it.</p>
+            <p className="mt-1 text-[11px] text-bone/70">{combatMove(c.enemy, c.telegraph).telegraph}</p>
+            <p className="mt-1 text-[11px] text-fire/80">{counterAdvice(c.telegraph)}</p>
           </div>
         ) : (
           <p className="mt-4 rounded-lg border border-fire/20 bg-coal/75 px-3 py-2 text-sm font-medium text-bone">{c.result === "win" ? "The path opens." : "You walk home. The fire is still there."}</p>
@@ -354,6 +365,8 @@ function CombatWorldScreen() {
                   {isCounter ? <span className="absolute left-1/2 top-1 -translate-x-1/2 rounded-full bg-fire px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-night">Counter</span> : null}
                   <UiAtlasSprite x={x} y={672} width={134} height={127} displayWidth={82} className={isCounter ? "scale-105" : "scale-95"} />
                   <span className={cn("text-xs font-semibold uppercase tracking-[0.12em]", isCounter ? "text-fire" : "text-bone/65")}>{verbLabel(verb)}</span>
+                  <span className="mt-0.5 px-1 text-center text-[10px] leading-tight text-bone/55">{combatMove(companion.species, verb).name}</span>
+                  {stats ? <span className="text-[10px] text-fire/80">{verb === "strike" ? stats.strike : verb === "guard" ? stats.guard : stats.skill}</span> : null}
                 </button>
               );
             })}

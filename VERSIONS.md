@@ -6,6 +6,13 @@
      it reads each project's VERSIONS.md and nothing else. Keeping the log with
      the SOURCE is what stops the number and the build disagreeing. -->
 
+## v17 — 2026-09-08
+**Fights read clearer, and combining becomes a fingertip beat**
+- combat now names each Strike / Guard / Skill, telegraphs the enemy move, and explains the counter in the same breath
+- Bond-hardened companions enter the path with their grown Vitality and live stats, so combat growth actually changes the fight
+- two tender-or-older companions combine by reaching fingertip to fingertip; fusion energy settles as an egg and neither parent is consumed
+- Keep, Pack and Lineage copy treat combat and combine as one firelit game; warmth still only gathers
+
 ## v13 — 2026-09-02
 **The road finally has its own visual identity**
 - Drowned Courtyard, Bell Keep and Ashwood now use dedicated character-free environment plates instead of cropped shared art
