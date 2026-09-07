@@ -216,7 +216,7 @@ export function CompanionResponsive() {
       {!s.egg && maturePairs.length > 0 && s.roster.length < 6 ? (
         <section className="mt-6 rounded-lg border border-fire/25 bg-coal/50 p-3 sm:bg-transparent sm:p-0">
           <h3 className="font-display text-xl">Combine</h3>
-          <p className="text-sm text-mute">Two tender-or-older companions can combine. They reach fingertip to fingertip; fusion energy settles as an egg. Both stay by the fire.</p>
+          <p className="text-sm text-mute">Two tender-or-older companions can combine. They reach across the coals; fusion energy settles as an egg. Both stay by the fire.</p>
           <ul className="mt-3 space-y-2">
             {maturePairs.map((p) => (
               <li key={p.a.id + p.b.id}>

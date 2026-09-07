@@ -87,7 +87,7 @@ try {
 
   await eggPage.getByRole("button", { name: /Ember · Mossling/ }).click();
   await eggPage.getByRole("dialog", { name: /Ember and Mossling combine/ }).waitFor();
-  await eggPage.getByText("Fingertip to fingertip").waitFor();
+  await eggPage.getByRole("heading", { name: "Fingertip to fingertip" }).waitFor();
   await eggPage.getByText("Ember Egg", { exact: true }).waitFor({ timeout: 8_000 });
   const afterPair = await eggPage.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
   assert.equal(afterPair.roster.length, 2, "breeding consumes neither parent");
