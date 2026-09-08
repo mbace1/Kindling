@@ -8,7 +8,7 @@ import {
 } from "@/lib/kindling/model";
 import { combatStatsForCompanion } from "@/lib/kindling/companion-combat";
 import { combatMove } from "@/lib/kindling/combat-moves";
-import { enemyArchetype, nerveMaxFor, pickEnemyIntent } from "@/lib/kindling/combat-depth";
+import { chargeIntentLine, enemyArchetype, nerveMaxFor, pickEnemyIntent } from "@/lib/kindling/combat-depth";
 import { hasCampBuild } from "@/lib/kindling/camp-construction";
 import { journeyTraitForCompanion } from "@/lib/kindling/companion-journey";
 import { journeyContent } from "@/lib/kindling/world-content";
@@ -140,7 +140,7 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
         const archetype = enemyArchetype(pathId);
         const intentLine =
           intent.pattern === "charging"
-            ? `They gather for a delayed ${intent.telegraph}.`
+            ? chargeIntentLine(intent.telegraph, intent.chargePhase)
             : intent.pattern === "feint"
               ? `A false wind-up — it looks like ${intent.telegraph}.`
               : combatMove(path.enemy, intent.telegraph).telegraph;
@@ -165,6 +165,7 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
             nerveMax,
             pattern: intent.pattern,
             chargeVerb: intent.chargeVerb,
+            chargePhase: intent.chargePhase,
             round: 1,
           },
           updatedAt,

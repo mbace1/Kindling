@@ -300,7 +300,8 @@ function CombatWorldScreen() {
   const path = WORLD_PATHS.find((p) => p.id === c.pathId);
   const done = Boolean(c.result);
   const pattern = c.pattern || "steady";
-  const recommended = recommendedCounter(pattern, c.telegraph);
+  const chargePhase = pattern === "charging" ? c.chargePhase ?? "windup" : null;
+  const recommended = recommendedCounter(pattern, c.telegraph, chargePhase);
   const growth = companionCombatGrowth(companion);
   const stats = combatStatsForCompanion(companion);
   const skills = companionSkillUnlocks(companion);
@@ -335,17 +336,21 @@ function CombatWorldScreen() {
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-mute">Intent · </span>
               <span className="font-medium text-bone">{combatMove(c.enemy, c.telegraph).name}</span>
-              <span className="rounded-full border border-bone/15 bg-night/60 px-2 py-0.5 text-[10px] uppercase tracking-wide text-bone/70">{patternLabel(pattern)}</span>
-              <span className="rounded-full bg-fire/10 px-2 py-0.5 text-xs text-fire">Counter: {verbLabel(recommended)}</span>
+              <span className="rounded-full border border-bone/15 bg-night/60 px-2 py-0.5 text-[10px] uppercase tracking-wide text-bone/70">{patternLabel(pattern, chargePhase)}</span>
+              <span className="rounded-full bg-fire/10 px-2 py-0.5 text-xs text-fire">
+                {chargePhase === "windup" ? "Next: interrupt" : `Counter: ${verbLabel(recommended)}`}
+              </span>
             </div>
             <p className="mt-1 text-[11px] text-bone/70">
-              {pattern === "charging"
-                ? `They gather weight for a delayed ${c.telegraph}.`
+              {pattern === "charging" && chargePhase === "windup"
+                ? `They gather weight for a delayed ${c.telegraph}. The blow comes next.`
+                : pattern === "charging"
+                  ? `The wind-up breaks — delayed ${c.telegraph} is coming.`
                 : pattern === "feint"
                   ? `It looks like ${c.telegraph}, but the wind-up feels false.`
                   : combatMove(c.enemy, c.telegraph).telegraph}
             </p>
-            <p className="mt-1 text-[11px] text-fire/80">{patternAdvice(pattern, c.telegraph)}</p>
+            <p className="mt-1 text-[11px] text-fire/80">{patternAdvice(pattern, c.telegraph, chargePhase)}</p>
             <p className="mt-2 text-[11px] text-bone/55">Nerve {nerve}/{nerveMax} · Skill spends · Guard restores</p>
           </div>
         ) : (

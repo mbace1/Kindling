@@ -13,6 +13,9 @@ export const NERVE_MAX = 3;
 
 export type CombatPattern = "steady" | "charging" | "feint";
 
+/** Two-turn charge: windup telegraphs, release lands or is interrupted next. */
+export type ChargePhase = "windup" | "release";
+
 export type EnemyArchetype = {
   id: string;
   label: string;
@@ -34,6 +37,8 @@ export type DepthRoundInput = {
   telegraph: CombatVerb;
   pattern: CombatPattern;
   chargeVerb: CombatVerb | null;
+  /** Present when pattern is charging — windup this turn, release next. */
+  chargePhase?: ChargePhase | null;
   nerve: number;
   nerveMax: number;
   pc: Species["combat"];
@@ -50,6 +55,10 @@ export type DepthRoundResult = {
   strained: boolean;
   nextNerve: number;
   beatLines: string[];
+  /** True after a wind-up beat: keep the charge into the release turn. */
+  chargeContinues: boolean;
+  /** Effective enemy verb used for this exchange (for log / move names). */
+  enemyVerb: CombatVerb;
 };
 
 const REGION_ARCHETYPE: Record<string, EnemyArchetype> = {
@@ -180,8 +189,15 @@ export function nerveMaxFor(companion?: Companion | null) {
   return NERVE_MAX;
 }
 
-export function patternAdvice(pattern: CombatPattern, telegraph: CombatVerb) {
+export function patternAdvice(
+  pattern: CombatPattern,
+  telegraph: CombatVerb,
+  chargePhase: ChargePhase | null = null,
+) {
   if (pattern === "charging") {
+    if (chargePhase === "windup") {
+      return "They wind up this turn. Next turn: Strike interrupts, or the heavy lands.";
+    }
     return "Strike interrupts the wind-up. Waiting lets the heavy land.";
   }
   if (pattern === "feint") {
@@ -194,13 +210,21 @@ export function patternAdvice(pattern: CombatPattern, telegraph: CombatVerb) {
       : "Strike interrupts the technique.";
 }
 
-export function recommendedCounter(pattern: CombatPattern, telegraph: CombatVerb): CombatVerb {
-  if (pattern === "charging" || pattern === "feint") return "strike";
+export function recommendedCounter(
+  pattern: CombatPattern,
+  telegraph: CombatVerb,
+  chargePhase: ChargePhase | null = null,
+): CombatVerb {
+  if (pattern === "charging") {
+    void chargePhase;
+    return "strike";
+  }
+  if (pattern === "feint") return "strike";
   return counterTo(telegraph);
 }
 
-export function patternLabel(pattern: CombatPattern) {
-  if (pattern === "charging") return "Charging";
+export function patternLabel(pattern: CombatPattern, chargePhase: ChargePhase | null = null) {
+  if (pattern === "charging") return chargePhase === "windup" ? "Winding" : "Charging";
   if (pattern === "feint") return "Feint";
   return "Steady";
 }
@@ -224,19 +248,24 @@ export function pickEnemyIntent(
   enemy: SpeciesId,
   pathId: string,
   random: () => number = Math.random,
-): { telegraph: CombatVerb; pattern: CombatPattern; chargeVerb: CombatVerb | null } {
+): {
+  telegraph: CombatVerb;
+  pattern: CombatPattern;
+  chargeVerb: CombatVerb | null;
+  chargePhase: ChargePhase | null;
+} {
   const archetype = enemyArchetype(pathId);
   const tendency = SPECIES[enemy].combat.tendency;
   const pattern = rollPattern(archetype, random);
   if (pattern === "charging") {
     const chargeVerb = archetype.preferredHeavy;
-    return { telegraph: chargeVerb, pattern, chargeVerb };
+    return { telegraph: chargeVerb, pattern, chargeVerb, chargePhase: "windup" };
   }
   const telegraph = tendencyTelegraph(tendency, random());
   if (pattern === "feint") {
-    return { telegraph, pattern, chargeVerb: null };
+    return { telegraph, pattern, chargeVerb: null, chargePhase: null };
   }
-  return { telegraph, pattern: "steady", chargeVerb: null };
+  return { telegraph, pattern: "steady", chargeVerb: null, chargePhase: null };
 }
 
 function baseResolve(
@@ -267,11 +296,13 @@ function baseResolve(
 }
 
 /**
- * Resolve one duel exchange with Nerve commitment, charge interrupt, feints,
- * and Bond-unlocked companion skills. Does not touch wellness state.
+ * Resolve one duel exchange with Nerve commitment, two-turn charge wind-up,
+ * feints, and Bond-unlocked companion skills. Does not touch wellness state.
  */
 export function resolveDepthRound(input: DepthRoundInput): DepthRoundResult {
   const { player, telegraph, pattern, chargeVerb, nerve, nerveMax, pc, ec, companion } = input;
+  const chargePhase: ChargePhase | null =
+    pattern === "charging" ? input.chargePhase ?? "windup" : null;
   const beatLines: string[] = [];
   let strained = false;
 
@@ -294,8 +325,18 @@ export function resolveDepthRound(input: DepthRoundInput): DepthRoundResult {
   let feinted = false;
   let enemyVerb: CombatVerb = telegraph;
   let interruptBonus = 0;
+  let chargeContinues = false;
 
-  if (pattern === "charging") {
+  if (pattern === "charging" && chargePhase === "windup") {
+    // Telegraph round: they gather weight, no heavy yet. Player can poke freely.
+    enemyVerb = "guard";
+    chargeContinues = true;
+    beatLines.push("They gather weight — the blow has not fallen.");
+    if (player === "strike") {
+      beatLines.push("A clean poke while they wind.");
+    }
+  } else if (pattern === "charging") {
+    // Release round: Strike interrupts, otherwise the delayed heavy lands.
     if (player === "strike") {
       interrupted = true;
       beatLines.push("Strike cuts the wind-up short.");
@@ -323,7 +364,16 @@ export function resolveDepthRound(input: DepthRoundInput): DepthRoundResult {
   let eDmg = 0;
   let countered = false;
 
-  if (pattern === "charging" && interrupted) {
+  if (pattern === "charging" && chargePhase === "windup") {
+    // Soft beat: companion pressure can land; enemy deals nothing while winding.
+    if (player === "strike" || player === "skill") {
+      const pAtk = player === "skill" ? pc.skill : pc.strike;
+      eDmg = Math.max(1, pAtk - Math.ceil(ec.guard / 3));
+      if (player === "skill") eDmg += 1;
+    }
+    pDmg = 0;
+    countered = false;
+  } else if (pattern === "charging" && interrupted) {
     pDmg = 0;
     eDmg = Math.max(1, pc.strike + interruptBonus);
     countered = true;
@@ -360,7 +410,6 @@ export function resolveDepthRound(input: DepthRoundInput): DepthRoundResult {
     nextNerve = Math.min(nerveMax, nextNerve + 1);
   }
 
-
   return {
     pDmg,
     eDmg,
@@ -370,6 +419,8 @@ export function resolveDepthRound(input: DepthRoundInput): DepthRoundResult {
     strained,
     nextNerve,
     beatLines,
+    chargeContinues,
+    enemyVerb,
   };
 }
 
@@ -393,18 +444,37 @@ export function combatAftermathCopy(args: {
   };
 }
 
+
+export function chargeIntentLine(telegraph: CombatVerb, chargePhase: ChargePhase | null = "windup") {
+  if (chargePhase === "release") {
+    return `The wind-up breaks — delayed ${telegraph} is coming.`;
+  }
+  return `They gather for a delayed ${telegraph}. The blow comes next.`;
+}
+
 export function intentPanelCopy(args: {
   telegraph: CombatVerb;
   pattern: CombatPattern;
   moveName: string;
   moveTelegraph: string;
+  chargePhase?: ChargePhase | null;
 }) {
-  const advice = patternAdvice(args.pattern, args.telegraph);
-  const counter = recommendedCounter(args.pattern, args.telegraph);
+  const phase = args.pattern === "charging" ? args.chargePhase ?? "windup" : null;
+  const advice = patternAdvice(args.pattern, args.telegraph, phase);
+  const counter = recommendedCounter(args.pattern, args.telegraph, phase);
+  if (args.pattern === "charging" && phase === "windup") {
+    return {
+      title: `${args.moveName} · winding`,
+      intent: `They gather weight for a delayed ${args.telegraph}. The blow comes next.`,
+      advice,
+      counter,
+      pattern: args.pattern,
+    };
+  }
   if (args.pattern === "charging") {
     return {
       title: `${args.moveName} · charging`,
-      intent: `They gather weight for a delayed ${args.telegraph}.`,
+      intent: `The wind-up breaks — delayed ${args.telegraph} is coming.`,
       advice,
       counter,
       pattern: args.pattern,

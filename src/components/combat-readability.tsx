@@ -1,4 +1,4 @@
-import type { CombatPattern, CombatVerb, SpeciesId } from "@/lib/kindling/model";
+import type { ChargePhase, CombatPattern, CombatVerb, SpeciesId } from "@/lib/kindling/model";
 import { combatMove, counterAdvice } from "@/lib/kindling/combat-moves";
 import {
   intentPanelCopy,
@@ -14,8 +14,15 @@ export const COMBAT_ACTION_COPY: Record<CombatVerb, { title: string; hint: strin
   skill: { title: "Skill", hint: "Stronger special · spends Nerve", role: "Breaks Guard" },
 };
 
-export function intentCopy(verb: CombatVerb, pattern: CombatPattern = "steady") {
-  if (pattern === "charging") return "They are winding a delayed heavy. Strike can cut it short.";
+export function intentCopy(
+  verb: CombatVerb,
+  pattern: CombatPattern = "steady",
+  chargePhase: ChargePhase | null = null,
+) {
+  if (pattern === "charging" && chargePhase === "windup") {
+    return "They wind up this turn. Next turn: Strike interrupts, or the heavy lands.";
+  }
+  if (pattern === "charging") return "The wind-up breaks. Strike can cut it short.";
   if (pattern === "feint") return "The wind-up looks false. Strike catches a feint.";
   if (verb === "strike") return "They are committing to a direct attack.";
   if (verb === "guard") return "They are bracing to absorb damage.";
@@ -34,18 +41,33 @@ export function moveBeat(species: SpeciesId, verb: CombatVerb) {
   return combatMove(species, verb).beat;
 }
 
-export function telegraphPanelCopy(enemy: SpeciesId, verb: CombatVerb, pattern: CombatPattern = "steady") {
+export function telegraphPanelCopy(
+  enemy: SpeciesId,
+  verb: CombatVerb,
+  pattern: CombatPattern = "steady",
+  chargePhase: ChargePhase | null = null,
+) {
   const move = combatMove(enemy, verb);
   return intentPanelCopy({
     telegraph: verb,
     pattern,
     moveName: move.name,
     moveTelegraph: move.telegraph,
+    chargePhase,
   });
 }
 
-export function previewExchangeHint(verb: CombatVerb, intent: CombatVerb, pattern: CombatPattern = "steady") {
-  const recommended = recommendedCounter(pattern, intent);
+export function previewExchangeHint(
+  verb: CombatVerb,
+  intent: CombatVerb,
+  pattern: CombatPattern = "steady",
+  chargePhase: ChargePhase | null = null,
+) {
+  const recommended = recommendedCounter(pattern, intent, chargePhase);
+  if (pattern === "charging" && chargePhase === "windup") {
+    if (verb === "strike") return "A clean poke while they wind. Interrupt comes next.";
+    return "They are still winding — the heavy comes next.";
+  }
   if (verb === recommended) {
     if (pattern === "charging") return "This interrupts the wind-up.";
     if (pattern === "feint") return "This catches the feint.";
