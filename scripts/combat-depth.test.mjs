@@ -57,7 +57,32 @@ test("balance growth table matches companion-combat runtime", () => {
   assert.match(balance, /alignedGrowth: true/);
 });
 
-test("VERSIONS records v18 combat depth", () => {
+test("VERSIONS records v18 combat depth and v19 two-turn charge", () => {
   assert.match(versions, /## v18/);
   assert.match(versions, /Nerve|charge|feint|archetype|aftermath/i);
+  assert.match(versions, /## v19/);
+  assert.match(versions, /two-turn|wind-up|windup|release/i);
+});
+
+test("v19 charge is a two-turn wind-up across resolve and store", () => {
+  assert.match(depth, /ChargePhase/);
+  assert.match(depth, /chargeContinues/);
+  assert.match(depth, /chargePhase === "windup"/);
+  assert.match(depth, /chargePhase === "release"|chargePhase: "release"/);
+  assert.match(depth, /They gather weight — the blow has not fallen/);
+  assert.match(store, /depth\.chargeContinues/);
+  assert.match(store, /chargePhase = "release"/);
+  assert.match(store, /chargeIntentLine/);
+  assert.match(model, /chargePhase/);
+});
+
+test("two-turn charge runtime resolves windup then interrupt-or-land", async () => {
+  const { spawnSync } = await import("node:child_process");
+  const r = spawnSync(
+    process.execPath,
+    ["--import", "tsx", new URL("./combat-charge-runtime.mjs", import.meta.url).pathname],
+    { encoding: "utf8", cwd: new URL("..", import.meta.url).pathname },
+  );
+  assert.equal(r.status, 0, `${r.stdout}\n${r.stderr}`);
+  assert.match(r.stdout, /"twoTurnCharge":\s*true/);
 });

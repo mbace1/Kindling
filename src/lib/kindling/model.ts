@@ -88,6 +88,9 @@ export type EggState = {
 
 export type CombatPattern = "steady" | "charging" | "feint";
 
+/** Two-turn charge: windup telegraphs, release lands or is interrupted next. */
+export type ChargePhase = "windup" | "release";
+
 export type CombatState = {
   enemy: SpeciesId;
   pathId: string;
@@ -105,6 +108,8 @@ export type CombatState = {
   pattern: CombatPattern;
   /** Verb that lands if a charge is not interrupted. */
   chargeVerb: CombatVerb | null;
+  /** Wind-up this turn vs release/interrupt next. Null when not charging. */
+  chargePhase: ChargePhase | null;
   round: number;
 };
 
@@ -558,6 +563,12 @@ export function normalizeCombat(raw: unknown): CombatState | null {
   const pattern = c.pattern === "charging" || c.pattern === "feint" || c.pattern === "steady" ? c.pattern : "steady";
   const chargeVerb =
     c.chargeVerb === "strike" || c.chargeVerb === "guard" || c.chargeVerb === "skill" ? c.chargeVerb : null;
+  const chargePhase =
+    pattern !== "charging"
+      ? null
+      : c.chargePhase === "release"
+        ? "release"
+        : "windup";
   const nerveMax = Number.isFinite(c.nerveMax) ? Math.max(1, Number(c.nerveMax)) : 3;
   const nerve = Number.isFinite(c.nerve) ? Math.max(0, Math.min(nerveMax, Number(c.nerve))) : nerveMax;
   return {
@@ -574,6 +585,7 @@ export function normalizeCombat(raw: unknown): CombatState | null {
     nerveMax,
     pattern,
     chargeVerb: pattern === "charging" ? chargeVerb ?? telegraph : null,
+    chargePhase,
     round: Number.isFinite(c.round) ? Math.max(1, Number(c.round)) : 1,
   };
 }

@@ -4,8 +4,8 @@
 reminded about staying healthy. `CANONICAL.md` holds the rules; this holds the
 order of work and, for each item, **who can do it**.
 
-Written 2026-08-21, after auditing the approved art bible against what the app
-actually runs on.
+Written 2026-08-21 (art audit); Phase 1–2 / 5 status refreshed 2026-09-08 against
+shipping code — combat/combine is the active lane, not old R1 blockers.
 
 ---
 
@@ -97,25 +97,20 @@ gain available. No new art.
 `CANONICAL.md`'s nine criteria. Ticking a line visibly changes the fire. A
 screenshot, not a green suite — a gate that certifies *works* cannot see *looks*.
 
-**Status, 2026-08-21 — half done, and the other half needs one render.**
+**Status, 2026-09-08 — fire states ship; full plate swap still art-gated.**
 
-Done: the five states are cut and committed (`public/art/fire-states.png`,
-re-cuttable with `tools/cut-fire-states.py`). Composited over the approved scene
-at real render size they read correctly at 0, 2 and 5 of 5 — the painted flame
-knocks back cleanly, because a flame against dark masonry darkens without a
-trace.
+Shipped (verify in tree, not wishful): `public/art/fire-states.png` is bound into
+the camp canvas; `public/art/camp-night-clean.png` and camp quadrant plates exist
+as interim character-free camp art; the live camp still composites carefully so a
+baked companion never doubles the runtime sprite.
 
-Blocked: **the approved scenes are finished illustrations, not plates.** All
-three camp scenes have Ember painted in, in the same pose. The app has to draw
-its own companion — species, stage and colour vary, and it must be ABSENT from
-camp while away on a Journey — so a painted-in Ember gives two monsters in shot.
-Covering it was tried and produces a smear; inpainting it out is paint work, not
-cutting. Request **R1** in `art-src/ART_REQUESTS.md` asks for the one plate that
-unblocks it: same camp, unlit pit, no creature, no firelight.
+Still art-gated (not DONE): a final owner-approved camp plate that matches the
+bible language at device resolution without a painted-in creature. Request **R1**
+in `art-src/ART_REQUESTS.md` remains the ask for that plate. Do not treat R1 as
+landed until the plate is committed and wired as the camp background.
 
-Do not swap the background in until R1 lands. Shipping a plate with a baked-in
-companion would break the companion system, which is worse than the placeholder
-art it replaces.
+**Agents now:** do not block combat/Journey/combine work on R1. Prefer the active
+code lane (Phase 5 / VERSIONS combat entries) over re-litigating camp art.
 
 ---
 
@@ -139,12 +134,19 @@ request **R2** in `art-src/ART_REQUESTS.md` now asks for the four strips as a
 real sprite sheet at ≥256 px frames on flat magenta, with the true frame counts
 stated. It is a resolution problem, not a redesign.
 
-Until R2 lands the companion stays on the 128 px sheet: the design is worse and
-the pixels are better, and at 224 device px the pixels win.
+**Status, 2026-09-08 — interim runtime atlases ship; bible-res R2 still open.**
 
-**Acceptance:** the companion reads as present and breathing on a screen you
-open for ten seconds. Souls fans will forgive a lot; they will not forgive a
-mascot that looks dead.
+Shipped (verify in tree): `ember-idle-runtime.svg` plus Mossling / Ashling /
+Moss Knight idle-runtime sheets drive camp, Journey, Pack and Keep motion with
+species-weighted cadence, hit and victory modes (see VERSIONS v10–v16). That is
+enough for the companion to read alive on a phone.
+
+Still art-gated (not DONE): request **R2** — ≥256 px approved strips on flat
+magenta — has not replaced the interim runtime atlas. Until R2 is committed and
+wired, do not delete the shipping runtime sheets.
+
+**Agents now:** companion animation polish is opportunistic; combat depth and
+combine readability are the active product work.
 
 ---
 
@@ -209,12 +211,22 @@ label matches; avoid reskinning for its own sake.
 
 ---
 
-## Phase 5 — combat, world, breeding **[code]**
+## Phase 5 — combat, world, breeding **[code]** — active (Sep 2026)
 
-`CANONICAL.md` items 4–6. The rules are already written there and the invariants
-are already enforced by `scripts/betterment-contract.test.mjs`. Do not start this
-before phases 1–2 land: *"do not build new content to hide an unresolved
-core-screen problem."*
+`CANONICAL.md` items 4–6. Invariants still enforced by
+`scripts/betterment-contract.test.mjs`. The old "do not start before phases 1–2"
+gate is obsolete for this lane: interim camp/companion art already keeps core
+screens honest enough that combat and combine are the higher-leverage work.
+
+**Shipped (verify VERSIONS + code, not this paragraph alone):**
+- v17 — named Strike / Guard / Skill, telegraph readability, fingertip combine
+- v18 — Nerve, same-round charge/feint archetypes, Bond skills, road echo
+- v19 — charge is a real two-turn wind-up (telegraph → land or Strike-interrupt)
+
+**Next relevant agents work here**, not on reopening R1/R2 unless art arrives:
+- feel the two-turn charge on Journey (Bell Keep / forest charge archetypes)
+- keep Strike-interrupt fantasy; never touch wellness on combat loss; no scolding
+- combine / Bond presentation polish only when combat contracts stay green
 
 ---
 

@@ -35,6 +35,7 @@ import {
 import { combatStatsForCompanion } from "./companion-combat";
 import { combatMove, exchangeHeadline } from "./combat-moves";
 import {
+  chargeIntentLine,
   combatAftermathCopy,
   enemyArchetype,
   nerveMaxFor,
@@ -353,7 +354,7 @@ export const useKindling = create<KindlingStore>((set, get) => ({
       const archetype = enemyArchetype(path.id);
       const intentLine =
         intent.pattern === "charging"
-          ? `They gather for a delayed ${intent.telegraph}.`
+          ? chargeIntentLine(intent.telegraph, intent.chargePhase)
           : intent.pattern === "feint"
             ? `A false wind-up — it looks like ${intent.telegraph}.`
             : combatMove(path.enemy, intent.telegraph).telegraph;
@@ -374,6 +375,7 @@ export const useKindling = create<KindlingStore>((set, get) => ({
         nerveMax,
         pattern: intent.pattern,
         chargeVerb: intent.chargeVerb,
+        chargePhase: intent.chargePhase,
         round: 1,
       };
       s.updatedAt = Date.now();
@@ -409,18 +411,20 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     const nerveMax = c.nerveMax || nerveMaxFor(s.companion);
     const nerve = Number.isFinite(c.nerve) ? c.nerve : nerveMax;
     const pattern = c.pattern || "steady";
+    const chargePhase = pattern === "charging" ? c.chargePhase ?? "windup" : null;
     const depth = resolveDepthRound({
       player: verb,
       telegraph: c.telegraph,
       pattern,
       chargeVerb: c.chargeVerb ?? null,
+      chargePhase,
       nerve,
       nerveMax,
       pc,
       ec,
       companion: s.companion,
     });
-    const enemyVerb = c.telegraph;
+    const enemyVerb = depth.enemyVerb;
     const { pDmg, eDmg, countered } = depth;
     c.enemyHp = Math.max(0, c.enemyHp - eDmg);
     c.playerHp = Math.max(0, c.playerHp - pDmg);
@@ -490,14 +494,21 @@ export const useKindling = create<KindlingStore>((set, get) => ({
       journalEntry(s).lines.push(aftermath.journal);
       s.roadEcho = aftermath.roadEcho;
       c.log.push("The path keeps what it wants. You walk home.");
+    } else if (depth.chargeContinues) {
+      c.pattern = "charging";
+      c.chargePhase = "release";
+      c.chargeVerb = c.chargeVerb ?? c.telegraph;
+      c.telegraph = c.chargeVerb;
+      c.log.push(chargeIntentLine(c.telegraph, "release"));
     } else {
       const intent = pickEnemyIntent(c.enemy, c.pathId);
       c.telegraph = intent.telegraph;
       c.pattern = intent.pattern;
       c.chargeVerb = intent.chargeVerb;
+      c.chargePhase = intent.chargePhase;
       const intentLine =
         intent.pattern === "charging"
-          ? `They gather for a delayed ${intent.telegraph}.`
+          ? chargeIntentLine(intent.telegraph, intent.chargePhase)
           : intent.pattern === "feint"
             ? `A false wind-up — it looks like ${intent.telegraph}.`
             : combatMove(c.enemy, intent.telegraph).telegraph;

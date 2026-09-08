@@ -6,6 +6,13 @@
      it reads each project's VERSIONS.md and nothing else. Keeping the log with
      the SOURCE is what stops the number and the build disagreeing. -->
 
+## v19 — 2026-09-08
+**Charge is a real two-turn wind-up**
+- charge telegraphs on one exchange (soft poke window, no heavy yet), then lands or is interrupted on the next
+- Strike still cuts the release short; Stone Patience still punishes the interrupt — never touches wellness
+- Journey intent copy labels Winding vs Charging so the duel reads across turns
+- PRODUCT_PLAN Phase 1–2 “blocked on R1” framing refreshed to match shipped Sep combat/combine work
+
 ## v18 — 2026-09-08
 **Encounters feel like a short duel, not only labeled RPS**
 - Nerve commitment: Skill spends Nerve, Guard restores it, spent Skill still lands thin — never touches wellness
