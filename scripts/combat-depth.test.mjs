@@ -40,8 +40,10 @@ test("Bond unlocks companion skills that change the exchange", () => {
 test("combat aftermath feeds Journey without scolding or wellness edits", () => {
   assert.match(depth, /combatAftermathCopy/);
   assert.match(store, /s\.roadEcho = aftermath\.roadEcho/);
+  assert.match(store, /recordRegionEcho\(s, c\.pathId/);
   assert.match(store, /journalEntry\(s\)\.lines\.push\(aftermath\.journal\)/);
   assert.match(model, /roadEcho/);
+  assert.match(model, /regionEchoes/);
   assert.doesNotMatch(depth, /you failed|don't forget|you should|missed your/i);
   assert.match(canonical, /combat loss never removes wellness progress/);
 });
@@ -57,11 +59,13 @@ test("balance growth table matches companion-combat runtime", () => {
   assert.match(balance, /alignedGrowth: true/);
 });
 
-test("VERSIONS records v18 combat depth and v19 two-turn charge", () => {
+test("VERSIONS records v18–v20 combat and world polish", () => {
   assert.match(versions, /## v18/);
   assert.match(versions, /Nerve|charge|feint|archetype|aftermath/i);
   assert.match(versions, /## v19/);
   assert.match(versions, /two-turn|wind-up|windup|release/i);
+  assert.match(versions, /## v20/);
+  assert.match(versions, /egg|region echo|Camp on the road|Winding/i);
 });
 
 test("v19 charge is a two-turn wind-up across resolve and store", () => {

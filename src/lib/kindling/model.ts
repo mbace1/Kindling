@@ -86,6 +86,13 @@ export type EggState = {
   trait?: string;
 };
 
+/** Soft memory of the last fight on a road. Never wellness. */
+export type RegionEcho = {
+  text: string;
+  result: "win" | "lose";
+  updatedAt: number;
+};
+
 export type CombatPattern = "steady" | "charging" | "feint";
 
 /** Two-turn charge: windup telegraphs, release lands or is interrupted next. */
@@ -145,8 +152,10 @@ export type KindlingSave = {
   encounters: { wins: number; losses: number };
   roster: Companion[];
   walkedOnce: boolean;
-  /** Soft Journey flavor after a fight. Cleared when shown. Never wellness. */
+  /** Soft Journey flavor after a fight. Cleared when dismissed. Never wellness. */
   roadEcho: string | null;
+  /** Last fight memory per road id — survives dismiss; never wellness. */
+  regionEchoes: Record<string, RegionEcho>;
 };
 
 export type Species = {
@@ -405,6 +414,7 @@ export function freshSave(): KindlingSave {
     roster: [companion],
     walkedOnce: false,
     roadEcho: null,
+    regionEchoes: {},
   };
 }
 
@@ -450,6 +460,39 @@ export function nextStageBondXp(s: KindlingSave) {
   const next = nextStage(s);
   if (!next || !s.companion) return 0;
   return Math.max(0, next.at * BASE_BOND_XP - s.companion.bondXp);
+}
+
+
+export function normalizeRegionEchoes(raw: unknown): Record<string, RegionEcho> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, RegionEcho> = {};
+  for (const [pathId, entry] of Object.entries(raw as Record<string, unknown>)) {
+    if (!entry || typeof entry !== "object") continue;
+    const row = entry as Partial<RegionEcho>;
+    if (typeof row.text !== "string" || !row.text.trim()) continue;
+    if (row.result !== "win" && row.result !== "lose") continue;
+    out[pathId] = {
+      text: row.text,
+      result: row.result,
+      updatedAt: Number.isFinite(row.updatedAt) ? Number(row.updatedAt) : 0,
+    };
+  }
+  return out;
+}
+
+export function recordRegionEcho(
+  s: Pick<KindlingSave, "regionEchoes">,
+  pathId: string,
+  echo: Omit<RegionEcho, "updatedAt"> & { updatedAt?: number },
+) {
+  s.regionEchoes = {
+    ...s.regionEchoes,
+    [pathId]: {
+      text: echo.text,
+      result: echo.result,
+      updatedAt: echo.updatedAt ?? Date.now(),
+    },
+  };
 }
 
 export function eggWarmth(s: KindlingSave) {
@@ -635,6 +678,7 @@ export function normalizeSave(raw: unknown): KindlingSave {
     walkedOnce: Boolean(r.walkedOnce),
     egg: r.egg && typeof r.egg === "object" ? { ...r.egg } as EggState : null,
     roadEcho: typeof r.roadEcho === "string" ? r.roadEcho : null,
+    regionEchoes: normalizeRegionEchoes(r.regionEchoes),
     combat: normalizeCombat(r.combat),
   };
 

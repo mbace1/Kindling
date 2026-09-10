@@ -1,5 +1,6 @@
 import { Flame, Footprints } from "lucide-react";
 import { CampConstructionPanel } from "@/components/camp-construction-panel";
+import { EggWarmthPanel } from "@/components/egg-warmth-panel";
 import { useKindling } from "@/lib/kindling/store";
 import { formatDay } from "@/lib/kindling/model";
 import { CompanionAtlasSprite } from "@/components/ember-atlas-sprite";
@@ -18,9 +19,9 @@ export function PackResponsive() {
         </div>
         <CampConstructionPanel />
         {s.egg ? (
-          <p className="text-sm text-mute">An egg warms in the coals. Warmth only gathers.</p>
+          <EggWarmthPanel save={s} compact />
         ) : s.roster.length > 1 ? (
-          <p className="text-sm text-mute">When two tenders combine, Keep holds the fingertip beat.</p>
+          <p className="text-sm text-mute">When two tenders combine, Keep holds the fingertip beat — parents stay, warmth only gathers.</p>
         ) : null}
       </div>
     );
@@ -76,13 +77,12 @@ export function PackResponsive() {
       <CampConstructionPanel />
 
       {s.egg ? (
-        <section className="mb-5 rounded-xl border border-fire/25 bg-coal/70 p-4">
-          <p className="text-xs uppercase tracking-[0.18em] text-fire">In the coals</p>
-          <p className="mt-1 text-sm text-bone">Fusion energy is still warming. The pack does not hurry it.</p>
-          <p className="mt-1 text-xs text-mute">From {s.egg.parentAName} and {s.egg.parentBName}. Both remain by the fire.</p>
-        </section>
+        <div className="mb-5">
+          <EggWarmthPanel save={s} compact />
+          <p className="mt-2 text-xs text-mute">Fusion energy is still warming. The pack does not hurry it.</p>
+        </div>
       ) : s.roster.length > 1 ? (
-        <p className="mb-4 text-sm text-mute">When two tenders reach fingertip to fingertip, Keep holds the combine.</p>
+        <p className="mb-4 text-sm text-mute">When two tenders reach fingertip to fingertip, Keep holds the combine — neither parent leaves.</p>
       ) : null}
 
       <div className="mt-6">

@@ -82,3 +82,31 @@ export function availableCampBuilds(s: Pick<KindlingSave, "found" | "journal" | 
 export function campBuildJournalLine(kind: FindKind) {
   return buildLine(kind);
 }
+
+export type CampRoadEffect = {
+  kind: FindKind;
+  name: string;
+  roadLine: string;
+};
+
+/** Built camp pieces that change the road — shown on Journey so construction feels consequential. */
+export function campRoadEffects(s: Pick<KindlingSave, "journal">): CampRoadEffect[] {
+  const kinds = builtCampKinds(s);
+  const lines: CampRoadEffect[] = [];
+  if (kinds.has("relic")) {
+    lines.push({ kind: "relic", name: "Waymarker", roadLine: "Known roads name what they may hold." });
+  }
+  if (kinds.has("shard")) {
+    lines.push({ kind: "shard", name: "Glass Lens", roadLine: "Danger is visible; encounters start steadier." });
+  }
+  if (kinds.has("moss")) {
+    lines.push({ kind: "moss", name: "Moss Bed", roadLine: "Resting on the road deepens Bond." });
+  }
+  if (kinds.has("memory")) {
+    lines.push({ kind: "memory", name: "Story Stone", roadLine: "Memory finds warm Bond a little more." });
+  }
+  if (kinds.has("ash")) {
+    lines.push({ kind: "ash", name: "Ember Bowl", roadLine: "Ashwood rests safer; the hearth mark stays." });
+  }
+  return lines;
+}

@@ -222,11 +222,12 @@ screens honest enough that combat and combine are the higher-leverage work.
 - v17 — named Strike / Guard / Skill, telegraph readability, fingertip combine
 - v18 — Nerve, same-round charge/feint archetypes, Bond skills, road echo
 - v19 — charge is a real two-turn wind-up (telegraph → land or Strike-interrupt)
+- v20 — egg warmth afterglow, persistent region echoes, camp-on-the-road, Bond/combine celebration
 
 **Next relevant agents work here**, not on reopening R1/R2 unless art arrives:
-- feel the two-turn charge on Journey (Bell Keep / forest charge archetypes)
+- deepen Old Gate / next-world beat when a clear content beat is ready
 - keep Strike-interrupt fantasy; never touch wellness on combat loss; no scolding
-- combine / Bond presentation polish only when combat contracts stay green
+- more region content only when the road memory / camp loop still reads clear
 
 ---
 

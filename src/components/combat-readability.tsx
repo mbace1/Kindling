@@ -20,9 +20,9 @@ export function intentCopy(
   chargePhase: ChargePhase | null = null,
 ) {
   if (pattern === "charging" && chargePhase === "windup") {
-    return "They wind up this turn. Next turn: Strike interrupts, or the heavy lands.";
+    return "Winding now · next turn they Charge — Strike interrupts, or the heavy lands.";
   }
-  if (pattern === "charging") return "The wind-up breaks. Strike can cut it short.";
+  if (pattern === "charging") return "Charging — Strike cuts the release short.";
   if (pattern === "feint") return "The wind-up looks false. Strike catches a feint.";
   if (verb === "strike") return "They are committing to a direct attack.";
   if (verb === "guard") return "They are bracing to absorb damage.";
