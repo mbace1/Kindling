@@ -19,6 +19,11 @@ import {
 } from "@/lib/kindling/combat-depth";
 import { companionCombatGrowth, combatStatsForCompanion } from "@/lib/kindling/companion-combat";
 import { campRoadEffects } from "@/lib/kindling/camp-construction";
+import {
+  rivalForPath,
+  rivalStatusLabel,
+  rivalStatusLine,
+} from "@/lib/kindling/combat-rivals";
 import { unlockedFindKinds } from "@/lib/kindling/find-progression";
 import { useKindling } from "@/lib/kindling/store";
 import {
@@ -162,6 +167,14 @@ export function JourneyWorldScreen() {
             <div className="h-full bg-fire transition-[width] duration-300 ease-linear" style={{ width: `${travel * 100}%` }} />
           </div>
           <p className="text-sm text-mute">{seconds > 0 ? `${seconds}s · continues if you close the app.` : "Coming home."}</p>
+          {path && rivalForPath(path.id) ? (
+            <p className="rounded-lg border border-fire/25 bg-night/60 px-3 py-2 text-xs text-bone/75">
+              <span className="block text-[10px] uppercase tracking-[0.14em] text-fire/80">
+                Keeper · {rivalStatusLabel(s.rivals?.[path.id]?.status ?? "looming")}
+              </span>
+              {rivalStatusLine(rivalForPath(path.id)!, s.rivals?.[path.id]?.status ?? "looming")}
+            </p>
+          ) : null}
           {path && summarizeRegionMemory(s.regionMemories?.[path.id]) ? (
             <p className="rounded-lg border border-fire/20 bg-coal/50 px-3 py-2 text-xs text-bone/70">
               <span className="block text-[10px] uppercase tracking-[0.14em] text-fire/80">Road remembers</span>
@@ -271,6 +284,17 @@ export function JourneyWorldScreen() {
                   </span>
                   {unlocked && hasWaymarker ? <span className="mt-1 block text-xs text-bone/55">May hold · {findNames}</span> : null}
                   {unlocked && hasLens ? <span className="mt-1 block text-xs text-bone/55">Encounter risk · {Math.round(path.encounter * 100)}%</span> : null}
+                  {unlocked && (() => {
+                    const rival = rivalForPath(path.id);
+                    const status = s.rivals?.[path.id]?.status;
+                    if (!rival) return null;
+                    const ensured = status ?? "looming";
+                    return (
+                      <span className="mt-1 block text-xs text-fire/80">
+                        Keeper · {rivalStatusLabel(ensured)} — {rivalStatusLine(rival, ensured)}
+                      </span>
+                    );
+                  })()}
                   {unlocked && summarizeRegionMemory(s.regionMemories?.[path.id]) ? (
                     <span className="mt-1 block text-xs text-fire/75">
                       Remembers · {summarizeRegionMemory(s.regionMemories?.[path.id])}
@@ -289,36 +313,87 @@ export function JourneyWorldScreen() {
             );
           })}
 
-          {gateOpen ? (
-            <div className="relative overflow-hidden rounded-xl border border-fire/40 bg-gradient-to-b from-coal to-night px-4 py-3 shadow-[0_0_28px_rgba(255,181,78,0.08)]">
-              <span className="absolute inset-y-0 left-0 w-1 bg-fire/50" />
-              <p className="text-[10px] uppercase tracking-[0.16em] text-fire">Path opens</p>
-              <p className="mt-1 font-medium">{OLD_GATE.chapter}. {OLD_GATE.displayName}</p>
-              <p className="mt-1 text-sm text-bone/75">{OLD_GATE.openCopy}</p>
-              <p className="mt-2 text-xs text-mute">Interim plate — the world is the reward; a dedicated gate plate can wait.</p>
-            </div>
-          ) : gateReady ? (
-            <button
-              type="button"
-              onClick={() => s.openOldGate()}
-              className="relative w-full overflow-hidden rounded-xl border border-fire/45 bg-gradient-to-b from-stone to-coal px-4 py-3 text-left shadow-[0_10px_28px_rgba(0,0,0,0.16)] transition hover:border-fire/60"
-              aria-label={OLD_GATE.approachLabel}
-            >
-              <span className="absolute inset-y-0 left-0 w-1 bg-fire/45" />
-              <p className="text-[10px] uppercase tracking-[0.16em] text-fire">The stone answers</p>
-              <p className="mt-1 font-medium">{OLD_GATE.chapter}. {OLD_GATE.displayName}</p>
-              <p className="mt-1 text-sm text-mute">{OLD_GATE.readyCopy}</p>
-              <span className="mt-2 inline-flex rounded-full border border-fire/35 bg-night/70 px-2.5 py-1 text-xs text-fire">{OLD_GATE.approachLabel}</span>
-            </button>
-          ) : (
-            <div className={cn("rounded-xl border border-ash bg-gradient-to-b from-stone to-coal px-4 py-3", oldGate ? "opacity-90" : "opacity-45")}>
-              <div className="flex items-center gap-2">
-                <LockKeyhole className="size-3.5 text-mute" />
-                <p className="font-medium">{OLD_GATE.chapter}. {OLD_GATE.displayName}</p>
-              </div>
-              <p className="mt-1 text-sm text-mute">{oldGate ? OLD_GATE.sealedCopy : OLD_GATE.worldBlurb}</p>
-            </div>
-          )}
+          {(() => {
+            const gateRival = rivalForPath("old-gate");
+            const gateRivalStatus = s.rivals?.["old-gate"]?.status;
+            const rivalLine = gateRival
+              ? rivalStatusLine(gateRival, gateRivalStatus ?? (oldGate ? "looming" : undefined))
+              : null;
+            const canChallenge =
+              Boolean(gateRival) &&
+              oldGate &&
+              gateRivalStatus !== "bested" &&
+              Boolean(s.companion) &&
+              s.fuel >= ERRAND_COST &&
+              !s.walk &&
+              !s.combat;
+            return (
+              <>
+                {gateOpen ? (
+                  <div className="relative overflow-hidden rounded-xl border border-fire/40 bg-gradient-to-b from-coal to-night px-4 py-3 shadow-[0_0_28px_rgba(255,181,78,0.08)]">
+                    <span className="absolute inset-y-0 left-0 w-1 bg-fire/50" />
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-fire">Path opens</p>
+                    <p className="mt-1 font-medium">{OLD_GATE.chapter}. {OLD_GATE.displayName}</p>
+                    <p className="mt-1 text-sm text-bone/75">{OLD_GATE.openCopy}</p>
+                    {gateRival && gateRivalStatus ? (
+                      <p className="mt-2 text-xs text-fire/80">Keeper · {rivalStatusLabel(gateRivalStatus)} — {rivalLine}</p>
+                    ) : null}
+                    <p className="mt-2 text-xs text-mute">Interim plate — the world is the reward; a dedicated gate plate can wait.</p>
+                  </div>
+                ) : gateReady ? (
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => s.openOldGate()}
+                      className="relative w-full overflow-hidden rounded-xl border border-fire/45 bg-gradient-to-b from-stone to-coal px-4 py-3 text-left shadow-[0_10px_28px_rgba(0,0,0,0.16)] transition hover:border-fire/60"
+                      aria-label={OLD_GATE.approachLabel}
+                    >
+                      <span className="absolute inset-y-0 left-0 w-1 bg-fire/45" />
+                      <p className="text-[10px] uppercase tracking-[0.16em] text-fire">The stone answers</p>
+                      <p className="mt-1 font-medium">{OLD_GATE.chapter}. {OLD_GATE.displayName}</p>
+                      <p className="mt-1 text-sm text-mute">{OLD_GATE.readyCopy}</p>
+                      {rivalLine ? <p className="mt-2 text-xs text-fire/80">Keeper · {rivalStatusLabel(gateRivalStatus ?? "looming")} — {rivalLine}</p> : null}
+                      <span className="mt-2 inline-flex rounded-full border border-fire/35 bg-night/70 px-2.5 py-1 text-xs text-fire">{OLD_GATE.approachLabel}</span>
+                    </button>
+                    {canChallenge ? (
+                      <button
+                        type="button"
+                        onClick={() => s.startWalk("old-gate")}
+                        className="relative w-full overflow-hidden rounded-xl border border-ash bg-coal/80 px-4 py-3 text-left transition hover:border-fire/40"
+                        aria-label="Challenge the Threshold Keeper"
+                      >
+                        <p className="text-[10px] uppercase tracking-[0.16em] text-fire">Keeper of the road</p>
+                        <p className="mt-1 font-medium">{gateRival!.name}</p>
+                        <p className="mt-1 text-sm text-mute">{gateRival!.blurb}</p>
+                        <span className="mt-2 inline-flex rounded-full border border-fire/30 bg-night/70 px-2.5 py-1 text-xs text-fire">Walk to challenge · {JOURNEY_FLAMES} Flames</span>
+                      </button>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className={cn("rounded-xl border border-ash bg-gradient-to-b from-stone to-coal px-4 py-3", oldGate ? "opacity-90" : "opacity-45")}>
+                    <div className="flex items-center gap-2">
+                      <LockKeyhole className="size-3.5 text-mute" />
+                      <p className="font-medium">{OLD_GATE.chapter}. {OLD_GATE.displayName}</p>
+                    </div>
+                    <p className="mt-1 text-sm text-mute">{oldGate ? OLD_GATE.sealedCopy : OLD_GATE.worldBlurb}</p>
+                    {oldGate && rivalLine ? (
+                      <p className="mt-2 text-xs text-fire/75">Keeper · {rivalStatusLabel(gateRivalStatus ?? "looming")} — {rivalLine}</p>
+                    ) : null}
+                    {canChallenge ? (
+                      <button
+                        type="button"
+                        onClick={() => s.startWalk("old-gate")}
+                        className="mt-3 inline-flex rounded-full border border-fire/30 bg-night/70 px-2.5 py-1 text-xs text-fire"
+                        aria-label="Challenge the Threshold Keeper"
+                      >
+                        Walk to challenge the keeper
+                      </button>
+                    ) : null}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {s.fuel < ERRAND_COST ? <p className="text-sm text-mute">Tend the fire a little more, then journey.</p> : null}
@@ -378,16 +453,20 @@ function CombatWorldScreen() {
         <p className="text-xs uppercase tracking-[0.2em] text-bone/65">{path ? `Chapter ${path.chapter} · ${path.displayName}` : "On the path"}</p>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="font-display text-3xl font-semibold">{enemy.name}</h2>
-            <p className="text-sm text-bone/70">{enemy.blurb}</p>
-            <p className="mt-1 text-[11px] text-fire/75">{archetype.label} · {archetype.regionHint}</p>
+            <h2 className="font-display text-3xl font-semibold">{c.rivalName || enemy.name}</h2>
+            <p className="text-sm text-bone/70">{c.rivalId ? (rivalForPath(c.pathId)?.blurb ?? enemy.blurb) : enemy.blurb}</p>
+            <p className="mt-1 text-[11px] text-fire/75">
+              {c.rivalId
+                ? `${rivalForPath(c.pathId)?.title ?? "Keeper"} · phase ${(c.rivalPhase ?? 0) + 1}/${c.rivalPhases || 1}`
+                : `${archetype.label} · ${archetype.regionHint}`}
+            </p>
           </div>
           {growth ? <span className="mt-1 shrink-0 rounded-full border border-fire/25 bg-night/70 px-2 py-1 text-[10px] text-fire">{growth.identity} {growth.rankLabel}</span> : null}
         </div>
 
         <div className="mt-5 flex items-end justify-between gap-3 rounded-xl border border-bone/10 bg-night/45 px-3 pb-3 pt-4 shadow-2xl backdrop-blur-[2px] sm:mt-6 sm:gap-5 sm:pt-5">
           <Fighter name={s.companion.name} species={s.companion.species} hp={c.playerHp} max={c.playerMax} align="left" damage={playerDamage} result={c.result} />
-          <Fighter name={enemy.name} species={c.enemy} hp={c.enemyHp} max={c.enemyMax} align="right" pose={c.result ? undefined : c.telegraph} damage={enemyDamage} result={c.result === "win" ? "lose" : c.result === "lose" ? "win" : null} />
+          <Fighter name={c.rivalName || enemy.name} species={c.enemy} hp={c.enemyHp} max={c.enemyMax} align="right" pose={c.result ? undefined : c.telegraph} damage={enemyDamage} result={c.result === "win" ? "lose" : c.result === "lose" ? "win" : null} />
         </div>
 
         {!done ? (
@@ -448,7 +527,7 @@ function CombatWorldScreen() {
 
         {done ? (
           <div className="mt-6 space-y-2">
-            {c.result === "win" && SPECIES[c.enemy].capturable && s.roster.length < 6 && !s.roster.some((m) => m.species === c.enemy) ? (
+            {c.result === "win" && !c.rivalId && SPECIES[c.enemy].capturable && s.roster.length < 6 && !s.roster.some((m) => m.species === c.enemy) ? (
               <button type="button" onClick={() => s.keepEncounter()} className="min-h-12 w-full rounded-md bg-fire px-4 font-medium text-night">Keep them by the fire</button>
             ) : null}
             <button
