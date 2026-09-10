@@ -13,6 +13,7 @@ import { combatMove } from "@/lib/kindling/combat-moves";
 import { chargeIntentLine, enemyArchetype, nerveMaxFor, pickEnemyIntent } from "@/lib/kindling/combat-depth";
 import { hasCampBuild } from "@/lib/kindling/camp-construction";
 import { journeyTraitForCompanion } from "@/lib/kindling/companion-journey";
+import { lineageRoadModifier } from "@/lib/kindling/lineage";
 import { journeyContent } from "@/lib/kindling/world-content";
 import { useKindling } from "@/lib/kindling/store";
 
@@ -64,6 +65,7 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
   const hasStoryStone = hasCampBuild(s, "memory");
   const hasEmberBowl = hasCampBuild(s, "ash");
   const trait = journeyTraitForCompanion(s.companion);
+  const elderMod = lineageRoadModifier(s);
   const shortcutProtected = hasLens || (pathId === "ash" && hasEmberBowl);
 
   useEffect(() => {
@@ -81,6 +83,7 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
     if (current.sheet.bonus.some((entry) => entry.startsWith(prefix))) return;
 
     const currentTrait = journeyTraitForCompanion(current.companion);
+    const currentElder = lineageRoadModifier(current);
     const marker = `${prefix}${pathId}:${choice}`;
     const sheet = { ...current.sheet, bonus: [...current.sheet.bonus, marker] };
     const updatedAt = Date.now();
@@ -128,12 +131,19 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
     } else if (choice === "rest") {
       const campRestBonus = (hasMossBed ? 10 : 0) + (pathId === "ash" && hasEmberBowl ? 10 : 0);
       const companionRestBonus = currentTrait?.restBondBonus ?? 0;
-      const totalBond = event.rest.bondXp + campRestBonus + companionRestBonus;
-      const restTime = Math.max(3_000, event.rest.timeMs + (currentTrait?.restTimeDelta ?? 0));
+      const elderRestBonus = currentElder?.restBondBonus ?? 0;
+      const totalBond = event.rest.bondXp + campRestBonus + companionRestBonus + elderRestBonus;
+      const restTime = Math.max(
+        3_000,
+        event.rest.timeMs + (currentTrait?.restTimeDelta ?? 0) + (currentElder?.restTimeDelta ?? 0),
+      );
       const companion = current.companion
         ? { ...current.companion, bondXp: current.companion.bondXp + totalBond }
         : null;
-      const regionMemories = withRegionMemory(current, pathId, "rest", "Rested together on this road.");
+      const restMemory = currentElder
+        ? `Rested with elder ${currentElder.elderName} on this road.`
+        : "Rested together on this road.";
+      const regionMemories = withRegionMemory(current, pathId, "rest", restMemory);
       useKindling.setState({
         companion,
         roster: companion ? current.roster.map((member) => (member.id === companion.id ? companion : member)) : current.roster,
@@ -141,11 +151,13 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
         walk: { ...walk, endsAt: walk.endsAt + restTime },
         regionMemories,
         updatedAt,
-        lastToast: `${event.rest.toast} · +${totalBond} Bond XP${campRestBonus ? " · camp bonus" : ""}${companionRestBonus ? " · companion bonus" : ""} · +${Math.round(restTime / 1000)}s`,
+        lastToast: `${event.rest.toast} · +${totalBond} Bond XP${campRestBonus ? " · camp bonus" : ""}${companionRestBonus ? " · companion bonus" : ""}${elderRestBonus ? " · elder walk" : ""} · +${Math.round(restTime / 1000)}s`,
       });
     } else {
       const path = PATHS.find((entry) => entry.id === pathId);
-      const ambushChance = event.shortcut.ambushChance * (currentTrait?.ambushMultiplier ?? 1);
+      const ambushChance = event.shortcut.ambushChance
+        * (currentTrait?.ambushMultiplier ?? 1)
+        * (currentElder?.ambushMultiplier ?? 1);
       const ambushed = Boolean(path?.enemy)
         && !shortcutProtected
         && consequenceRoll(pathId, startedAt) < ambushChance;
@@ -217,16 +229,18 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
   const investigateDetail = `Guaranteed ${event.investigate.findKind} · +${Math.round(investigateTime / 1000)}s${hasWaymarker ? " · Waymarker may reveal extra" : trait?.investigateExtra ? " · companion may reveal extra" : ""}`;
   const campRestBonus = (hasMossBed ? 10 : 0) + (pathId === "ash" && hasEmberBowl ? 10 : 0);
   const companionRestBonus = trait?.restBondBonus ?? 0;
-  const restTime = Math.max(3_000, event.rest.timeMs + (trait?.restTimeDelta ?? 0));
-  const restDetail = `+${event.rest.bondXp + campRestBonus + companionRestBonus} Bond XP · +${Math.round(restTime / 1000)}s${campRestBonus ? " · camp bonus" : ""}${companionRestBonus ? " · companion bonus" : ""}`;
+  const elderRestBonus = elderMod?.restBondBonus ?? 0;
+  const restTime = Math.max(3_000, event.rest.timeMs + (trait?.restTimeDelta ?? 0) + (elderMod?.restTimeDelta ?? 0));
+  const restDetail = `+${event.rest.bondXp + campRestBonus + companionRestBonus + elderRestBonus} Bond XP · +${Math.round(restTime / 1000)}s${campRestBonus ? " · camp bonus" : ""}${companionRestBonus ? " · companion bonus" : ""}${elderRestBonus ? " · elder walk" : ""}`;
   const shortcutTime = event.shortcut.timeMs + (trait?.shortcutTimeDelta ?? 0);
   const shortcutSeconds = Math.abs(Math.round(shortcutTime / 1000));
+  const ambushMul = (trait?.ambushMultiplier ?? 1) * (elderMod?.ambushMultiplier ?? 1);
   const baseShortcutRisk = shortcutProtected && event.shortcut.ambushChance > 0
     ? "scouted safe"
     : event.shortcut.ambushChance > 0
-      ? `${Math.round(event.shortcut.ambushChance * (trait?.ambushMultiplier ?? 1) * 100)}% ambush risk`
+      ? `${Math.round(event.shortcut.ambushChance * ambushMul * 100)}% ambush risk`
       : "safe route";
-  const shortcutDetail = `Get home ${shortcutSeconds}s sooner · ${baseShortcutRisk}`;
+  const shortcutDetail = `Get home ${shortcutSeconds}s sooner · ${baseShortcutRisk}${elderMod ? " · elder steadies the road" : ""}`;
 
   return (
     <section className="fixed inset-x-3 bottom-20 z-40 mx-auto max-w-md rounded-xl border border-fire/35 bg-night/95 p-3 shadow-2xl backdrop-blur">
@@ -236,6 +250,11 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
       {trait && s.companion ? (
         <p className="mt-2 rounded-md border border-fire/20 bg-coal/70 px-2.5 py-2 text-xs text-bone/75">
           <span className="font-medium text-fire">{s.companion.name} · {trait.name}</span> — {trait.summary}
+        </p>
+      ) : null}
+      {elderMod ? (
+        <p className="mt-2 rounded-md border border-fire/25 bg-night/70 px-2.5 py-2 text-xs text-fire">
+          {elderMod.summary} — softer ambushes, warmer rests.
         </p>
       ) : null}
       <div className="mt-3 grid gap-2">

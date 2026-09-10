@@ -35,6 +35,7 @@ import {
   offspringOf,
 } from "./model";
 import { combatStatsForCompanion } from "./companion-combat";
+import { hatchCompanionFromEgg, isAshTraitId } from "./lineage";
 import { combatMove, exchangeHeadline } from "./combat-moves";
 import {
   chargeIntentLine,
@@ -790,8 +791,9 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     const child = offspringOf(a.species, b.species);
     if (!child) return;
     // Combining never consumes either parent — both stay in roster/lineage.
-    const inherited = a.trait ?? b.trait;
-    const trait = Math.random() < 0.12
+    const inherited = (a.trait && isAshTraitId(a.trait) ? a.trait : undefined)
+      ?? (b.trait && isAshTraitId(b.trait) ? b.trait : undefined);
+    const trait = Math.random() < 0.12 || !inherited
       ? ASH_TRAITS[Math.floor(Math.random() * ASH_TRAITS.length)]
       : inherited;
     s.egg = {
@@ -820,14 +822,25 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     const s = pick(get());
     if (!s.egg || !eggReady(s) || s.roster.length >= 6) return;
     const egg = s.egg;
-    const born = freshCompanion(egg.species, egg.trait);
+    // Named child with visible parent links + inherited ash trait; becomes active companion.
+    const born = hatchCompanionFromEgg(egg);
     s.roster.push(born);
+    s.companion = born;
     if (!s.unlocked.includes(egg.species)) s.unlocked.push(egg.species);
     s.egg = null;
-    journalEntry(s).lines.push(`${born.name} hatched from the coals.`);
+    const traitNote = born.trait ? ` Carries ${born.trait} from the family fire.` : "";
+    journalEntry(s).lines.push(
+      `${born.name} hatched from the coals — child of ${egg.parentAName} and ${egg.parentBName}.${traitNote}`,
+    );
     s.updatedAt = Date.now();
     persist(s);
-    set({ ...s, lastToast: `${born.name} hatched.`, tab: "companion" });
+    set({
+      ...s,
+      lastToast: born.trait
+        ? `${born.name} hatched · inherits ${born.trait}.`
+        : `${born.name} hatched.`,
+      tab: "companion",
+    });
   },
 
   confirmKindling: () => {
@@ -835,7 +848,9 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     if (!s.kindlingPending) return;
     if (s.companion) {
       const st = stageOf(s);
-      const trait = ASH_TRAITS[Math.floor(Math.random() * ASH_TRAITS.length)];
+      // Keep what they carried; otherwise gift an ash trait so lineage stays flavored.
+      const carried = s.companion.trait && isAshTraitId(s.companion.trait) ? s.companion.trait : undefined;
+      const trait = carried ?? ASH_TRAITS[Math.floor(Math.random() * ASH_TRAITS.length)];
       s.lineage.unshift({
         id: s.companion.id,
         species: s.companion.species,

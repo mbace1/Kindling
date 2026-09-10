@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { SPECIES, stageOfCompanion } from "@/lib/kindling/model";
+import { ashTraitLabel } from "@/lib/kindling/lineage";
 import { useKindling } from "@/lib/kindling/store";
 import { OLD_GATE, WORLD_PATHS, pathUnlocked } from "@/lib/kindling/world";
 
@@ -12,6 +13,7 @@ export function ProgressionCelebration() {
   const previousStage = useRef<string | null>(null);
   const previousEgg = useRef<boolean | null>(null);
   const previousGate = useRef<boolean | null>(null);
+  const previousRosterIds = useRef<string[] | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
 
   useEffect(() => {
@@ -21,6 +23,7 @@ export function ProgressionCelebration() {
     const stage = s.companion ? stageOfCompanion(s.companion) : null;
     const hasEgg = Boolean(s.egg);
     const gateOpen = Boolean(s.oldGateOpened);
+    const rosterIds = s.roster.map((m) => m.id);
 
     if (previousRoads.current) {
       const opened = roads.find((id) => !previousRoads.current?.includes(id));
@@ -60,12 +63,28 @@ export function ProgressionCelebration() {
       });
     }
 
+    if (previousRosterIds.current && previousEgg.current === true && !hasEgg) {
+      const bornId = rosterIds.find((id) => !previousRosterIds.current?.includes(id));
+      const born = bornId ? s.roster.find((m) => m.id === bornId) : s.companion;
+      if (born?.parentAName && born?.parentBName) {
+        const trait = born.trait ? ashTraitLabel(born.trait) ?? born.trait : null;
+        setCelebration({
+          eyebrow: "Family hatch",
+          title: born.name,
+          copy: trait
+            ? `Child of ${born.parentAName} + ${born.parentBName}. Carries ${trait} onto the road.`
+            : `Child of ${born.parentAName} + ${born.parentBName}. The family fire keeps walking.`,
+        });
+      }
+    }
+
     previousRoads.current = roads;
     previousSpecies.current = species;
     previousStage.current = stage?.id ?? null;
     previousEgg.current = hasEgg;
     previousGate.current = gateOpen;
-  }, [s.hydrated, s.found.length, s.unlocked.length, s.companion?.id, s.companion?.bondXp, s.egg?.species, s.egg?.parentAName, s.oldGateOpened]);
+    previousRosterIds.current = rosterIds;
+  }, [s.hydrated, s.found.length, s.unlocked.length, s.companion?.id, s.companion?.bondXp, s.companion?.trait, s.egg?.species, s.egg?.parentAName, s.oldGateOpened, s.roster.length]);
 
   useEffect(() => {
     if (!celebration) return;
