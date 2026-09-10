@@ -316,7 +316,7 @@ export function JourneyWorldScreen() {
                 <LockKeyhole className="size-3.5 text-mute" />
                 <p className="font-medium">{OLD_GATE.chapter}. {OLD_GATE.displayName}</p>
               </div>
-              <p className="mt-1 hidden text-sm text-mute sm:block">{oldGate ? OLD_GATE.sealedCopy : OLD_GATE.worldBlurb}</p>
+              <p className="mt-1 text-sm text-mute">{oldGate ? OLD_GATE.sealedCopy : OLD_GATE.worldBlurb}</p>
             </div>
           )}
         </div>
