@@ -380,7 +380,12 @@ function CombatWorldScreen() {
             <p className="mt-2 text-[11px] text-bone/55">Nerve {nerve}/{nerveMax} · Skill spends · Guard restores</p>
           </div>
         ) : (
-          <p className="mt-4 rounded-lg border border-fire/20 bg-coal/75 px-3 py-2 text-sm font-medium text-bone">{c.result === "win" ? "The path opens." : "You walk home. Care still waits at the fire — combat never cools it."}</p>
+          <div className="mt-4 rounded-lg border border-fire/20 bg-coal/75 px-3 py-2">
+            <p className="text-sm font-medium text-bone">{c.result === "win" ? "The path opens." : "You walk home. The fire is still there."}</p>
+            {c.result === "lose" ? (
+              <p className="mt-1 text-[11px] text-bone/55">Care still waits at the fire — combat never cools it.</p>
+            ) : null}
+          </div>
         )}
 
         {c.log.length ? (
