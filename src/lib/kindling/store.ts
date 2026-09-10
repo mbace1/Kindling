@@ -58,7 +58,7 @@ import {
   type RoadRival,
 } from "./combat-rivals";
 import { playHit, playTick, unlockAudio } from "./audio";
-import { oldGateReady, oldGateVisible, pathCleared } from "./world";
+import { oldGateReady, oldGateVisible, pathCleared, pathUnlocked, WORLD_PATHS } from "./world";
 
 const WALK_DURATION_MS = 90_000;
 
@@ -453,6 +453,8 @@ export const useKindling = create<KindlingStore>((set, get) => ({
 
     const path = PATHS.find((p) => p.id === pathId);
     if (!path) return "That path is gone.";
+    const worldPath = WORLD_PATHS.find((entry) => entry.id === pathId);
+    if (worldPath && !pathUnlocked(s, worldPath)) return "That road is not open yet.";
     s.fuel -= ERRAND_COST;
     const startedAt = Date.now();
     s.walk = { pathId, startedAt, endsAt: startedAt + WALK_DURATION_MS };
@@ -740,10 +742,10 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     if (s.oldGateOpened) return "The gate already stands open.";
     if (!oldGateReady(s)) return "The roads behind you are not finished speaking.";
     s.oldGateOpened = true;
-    journalEntry(s).lines.push("The Old Gate opened. A next world waits beyond the threshold.");
+    journalEntry(s).lines.push("The Old Gate opened. Pale Reach waits beyond the threshold.");
     s.updatedAt = Date.now();
     persist(s);
-    set({ ...s, lastToast: "The path opens.", tab: "journey" });
+    set({ ...s, lastToast: "Pale Reach opens beyond the gate.", tab: "journey" });
     return null;
   },
 

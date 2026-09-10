@@ -10,7 +10,7 @@ export type JourneyChoiceContent = {
 };
 
 export type RegionContent = {
-  id: "ruin" | "forest" | "road" | "ash";
+  id: "ruin" | "forest" | "road" | "ash" | "pale" | "spire";
   chapter: number;
   displayName: string;
   worldBlurb: string;
@@ -66,6 +66,28 @@ export const REGION_CONTENT: RegionContent[] = [
       investigate: { label: "Dig into the warm ash", toast: "There is still something warm beneath the ash.", findKind: "ash", timeMs: 25000 },
       rest: { label: "Warm yourselves here", toast: "You stay beside the buried heat a little longer.", bondXp: 40, timeMs: 15000 },
       shortcut: { label: "Run the cooling ridge", toast: "The ridge holds long enough to cross.", timeMs: -20000, ambushChance: .30 },
+    },
+  },
+  {
+    id: "pale", chapter: 6, displayName: "Pale Reach", unlockAfter: "old-gate",
+    worldBlurb: "Beyond the threshold the road turns pale — cold flats under a thin moon.",
+    artDirection: "cold pale flats, thin moonlight, sparse white grass, distant warm gate-slit behind", art: "art/birch-ruins-clean.svg", crop: "42% 28%", ambience: "thin wind, frost grit, distant gate hush", enemyPool: ["mossling"],
+    journey: {
+      eyebrow: "Pale Reach · moon flats", title: "A pale glint rests in the frost grass.", copy: "The flats look empty. Something still watches between the pale blades.",
+      investigate: { label: "Comb the frost grass", toast: "The pale flats were holding something.", findKind: "shard", timeMs: 18000 },
+      rest: { label: "Sit under the thin moon", toast: "The cold stills. You rest together.", bondXp: 30, timeMs: 10000 },
+      shortcut: { label: "Cut across the pale flats", toast: "The flats save time if you keep moving.", timeMs: -22000, ambushChance: .38 },
+    },
+  },
+  {
+    id: "spire", chapter: 7, displayName: "Hollow Spire", unlockAfter: "pale",
+    worldBlurb: "Past the pale flats, a quiet tower stands hollow against the cold.",
+    artDirection: "hollow ruined spire, cold stone, high wind, warm ember slit at the crown", art: "art/bell-keep-clean.svg", crop: "58% 18%", ambience: "high wind, hollow stone, distant metal", enemyPool: ["mossknight"],
+    journey: {
+      eyebrow: "Hollow Spire · quiet stair", title: "An unlit stair climbs into the hollow crown.", copy: "The main approach is exposed. A side stair vanishes into cold stone.",
+      investigate: { label: "Search the hollow stair", toast: "Something waited in the unlit stone.", findKind: "relic", timeMs: 20000 },
+      rest: { label: "Shelter in the hollow", toast: "The spire holds the wind back for a while.", bondXp: 35, timeMs: 12000 },
+      shortcut: { label: "Climb the outer stones", toast: "The outer climb is faster — and seen.", timeMs: -28000, ambushChance: .42 },
     },
   },
 ];

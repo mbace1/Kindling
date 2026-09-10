@@ -35,6 +35,7 @@ import {
   oldGateVisible,
   pathCleared,
   pathUnlocked,
+  unlockRoadName,
   worldProgress,
 } from "@/lib/kindling/world";
 import { cn } from "@/lib/utils";
@@ -191,9 +192,7 @@ export function JourneyWorldScreen() {
   const oldGate = oldGateVisible(s);
   const gateReady = oldGateReady(s);
   const gateOpen = oldGateIsOpen(s);
-  const coverPath = gateOpen
-    ? { ...WORLD_PATHS[WORLD_PATHS.length - 1], displayName: OLD_GATE.displayName, art: OLD_GATE.art, crop: OLD_GATE.crop }
-    : [...WORLD_PATHS].reverse().find((path) => pathUnlocked(s, path)) ?? WORLD_PATHS[0];
+  const coverPath = [...WORLD_PATHS].reverse().find((path) => pathUnlocked(s, path)) ?? WORLD_PATHS[0];
   const findKinds = unlockedFindKinds(s);
   const hasWaymarker = findKinds.has("relic");
   const hasLens = findKinds.has("shard");
@@ -287,7 +286,7 @@ export function JourneyWorldScreen() {
                   </span>
                   <span className={cn("mt-0.5 text-sm text-mute", !unlocked ? "hidden sm:block" : "block")}>
                     {!unlocked
-                      ? `Bring something home from ${WORLD_PATHS[path.chapter - 2]?.displayName ?? "the previous road"}.`
+                      ? `Bring something home from ${unlockRoadName(path)}.`
                       : cleared
                         ? "Known path · return whenever you want."
                         : path.worldBlurb}
@@ -348,7 +347,8 @@ export function JourneyWorldScreen() {
                     {gateRival && gateRivalStatus ? (
                       <p className="mt-2 text-xs text-fire/80">Keeper · {rivalStatusLabel(gateRivalStatus)} — {rivalLine}</p>
                     ) : null}
-                    <p className="mt-2 text-xs text-mute">Interim plate — the world is the reward; a dedicated gate plate can wait.</p>
+                    <p className="mt-2 text-xs text-fire/85">Walk Pale Reach above — Hollow Spire waits once that road answers.</p>
+                    <p className="mt-2 text-xs text-mute">Interim plates — the world is the reward; dedicated beyond-gate art can wait.</p>
                   </div>
                 ) : gateReady ? (
                   <div className="space-y-2">

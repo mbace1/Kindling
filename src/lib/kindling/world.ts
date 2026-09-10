@@ -40,7 +40,7 @@ export const OLD_GATE = {
   crop: "62% 42%",
   sealedCopy: "The gate is visible beyond Ashwood. The stone still holds.",
   readyCopy: "Every road behind you answers. The gate will open if you approach.",
-  openCopy: "The slit of light widens. A next world waits beyond the threshold — the road itself is the reward.",
+  openCopy: "The slit of light widens. Pale Reach opens beyond the threshold — Hollow Spire waits farther on. The road itself is the reward.",
   approachLabel: "Approach the Old Gate",
 } as const;
 
@@ -50,8 +50,21 @@ export function pathCleared(s: Pick<KindlingSave, "found">, pathId: string) {
   return s.found.some((item) => item.from === pathId);
 }
 
-export function pathUnlocked(s: Pick<KindlingSave, "found">, path: WorldPath) {
-  return path.unlockAfter === null || pathCleared(s, path.unlockAfter);
+export function pathUnlocked(s: Pick<KindlingSave, "found" | "oldGateOpened">, path: WorldPath) {
+  if (path.unlockAfter === null) return true;
+  if (path.unlockAfter === "old-gate") return oldGateIsOpen(s);
+  return pathCleared(s, path.unlockAfter);
+}
+
+/** Display name for the lock that opens this road. */
+export function unlockRoadName(path: WorldPath) {
+  if (path.unlockAfter === "old-gate") return OLD_GATE.displayName;
+  return WORLD_PATHS.find((entry) => entry.id === path.unlockAfter)?.displayName ?? "the previous road";
+}
+
+/** Regions that only exist past the opened Old Gate. */
+export function beyondGatePaths() {
+  return WORLD_PATHS.filter((path) => path.unlockAfter === "old-gate" || path.chapter >= 6);
 }
 
 /** Gate looms once Bell Keep is known — Ashwood still waits ahead. */

@@ -58,8 +58,8 @@ export function ProgressionCelebration() {
     if (previousGate.current === false && gateOpen) {
       setCelebration({
         eyebrow: "Path opens",
-        title: OLD_GATE.displayName,
-        copy: "A next world waits beyond the threshold. The world is the reward.",
+        title: "Into Pale Reach",
+        copy: "The Old Gate opens onto Pale Reach. Hollow Spire waits farther on. The world is the reward.",
       });
     }
 
