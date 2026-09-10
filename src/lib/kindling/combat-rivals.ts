@@ -21,7 +21,7 @@ export type RivalPhaseDef = {
 
 export type RoadRival = {
   id: string;
-  /** Existing region ids: ruin | forest | road | ash | old-gate */
+  /** Existing region ids: ruin | forest | road | ash | old-gate | pale | spire */
   pathId: string;
   name: string;
   title: string;
@@ -124,6 +124,41 @@ export const ROAD_RIVALS: RoadRival[] = [
     loomingLine: "Threshold Keeper looms at the Old Gate.",
     challengedLine: "Threshold Keeper still bars the Old Gate.",
     bestedLine: "Threshold Keeper yielded. The slit of light widens.",
+  },
+  {
+    id: "silver-fenward",
+    pathId: "pale",
+    name: "Silver Fenward",
+    title: "Keeper of Pale Reach",
+    species: "mossling",
+    blurb: "Pale flats hide a cold watcher under the thin moon.",
+    phases: [
+      { label: "Frost hush", hpMult: 0.9, chargeChance: 0.2, feintChance: 0.34, preferredHeavy: "skill" },
+      { label: "Pale close", hpMult: 1.12, chargeChance: 0.32, feintChance: 0.22, preferredHeavy: "skill" },
+    ],
+    pressureSkillId: "spore-breath",
+    pressureHint: "Spore Breath softens the pale close.",
+    loomingLine: "Silver Fenward looms across the pale flats.",
+    challengedLine: "Silver Fenward still holds Pale Reach.",
+    bestedLine: "Silver Fenward yielded the pale road.",
+  },
+  {
+    id: "unlit-spireward",
+    pathId: "spire",
+    name: "Unlit Spireward",
+    title: "Keeper of Hollow Spire",
+    species: "mossknight",
+    blurb: "The hollow crown gathers weight before it falls.",
+    phases: [
+      { label: "Hollow stair", hpMult: 0.88, chargeChance: 0.36, feintChance: 0.1, preferredHeavy: "strike" },
+      { label: "Crown wind", hpMult: 1.05, chargeChance: 0.28, feintChance: 0.2, preferredHeavy: "skill" },
+      { label: "Unlit peal", hpMult: 1.18, chargeChance: 0.48, feintChance: 0.08, preferredHeavy: "strike" },
+    ],
+    pressureSkillId: "stone-patience",
+    pressureHint: "Stone Patience punishes the unlit peal.",
+    loomingLine: "Unlit Spireward looms in the hollow crown.",
+    challengedLine: "Unlit Spireward still claims Hollow Spire.",
+    bestedLine: "Unlit Spireward stepped aside from the crown.",
   },
 ];
 

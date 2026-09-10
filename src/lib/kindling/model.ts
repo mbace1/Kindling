@@ -385,6 +385,30 @@ export const PATHS = [
       { name: "banner thread", kind: "memory" as FindKind },
     ],
   },
+  {
+    id: "pale",
+    name: "Pale Reach",
+    blurb: "Cold flats beyond the threshold.",
+    encounter: 0.55,
+    enemy: "mossling" as SpeciesId,
+    finds: [
+      { name: "a pale thorn", kind: "shard" as FindKind },
+      { name: "moon moss", kind: "moss" as FindKind },
+      { name: "a frost memory", kind: "memory" as FindKind },
+    ],
+  },
+  {
+    id: "spire",
+    name: "Hollow Spire",
+    blurb: "A quiet tower past the pale flats.",
+    encounter: 0.68,
+    enemy: "mossknight" as SpeciesId,
+    finds: [
+      { name: "a hollow nail", kind: "relic" as FindKind },
+      { name: "spire ash", kind: "ash" as FindKind },
+      { name: "an unlit vow", kind: "memory" as FindKind },
+    ],
+  },
 ] as const;
 
 export const ASH_TRAITS = ["ember-core", "quiet-guard", "quick-spark", "moss-memory"] as const;

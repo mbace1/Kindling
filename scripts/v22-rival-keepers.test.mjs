@@ -128,7 +128,7 @@ if (s.kept !== kept || s.fuel !== fuel) throw new Error("wellness changed");
 if (!s.rivals.ruin || s.rivals.ruin.status !== "bested") throw new Error("rival status lost");
 const again = normalizeSave(JSON.parse(JSON.stringify(s)));
 if (again.rivals.ruin?.status !== "bested") throw new Error("normalize dropped rivals");
-if (ROAD_RIVALS.length !== 5) throw new Error("expected five keepers");
+if (ROAD_RIVALS.length < 5) throw new Error("expected at least five keepers");
 console.log(JSON.stringify({ ok: true, phases: rival.phases.length, rivals: ROAD_RIVALS.length, soft }));
 `;
   const r = spawnSync(process.execPath, ["--import", "tsx", "--input-type=module", "-e", runtime], {

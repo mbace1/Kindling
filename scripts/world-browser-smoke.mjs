@@ -68,7 +68,7 @@ try {
   assert.equal(await fresh.page.getByRole("button", { name: "Drowned Courtyard" }).isDisabled(), true, "Drowned Courtyard starts locked");
   assert.equal(await fresh.page.getByRole("button", { name: "Bell Keep" }).isDisabled(), true, "Bell Keep starts locked");
   assert.equal(await fresh.page.getByRole("button", { name: "Ashwood" }).isDisabled(), true, "Ashwood starts locked");
-  assert.match(await fresh.page.locator("body").innerText(), /0 \/ 5\s+roads known/, "fresh world shows five-chapter progression");
+  assert.match(await fresh.page.locator("body").innerText(), /0 \/ 7\s+roads known/, "fresh world shows seven-slot progression (4 roads + gate + 2 beyond)");
   await fresh.context.close();
 
   const afterBirch = await openWorld(browser, seed(["ruin"]));
@@ -88,7 +88,7 @@ try {
   const oldGateTitle = deep.page.getByText("5. Old Gate", { exact: true });
   assert.equal(await oldGateTitle.isVisible(), true, "Old Gate title is visible after Bell Keep");
   assert.match(await deep.page.locator("body").innerText(), /The stone still holds|something older closes the road/i, "sealed Old Gate copy before Ashwood clear");
-  assert.match(await deep.page.locator("body").innerText(), /3 \/ 5\s+roads known/, "three live regions cleared; gate not yet open");
+  assert.match(await deep.page.locator("body").innerText(), /3 \/ 7\s+roads known/, "three live regions cleared; gate not yet open");
   const overflow = await deep.page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   assert.ok(overflow <= 0, `world screen overflows horizontally by ${overflow}px`);
   await deep.page.screenshot({ path: "artifacts/betterment-world.png", fullPage: true });
@@ -98,13 +98,15 @@ try {
   assert.equal(await ready.page.getByRole("button", { name: "Approach the Old Gate" }).isVisible(), true, "Old Gate approachable after Ashwood + care progress");
   await ready.page.getByRole("button", { name: "Approach the Old Gate" }).click();
   await ready.page.getByRole("main").getByText("Path opens", { exact: true }).waitFor();
-  assert.match(await ready.page.locator("body").innerText(), /next world waits|Beyond the gate/i, "opened gate shows next-world beat");
-  assert.match(await ready.page.locator("body").innerText(), /5 \/ 5\s+roads known/, "opened gate counts toward world progress");
+  assert.match(await ready.page.locator("body").innerText(), /Pale Reach|Beyond the gate|Hollow Spire/i, "opened gate shows path into the new world");
+  assert.match(await ready.page.locator("body").innerText(), /5 \/ 7\s+roads known/, "opened gate counts; beyond regions still ahead");
+  assert.equal(await ready.page.getByRole("button", { name: "Pale Reach" }).isEnabled(), true, "Pale Reach unlocks when the Gate opens");
+  assert.equal(await ready.page.getByRole("button", { name: "Hollow Spire" }).isDisabled(), true, "Hollow Spire waits for Pale Reach");
   const opened = await ready.page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null")?.oldGateOpened);
   assert.equal(opened, true, "oldGateOpened persists in save");
   await ready.context.close();
 
-  console.log(JSON.stringify({ ok: true, sequence: ["Birch Ruins", "Drowned Courtyard", "Bell Keep", "Ashwood", "Old Gate"] }, null, 2));
+  console.log(JSON.stringify({ ok: true, sequence: ["Birch Ruins", "Drowned Courtyard", "Bell Keep", "Ashwood", "Old Gate", "Pale Reach", "Hollow Spire"] }, null, 2));
 } finally {
   await browser.close();
 }

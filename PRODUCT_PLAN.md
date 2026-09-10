@@ -226,15 +226,15 @@ screens honest enough that combat and combine are the higher-leverage work.
 - v21 — deeper per-region memory; Old Gate approach / next-world interim beat
 - v22 — named keepers / multi-phase rival duels on the five roads (epic C)
 - v23 — living lineage roster: hatch inheritance, firelit family tree, walk-with-elder (epic B)
+- v24 — world beyond Old Gate: Pale Reach + Hollow Spire with Journey / memory / rival hooks (epic A)
 
-**Epic roadmap (owner order C → B → A):**
+**Epic roadmap (owner order C → B → A) — complete:**
 - **C — Boss / named rival duels** — shipped in v22
 - **B — Living lineage** — shipped in v23 (family tree / hatch traits / elder walk)
-- **A — World beyond Gate** — next: more than interim Gate copy; a next region or travel beat past the threshold
+- **A — World beyond Gate** — shipped in v24 (Pale Reach + Hollow Spire past the threshold)
 
 **Next relevant agents work here**, not on reopening R1/R2 unless art arrives:
-- epic A (world beyond Gate) — roadmap only until started; do not expand beyond a plan line while shipping B
-- dedicated Old Gate plate only when art arrives (interim ships without blocking)
+- dedicated Old Gate / beyond-gate plates only when art arrives (interim ships without blocking)
 - keep Strike-interrupt fantasy; never touch wellness on combat loss; no scolding
 - more region content only when the road memory / camp loop still reads clear
 

@@ -94,6 +94,22 @@ const REGION_ARCHETYPE: Record<string, EnemyArchetype> = {
     feintChance: 0.34,
     preferredHeavy: "skill",
   },
+  pale: {
+    id: "pale-watcher",
+    label: "Pale Watcher",
+    regionHint: "Frost flats hide false stillness.",
+    chargeChance: 0.2,
+    feintChance: 0.3,
+    preferredHeavy: "skill",
+  },
+  spire: {
+    id: "hollow-warden",
+    label: "Hollow Warden",
+    regionHint: "The spire gathers weight before it falls.",
+    chargeChance: 0.36,
+    feintChance: 0.12,
+    preferredHeavy: "strike",
+  },
 };
 
 const DEFAULT_ARCHETYPE: EnemyArchetype = {
