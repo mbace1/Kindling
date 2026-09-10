@@ -5,6 +5,8 @@ import {
   SAVE_KEY,
   SPECIES,
   dayKey,
+  recordRegionMemory,
+  type KindlingSave,
 } from "@/lib/kindling/model";
 import { combatStatsForCompanion } from "@/lib/kindling/companion-combat";
 import { combatMove } from "@/lib/kindling/combat-moves";
@@ -27,6 +29,19 @@ function persistCurrent() {
   }
 }
 
+
+function withRegionMemory(
+  current: ReturnType<typeof useKindling.getState>,
+  pathId: string,
+  kind: "find" | "rest" | "shortcut",
+  text: string,
+) {
+  const draft = {
+    regionMemories: { ...(current.regionMemories ?? {}) },
+  } as Pick<KindlingSave, "regionMemories">;
+  recordRegionMemory(draft, pathId, { kind, text });
+  return draft.regionMemories;
+}
 function consequenceRoll(pathId: string, startedAt: number) {
   let h = (startedAt >>> 0) ^ 0x51ed270b;
   for (let i = 0; i < pathId.length; i++) {
@@ -99,12 +114,14 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
       }
 
       const investigateTime = Math.max(3_000, event.investigate.timeMs + (currentTrait?.investigateTimeDelta ?? 0));
+      const regionMemories = withRegionMemory(current, pathId, "find", `Found ${find.name} on this road.`);
       useKindling.setState({
         found,
         companion,
         roster,
         sheet,
         walk: { ...walk, endsAt: walk.endsAt + investigateTime },
+        regionMemories,
         updatedAt,
         lastToast: `${event.investigate.toast} ${find.name}.${bonusCopy} +${Math.round(investigateTime / 1000)}s`,
       });
@@ -116,11 +133,13 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
       const companion = current.companion
         ? { ...current.companion, bondXp: current.companion.bondXp + totalBond }
         : null;
+      const regionMemories = withRegionMemory(current, pathId, "rest", "Rested together on this road.");
       useKindling.setState({
         companion,
         roster: companion ? current.roster.map((member) => (member.id === companion.id ? companion : member)) : current.roster,
         sheet,
         walk: { ...walk, endsAt: walk.endsAt + restTime },
+        regionMemories,
         updatedAt,
         lastToast: `${event.rest.toast} · +${totalBond} Bond XP${campRestBonus ? " · camp bonus" : ""}${companionRestBonus ? " · companion bonus" : ""} · +${Math.round(restTime / 1000)}s`,
       });
@@ -144,9 +163,11 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
             : intent.pattern === "feint"
               ? `A false wind-up — it looks like ${intent.telegraph}.`
               : combatMove(path.enemy, intent.telegraph).telegraph;
+        const regionMemories = withRegionMemory(current, pathId, "shortcut", "Took the quicker way — the road noticed.");
         useKindling.setState({
           sheet,
           walk: null,
+          regionMemories,
           combat: {
             enemy: path.enemy,
             pathId,
@@ -174,9 +195,11 @@ export function JourneyDecision({ startedAt, pathId }: { startedAt: number; path
       } else {
         const shortcutTime = event.shortcut.timeMs + (currentTrait?.shortcutTimeDelta ?? 0);
         const seconds = Math.abs(Math.round(shortcutTime / 1000));
+        const regionMemories = withRegionMemory(current, pathId, "shortcut", "Took the quicker way across this road.");
         useKindling.setState({
           sheet,
           walk: { ...walk, endsAt: Math.max(Date.now() + 3_000, walk.endsAt + shortcutTime) },
+          regionMemories,
           updatedAt,
           lastToast: `${event.shortcut.toast} · −${seconds}s${shortcutProtected && event.shortcut.ambushChance > 0 ? " · route scouted" : ""}${currentTrait?.shortcutTimeDelta ? " · companion pace" : ""}`,
         });

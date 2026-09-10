@@ -93,6 +93,23 @@ export type RegionEcho = {
   updatedAt: number;
 };
 
+/** Soft road beat kinds — finds, rests, shortcuts, fights. Never a streak. */
+export type RegionMemoryKind = "find" | "rest" | "shortcut" | "win" | "lose";
+
+export type RegionMemoryBeat = {
+  kind: RegionMemoryKind;
+  text: string;
+  at: number;
+};
+
+/** Short durable per-region history. Accumulates; missed care never cools it. */
+export type RegionMemory = {
+  beats: RegionMemoryBeat[];
+  updatedAt: number;
+};
+
+export const REGION_MEMORY_CAP = 4;
+
 export type CombatPattern = "steady" | "charging" | "feint";
 
 /** Two-turn charge: windup telegraphs, release lands or is interrupted next. */
@@ -156,6 +173,10 @@ export type KindlingSave = {
   roadEcho: string | null;
   /** Last fight memory per road id — survives dismiss; never wellness. */
   regionEchoes: Record<string, RegionEcho>;
+  /** Short durable per-region history (finds/rests/shortcuts/fights). Never cooled by missed care. */
+  regionMemories: Record<string, RegionMemory>;
+  /** Old Gate opened — next-world beat. World progress; never wellness. */
+  oldGateOpened: boolean;
 };
 
 export type Species = {
@@ -415,6 +436,8 @@ export function freshSave(): KindlingSave {
     walkedOnce: false,
     roadEcho: null,
     regionEchoes: {},
+    regionMemories: {},
+    oldGateOpened: false,
   };
 }
 
@@ -493,6 +516,70 @@ export function recordRegionEcho(
       updatedAt: echo.updatedAt ?? Date.now(),
     },
   };
+}
+
+function softMemoryKindLabel(kind: RegionMemoryKind) {
+  if (kind === "find") return "a find";
+  if (kind === "rest") return "a rest";
+  if (kind === "shortcut") return "a shortcut";
+  if (kind === "win") return "a fight won";
+  return "a quiet return";
+}
+
+export function normalizeRegionMemories(raw: unknown): Record<string, RegionMemory> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, RegionMemory> = {};
+  for (const [pathId, entry] of Object.entries(raw as Record<string, unknown>)) {
+    if (!entry || typeof entry !== "object") continue;
+    const row = entry as Partial<RegionMemory>;
+    const beatsRaw = Array.isArray(row.beats) ? row.beats : [];
+    const beats: RegionMemoryBeat[] = [];
+    for (const beat of beatsRaw) {
+      if (!beat || typeof beat !== "object") continue;
+      const b = beat as Partial<RegionMemoryBeat>;
+      const kind = b.kind;
+      if (kind !== "find" && kind !== "rest" && kind !== "shortcut" && kind !== "win" && kind !== "lose") continue;
+      if (typeof b.text !== "string" || !b.text.trim()) continue;
+      beats.push({
+        kind,
+        text: b.text.trim(),
+        at: Number.isFinite(b.at) ? Number(b.at) : 0,
+      });
+      if (beats.length >= REGION_MEMORY_CAP) break;
+    }
+    if (!beats.length) continue;
+    out[pathId] = {
+      beats,
+      updatedAt: Number.isFinite(row.updatedAt) ? Number(row.updatedAt) : beats[0]?.at ?? 0,
+    };
+  }
+  return out;
+}
+
+export function recordRegionMemory(
+  s: Pick<KindlingSave, "regionMemories">,
+  pathId: string,
+  beat: Omit<RegionMemoryBeat, "at"> & { at?: number },
+) {
+  const at = beat.at ?? Date.now();
+  const prev = s.regionMemories?.[pathId];
+  const nextBeat: RegionMemoryBeat = { kind: beat.kind, text: beat.text.trim(), at };
+  const beats = [nextBeat, ...(prev?.beats ?? [])]
+    .filter((entry, index, all) => entry.text && all.findIndex((other) => other.text === entry.text && other.kind === entry.kind) === index)
+    .slice(0, REGION_MEMORY_CAP);
+  s.regionMemories = {
+    ...s.regionMemories,
+    [pathId]: { beats, updatedAt: at },
+  };
+}
+
+/** Journey-card line from durable memory. Soft place-memory, never a streak count. */
+export function summarizeRegionMemory(memory: RegionMemory | undefined | null): string | null {
+  if (!memory?.beats?.length) return null;
+  const [head, ...rest] = memory.beats;
+  if (!rest.length) return head.text;
+  const extras = rest.slice(0, 2).map((b) => softMemoryKindLabel(b.kind)).join(" · ");
+  return `${head.text} · also ${extras}`;
 }
 
 export function eggWarmth(s: KindlingSave) {
@@ -580,6 +667,7 @@ export function applyRollover(s: KindlingSave) {
   }
   // A finished journey is allowed to wait for the player. Do not discard it on
   // reload: the return is part of the game, and journeys never fail while away.
+  // Missed care may Kindle a companion; it never erases regionMemories / Old Gate.
   return s;
 }
 
@@ -679,6 +767,8 @@ export function normalizeSave(raw: unknown): KindlingSave {
     egg: r.egg && typeof r.egg === "object" ? { ...r.egg } as EggState : null,
     roadEcho: typeof r.roadEcho === "string" ? r.roadEcho : null,
     regionEchoes: normalizeRegionEchoes(r.regionEchoes),
+    regionMemories: normalizeRegionMemories(r.regionMemories),
+    oldGateOpened: Boolean(r.oldGateOpened),
     combat: normalizeCombat(r.combat),
   };
 

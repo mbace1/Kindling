@@ -59,13 +59,15 @@ test("balance growth table matches companion-combat runtime", () => {
   assert.match(balance, /alignedGrowth: true/);
 });
 
-test("VERSIONS records v18–v20 combat and world polish", () => {
+test("VERSIONS records v18–v21 combat and world polish", () => {
   assert.match(versions, /## v18/);
   assert.match(versions, /Nerve|charge|feint|archetype|aftermath/i);
   assert.match(versions, /## v19/);
   assert.match(versions, /two-turn|wind-up|windup|release/i);
   assert.match(versions, /## v20/);
   assert.match(versions, /egg|region echo|Camp on the road|Winding/i);
+  assert.match(versions, /## v21/);
+  assert.match(versions, /region memory|Old Gate|next world/i);
 });
 
 test("v19 charge is a two-turn wind-up across resolve and store", () => {
