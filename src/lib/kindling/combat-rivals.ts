@@ -272,12 +272,12 @@ export function rivalAftermathCopy(args: {
 export function shouldMeetRival(
   status: RivalStatus | undefined,
   pathClearedAlready: boolean,
-  random: () => number = Math.random,
+  _random: () => number = Math.random,
 ): boolean {
   if (status === "bested") return false;
-  if (status === "challenged") return true;
-  if (status === "looming") return true;
-  // First glimpse: loom after the road is known, else small chance on early walks.
-  if (pathClearedAlready) return true;
-  return random() < 0.55;
+  if (status === "challenged" || status === "looming") return true;
+  // After the road is known, the keeper steps forward on the next walk.
+  // First discovery walk stays a quiet find / ordinary encounter.
+  void _random;
+  return pathClearedAlready;
 }

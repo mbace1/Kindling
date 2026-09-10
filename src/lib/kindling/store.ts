@@ -440,8 +440,6 @@ export const useKindling = create<KindlingStore>((set, get) => ({
 
     if (pathId === "old-gate") {
       if (!oldGateVisible(s)) return "The gate is not yet in sight.";
-      const rival = rivalForPath("old-gate");
-      if (rival) s.rivals = ensureRivalLooming(s.rivals ?? {}, "old-gate");
       s.fuel -= ERRAND_COST;
       const startedAt = Date.now();
       s.walk = { pathId: "old-gate", startedAt, endsAt: startedAt + WALK_DURATION_MS };
@@ -454,8 +452,6 @@ export const useKindling = create<KindlingStore>((set, get) => ({
 
     const path = PATHS.find((p) => p.id === pathId);
     if (!path) return "That path is gone.";
-    const rival = rivalForPath(path.id);
-    if (rival) s.rivals = ensureRivalLooming(s.rivals ?? {}, path.id);
     s.fuel -= ERRAND_COST;
     const startedAt = Date.now();
     s.walk = { pathId, startedAt, endsAt: startedAt + WALK_DURATION_MS };
@@ -508,11 +504,10 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     const rival = rivalForPath(path.id);
     const cleared = pathCleared(s, path.id);
     if (rival && s.companion) {
-      s.rivals = ensureRivalLooming(s.rivals ?? {}, path.id);
-      const status = s.rivals[path.id]?.status;
+      const status = s.rivals?.[path.id]?.status;
       const meet = shouldMeetRival(status, cleared, () => journeyRoll(path.id, departure.startedAt, 7));
       if (meet) {
-        s.rivals = setRivalStatus(s.rivals, path.id, "challenged");
+        s.rivals = setRivalStatus(s.rivals ?? {}, path.id, "challenged");
         s.combat = beginRivalCombat(s, rival);
         s.roadEcho = rival.loomingLine;
         s.updatedAt = Date.now();
@@ -520,6 +515,8 @@ export const useKindling = create<KindlingStore>((set, get) => ({
         set({ ...s, lastToast: "A keeper holds the road.", tab: "journey" });
         return;
       }
+      // First quiet walks can still mark the keeper as looming without a duel yet.
+      s.rivals = ensureRivalLooming(s.rivals ?? {}, path.id);
     }
 
     const fight = Boolean(path.enemy) && journeyRoll(path.id, departure.startedAt, 0) < path.encounter;
