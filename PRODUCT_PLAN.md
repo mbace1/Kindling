@@ -223,9 +223,10 @@ screens honest enough that combat and combine are the higher-leverage work.
 - v18 — Nerve, same-round charge/feint archetypes, Bond skills, road echo
 - v19 — charge is a real two-turn wind-up (telegraph → land or Strike-interrupt)
 - v20 — egg warmth afterglow, persistent region echoes, camp-on-the-road, Bond/combine celebration
+- v21 — deeper per-region memory; Old Gate approach / next-world interim beat
 
 **Next relevant agents work here**, not on reopening R1/R2 unless art arrives:
-- deepen Old Gate / next-world beat when a clear content beat is ready
+- dedicated Old Gate plate only when art arrives (interim ships without blocking)
 - keep Strike-interrupt fantasy; never touch wellness on combat loss; no scolding
 - more region content only when the road memory / camp loop still reads clear
 

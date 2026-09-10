@@ -19,6 +19,7 @@ import {
   dayKey,
   eggReady,
   recordRegionEcho,
+  recordRegionMemory,
   freshCompanion,
   freshSave,
   grantBonus,
@@ -44,6 +45,7 @@ import {
   resolveDepthRound,
 } from "./combat-depth";
 import { playHit, playTick, unlockAudio } from "./audio";
+import { oldGateReady } from "./world";
 
 const WALK_DURATION_MS = 90_000;
 
@@ -70,6 +72,7 @@ type KindlingStore = KindlingSave & {
   playerAct: (verb: CombatVerb) => void;
   leaveCombat: () => void;
   clearRoadEcho: () => void;
+  openOldGate: () => string | null;
   confirmKindling: () => void;
   hatch: (species: SpeciesId) => void;
   hatchEgg: () => void;
@@ -121,6 +124,8 @@ function pick<T extends object>(s: T): KindlingSave {
     walkedOnce,
     roadEcho,
     regionEchoes,
+    regionMemories,
+    oldGateOpened,
   } = s as KindlingSave;
   return {
     v,
@@ -150,6 +155,8 @@ function pick<T extends object>(s: T): KindlingSave {
     walkedOnce,
     roadEcho,
     regionEchoes,
+    regionMemories,
+    oldGateOpened,
   };
 }
 
@@ -466,6 +473,7 @@ export const useKindling = create<KindlingStore>((set, get) => ({
       journalEntry(s).lines.push(aftermath.journal);
       s.roadEcho = aftermath.roadEcho;
       recordRegionEcho(s, c.pathId, { text: aftermath.roadEcho, result: "win" });
+      recordRegionMemory(s, c.pathId, { kind: "win", text: aftermath.roadEcho });
       if (SPECIES[c.enemy].capturable && !s.unlocked.includes(c.enemy)) {
         s.unlocked.push(c.enemy);
         c.log.push(`${SPECIES[c.enemy].name} will come if you ask.`);
@@ -498,6 +506,7 @@ export const useKindling = create<KindlingStore>((set, get) => ({
       journalEntry(s).lines.push(aftermath.journal);
       s.roadEcho = aftermath.roadEcho;
       recordRegionEcho(s, c.pathId, { text: aftermath.roadEcho, result: "lose" });
+      recordRegionMemory(s, c.pathId, { kind: "lose", text: aftermath.roadEcho });
       c.log.push("The path keeps what it wants. You walk home.");
     } else if (depth.chargeContinues) {
       c.pattern = "charging";
@@ -539,6 +548,19 @@ export const useKindling = create<KindlingStore>((set, get) => ({
     s.updatedAt = Date.now();
     persist(s);
     set(s);
+  },
+
+  openOldGate: () => {
+    const s = pick(get());
+    applyRollover(s);
+    if (s.oldGateOpened) return "The gate already stands open.";
+    if (!oldGateReady(s)) return "The roads behind you are not finished speaking.";
+    s.oldGateOpened = true;
+    journalEntry(s).lines.push("The Old Gate opened. A next world waits beyond the threshold.");
+    s.updatedAt = Date.now();
+    persist(s);
+    set({ ...s, lastToast: "The path opens.", tab: "journey" });
+    return null;
   },
 
   keepEncounter: () => {

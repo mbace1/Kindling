@@ -5,6 +5,7 @@ import {
   FLAMES_PER_FUEL,
   SPECIES,
   assetSrc,
+  summarizeRegionMemory,
   verbLabel,
   type SpeciesId,
 } from "@/lib/kindling/model";
@@ -23,6 +24,8 @@ import { useKindling } from "@/lib/kindling/store";
 import {
   OLD_GATE,
   WORLD_PATHS,
+  oldGateIsOpen,
+  oldGateReady,
   oldGateVisible,
   pathCleared,
   pathUnlocked,
@@ -159,6 +162,12 @@ export function JourneyWorldScreen() {
             <div className="h-full bg-fire transition-[width] duration-300 ease-linear" style={{ width: `${travel * 100}%` }} />
           </div>
           <p className="text-sm text-mute">{seconds > 0 ? `${seconds}s · continues if you close the app.` : "Coming home."}</p>
+          {path && summarizeRegionMemory(s.regionMemories?.[path.id]) ? (
+            <p className="rounded-lg border border-fire/20 bg-coal/50 px-3 py-2 text-xs text-bone/70">
+              <span className="block text-[10px] uppercase tracking-[0.14em] text-fire/80">Road remembers</span>
+              {summarizeRegionMemory(s.regionMemories?.[path.id])}
+            </p>
+          ) : null}
         </div>
       </div>
     );
@@ -166,7 +175,11 @@ export function JourneyWorldScreen() {
 
   const progress = worldProgress(s);
   const oldGate = oldGateVisible(s);
-  const coverPath = [...WORLD_PATHS].reverse().find((path) => pathUnlocked(s, path)) ?? WORLD_PATHS[0];
+  const gateReady = oldGateReady(s);
+  const gateOpen = oldGateIsOpen(s);
+  const coverPath = gateOpen
+    ? { ...WORLD_PATHS[WORLD_PATHS.length - 1], displayName: OLD_GATE.displayName, art: OLD_GATE.art, crop: OLD_GATE.crop }
+    : [...WORLD_PATHS].reverse().find((path) => pathUnlocked(s, path)) ?? WORLD_PATHS[0];
   const findKinds = unlockedFindKinds(s);
   const hasWaymarker = findKinds.has("relic");
   const hasLens = findKinds.has("shard");
@@ -178,7 +191,7 @@ export function JourneyWorldScreen() {
         <img src={assetSrc(coverPath.art)} alt="" className="h-full w-full object-cover" style={{ objectPosition: coverPath.crop }} />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-night" />
         <div className="absolute bottom-4 left-4 rounded-md border border-bone/15 bg-night/75 px-3 py-2 backdrop-blur-sm">
-          <p className="text-[10px] uppercase tracking-[0.18em] text-fire">Farthest known road</p>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-fire">{gateOpen ? "Beyond the gate" : "Farthest known road"}</p>
           <p className="font-display text-lg">{coverPath.displayName}</p>
         </div>
       </div>
@@ -258,7 +271,11 @@ export function JourneyWorldScreen() {
                   </span>
                   {unlocked && hasWaymarker ? <span className="mt-1 block text-xs text-bone/55">May hold · {findNames}</span> : null}
                   {unlocked && hasLens ? <span className="mt-1 block text-xs text-bone/55">Encounter risk · {Math.round(path.encounter * 100)}%</span> : null}
-                  {unlocked && s.regionEchoes?.[path.id] ? (
+                  {unlocked && summarizeRegionMemory(s.regionMemories?.[path.id]) ? (
+                    <span className="mt-1 block text-xs text-fire/75">
+                      Remembers · {summarizeRegionMemory(s.regionMemories?.[path.id])}
+                    </span>
+                  ) : unlocked && s.regionEchoes?.[path.id] ? (
                     <span className="mt-1 block text-xs text-fire/75">
                       Echo · {s.regionEchoes[path.id].text}
                     </span>
@@ -272,13 +289,36 @@ export function JourneyWorldScreen() {
             );
           })}
 
-          <div className={cn("rounded-xl border border-ash bg-gradient-to-b from-stone to-coal px-4 py-3", oldGate ? "opacity-90" : "opacity-45")}>
-            <div className="flex items-center gap-2">
-              <LockKeyhole className="size-3.5 text-mute" />
-              <p className="font-medium">{OLD_GATE.chapter}. {OLD_GATE.displayName}</p>
+          {gateOpen ? (
+            <div className="relative overflow-hidden rounded-xl border border-fire/40 bg-gradient-to-b from-coal to-night px-4 py-3 shadow-[0_0_28px_rgba(255,181,78,0.08)]">
+              <span className="absolute inset-y-0 left-0 w-1 bg-fire/50" />
+              <p className="text-[10px] uppercase tracking-[0.16em] text-fire">Path opens</p>
+              <p className="mt-1 font-medium">{OLD_GATE.chapter}. {OLD_GATE.displayName}</p>
+              <p className="mt-1 text-sm text-bone/75">{OLD_GATE.openCopy}</p>
+              <p className="mt-2 text-xs text-mute">Interim plate — the world is the reward; a dedicated gate plate can wait.</p>
             </div>
-            <p className="mt-1 hidden text-sm text-mute sm:block">{oldGate ? "The gate is visible beyond Ashwood. It does not open yet." : OLD_GATE.worldBlurb}</p>
-          </div>
+          ) : gateReady ? (
+            <button
+              type="button"
+              onClick={() => s.openOldGate()}
+              className="relative w-full overflow-hidden rounded-xl border border-fire/45 bg-gradient-to-b from-stone to-coal px-4 py-3 text-left shadow-[0_10px_28px_rgba(0,0,0,0.16)] transition hover:border-fire/60"
+              aria-label={OLD_GATE.approachLabel}
+            >
+              <span className="absolute inset-y-0 left-0 w-1 bg-fire/45" />
+              <p className="text-[10px] uppercase tracking-[0.16em] text-fire">The stone answers</p>
+              <p className="mt-1 font-medium">{OLD_GATE.chapter}. {OLD_GATE.displayName}</p>
+              <p className="mt-1 text-sm text-mute">{OLD_GATE.readyCopy}</p>
+              <span className="mt-2 inline-flex rounded-full border border-fire/35 bg-night/70 px-2.5 py-1 text-xs text-fire">{OLD_GATE.approachLabel}</span>
+            </button>
+          ) : (
+            <div className={cn("rounded-xl border border-ash bg-gradient-to-b from-stone to-coal px-4 py-3", oldGate ? "opacity-90" : "opacity-45")}>
+              <div className="flex items-center gap-2">
+                <LockKeyhole className="size-3.5 text-mute" />
+                <p className="font-medium">{OLD_GATE.chapter}. {OLD_GATE.displayName}</p>
+              </div>
+              <p className="mt-1 hidden text-sm text-mute sm:block">{oldGate ? OLD_GATE.sealedCopy : OLD_GATE.worldBlurb}</p>
+            </div>
+          )}
         </div>
 
         {s.fuel < ERRAND_COST ? <p className="text-sm text-mute">Tend the fire a little more, then journey.</p> : null}

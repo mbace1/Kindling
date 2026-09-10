@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { SPECIES, stageOfCompanion } from "@/lib/kindling/model";
 import { useKindling } from "@/lib/kindling/store";
-import { WORLD_PATHS, pathUnlocked } from "@/lib/kindling/world";
+import { OLD_GATE, WORLD_PATHS, pathUnlocked } from "@/lib/kindling/world";
 
 type Celebration = { eyebrow: string; title: string; copy: string };
 
@@ -11,6 +11,7 @@ export function ProgressionCelebration() {
   const previousSpecies = useRef<string[] | null>(null);
   const previousStage = useRef<string | null>(null);
   const previousEgg = useRef<boolean | null>(null);
+  const previousGate = useRef<boolean | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
 
   useEffect(() => {
@@ -19,6 +20,7 @@ export function ProgressionCelebration() {
     const species = [...s.unlocked];
     const stage = s.companion ? stageOfCompanion(s.companion) : null;
     const hasEgg = Boolean(s.egg);
+    const gateOpen = Boolean(s.oldGateOpened);
 
     if (previousRoads.current) {
       const opened = roads.find((id) => !previousRoads.current?.includes(id));
@@ -50,11 +52,20 @@ export function ProgressionCelebration() {
       });
     }
 
+    if (previousGate.current === false && gateOpen) {
+      setCelebration({
+        eyebrow: "Path opens",
+        title: OLD_GATE.displayName,
+        copy: "A next world waits beyond the threshold. The world is the reward.",
+      });
+    }
+
     previousRoads.current = roads;
     previousSpecies.current = species;
     previousStage.current = stage?.id ?? null;
     previousEgg.current = hasEgg;
-  }, [s.hydrated, s.found.length, s.unlocked.length, s.companion?.id, s.companion?.bondXp, s.egg?.species, s.egg?.parentAName]);
+    previousGate.current = gateOpen;
+  }, [s.hydrated, s.found.length, s.unlocked.length, s.companion?.id, s.companion?.bondXp, s.egg?.species, s.egg?.parentAName, s.oldGateOpened]);
 
   useEffect(() => {
     if (!celebration) return;
