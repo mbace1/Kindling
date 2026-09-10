@@ -97,7 +97,7 @@ try {
   const ready = await openWorld(browser, seed(["ruin", "forest", "road", "ash"]));
   assert.equal(await ready.page.getByRole("button", { name: "Approach the Old Gate" }).isVisible(), true, "Old Gate approachable after Ashwood + care progress");
   await ready.page.getByRole("button", { name: "Approach the Old Gate" }).click();
-  await ready.page.getByText("Path opens", { exact: true }).waitFor();
+  await ready.page.getByRole("main").getByText("Path opens", { exact: true }).waitFor();
   assert.match(await ready.page.locator("body").innerText(), /next world waits|Beyond the gate/i, "opened gate shows next-world beat");
   assert.match(await ready.page.locator("body").innerText(), /5 \/ 5\s+roads known/, "opened gate counts toward world progress");
   const opened = await ready.page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null")?.oldGateOpened);
