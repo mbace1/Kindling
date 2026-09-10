@@ -3,8 +3,6 @@ import { ChevronDown } from "lucide-react";
 import {
   SPECIES,
   bondUnits,
-  eggReady,
-  eggWarmth,
   formatDay,
   pairings,
   portraitSrc,
@@ -16,6 +14,7 @@ import { useKindling } from "@/lib/kindling/store";
 import { companionVisualState } from "@/lib/kindling/find-progression";
 import { cn } from "@/lib/utils";
 import { CompanionAtlasSprite } from "@/components/ember-atlas-sprite";
+import { EggWarmthPanel } from "@/components/egg-warmth-panel";
 import { FingerTouchCombine } from "@/components/finger-touch-combine";
 import { companionCombatGrowth } from "@/lib/kindling/companion-combat";
 
@@ -38,8 +37,6 @@ export function CompanionResponsive() {
   const [rosterOpen, setRosterOpen] = useState(false);
   const [lineageOpen, setLineageOpen] = useState(false);
   const [pendingCombine, setPendingCombine] = useState<{ a: typeof s.roster[number]; b: typeof s.roster[number]; child: (typeof s.roster)[number]["species"] } | null>(null);
-  const warmthNow = eggWarmth(s);
-  const ready = eggReady(s);
   const maturePairs = useMemo(
     () => pairings(s.roster).filter((p) => bondUnits(p.a) >= 18 && bondUnits(p.b) >= 18),
     [s.roster],
@@ -154,22 +151,9 @@ export function CompanionResponsive() {
       ) : null}
 
       {s.egg ? (
-        <section className="mt-6 rounded-lg border border-fire/35 bg-coal p-4">
-          <p className="text-xs uppercase tracking-[0.18em] text-mute">Ember Egg</p>
-          <h3 className="mt-1 font-display text-xl">{SPECIES[s.egg.species].name}</h3>
-          <p className="text-sm text-mute">From {s.egg.parentAName} + {s.egg.parentBName}</p>
-          <div className="mt-3 flex gap-1.5" aria-label={`${warmthNow} of ${s.egg.required} warmth`}>
-            {Array.from({ length: s.egg.required }).map((_, i) => (
-              <span key={i} className={cn("h-2 flex-1 rounded-full", i < warmthNow ? "bg-fire" : "bg-ash")} />
-            ))}
-          </div>
-          <p className="mt-2 text-sm text-mute">
-            {ready ? "Warm enough to hatch whenever you are ready." : `${warmthNow} / ${s.egg.required} ordinary care actions warmed the egg. Missed days do not cool it.`}
-          </p>
-          {ready ? (
-            <button type="button" onClick={() => s.hatchEgg()} className="mt-3 min-h-12 w-full rounded-md bg-fire px-4 font-medium text-night">Hatch</button>
-          ) : null}
-        </section>
+        <div className="mt-6">
+          <EggWarmthPanel save={s} onHatch={() => s.hatchEgg()} />
+        </div>
       ) : null}
 
       {s.roster.length > 1 ? (
@@ -216,7 +200,7 @@ export function CompanionResponsive() {
       {!s.egg && maturePairs.length > 0 && s.roster.length < 6 ? (
         <section className="mt-6 rounded-lg border border-fire/25 bg-coal/50 p-3 sm:bg-transparent sm:p-0">
           <h3 className="font-display text-xl">Combine</h3>
-          <p className="text-sm text-mute">Two tender-or-older companions can combine. They reach across the coals; fusion energy settles as an egg. Both stay by the fire.</p>
+          <p className="text-sm text-mute">Two tender-or-older companions can combine. They reach across the coals; fusion energy settles as an egg. Neither parent is consumed — Keep holds the afterglow.</p>
           <ul className="mt-3 space-y-2">
             {maturePairs.map((p) => (
               <li key={p.a.id + p.b.id}>
@@ -259,15 +243,15 @@ export function CompanionResponsive() {
           className="flex min-h-12 w-full items-center justify-between rounded-lg border border-ash bg-stone px-4 text-left sm:hidden"
         >
           <span>
-            <span className="block font-medium">Ancestors</span>
+            <span className="block font-medium">Lineage</span>
             <span className="block text-xs text-mute">{s.lineage.length ? `${s.lineage.length} remembered` : "None yet"}</span>
           </span>
           <ChevronDown className={cn("size-4 text-mute transition-transform", lineageOpen && "rotate-180")} />
         </button>
         <div className={cn("mt-3", !lineageOpen && "max-sm:hidden")}>
-          <h3 className="hidden font-display text-xl sm:block">Ancestors</h3>
+          <h3 className="hidden font-display text-xl sm:block">Lineage</h3>
           {s.lineage.length === 0 ? (
-            <p className="text-sm text-mute sm:mt-2">No ancestors yet. The fire has only been kept.</p>
+            <p className="text-sm text-mute sm:mt-2">No Kindled names yet. Combine leaves parents by the fire; lineage remembers who became Kindling.</p>
           ) : (
             <ul className="space-y-2 sm:mt-3">
               {s.lineage.map((a) => (

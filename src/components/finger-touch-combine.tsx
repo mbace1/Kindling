@@ -31,7 +31,7 @@ export function FingerTouchCombine({ a, b, child, open, onComplete, onCancel }: 
     const t1 = window.setTimeout(() => setPhase("touch"), 720);
     const t2 = window.setTimeout(() => setPhase("flash"), 1280);
     const t3 = window.setTimeout(() => setPhase("settle"), 1780);
-    const t4 = window.setTimeout(() => completeRef.current(), 2400);
+    const t4 = window.setTimeout(() => completeRef.current(), 2800);
     return () => {
       window.clearTimeout(t1);
       window.clearTimeout(t2);
@@ -98,12 +98,17 @@ export function FingerTouchCombine({ a, b, child, open, onComplete, onCancel }: 
           )}
         </div>
 
-        <div className={cn("mt-4 flex items-center justify-center gap-3 transition-opacity duration-500", phase === "settle" ? "opacity-100" : "opacity-0")}>
-          <img src={portraitSrc(child)} alt="" className="h-14 w-14 object-contain drop-shadow-[0_0_12px_rgba(255,181,78,0.35)]" />
-          <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-mute">Settles as</p>
-            <p className="font-display text-lg text-fire">{SPECIES[child].name} egg</p>
+        <div className={cn("mt-4 space-y-2 transition-opacity duration-500", phase === "settle" ? "opacity-100" : "opacity-0")}>
+          <div className="flex items-center justify-center gap-3">
+            <img src={portraitSrc(child)} alt="" className="h-14 w-14 object-contain drop-shadow-[0_0_12px_rgba(255,181,78,0.35)]" />
+            <div>
+              <p className="text-xs uppercase tracking-[0.16em] text-mute">Settles as</p>
+              <p className="font-display text-lg text-fire">{SPECIES[child].name} egg</p>
+            </div>
           </div>
+          <p className="text-center text-xs text-bone/70">
+            {a.name} and {b.name} stay by the fire. Keep holds the coals — warmth only gathers.
+          </p>
         </div>
 
         <button

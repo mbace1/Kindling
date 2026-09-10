@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { SPECIES } from "@/lib/kindling/model";
+import { SPECIES, stageOfCompanion } from "@/lib/kindling/model";
 import { useKindling } from "@/lib/kindling/store";
 import { WORLD_PATHS, pathUnlocked } from "@/lib/kindling/world";
 
@@ -9,12 +9,16 @@ export function ProgressionCelebration() {
   const s = useKindling();
   const previousRoads = useRef<string[] | null>(null);
   const previousSpecies = useRef<string[] | null>(null);
+  const previousStage = useRef<string | null>(null);
+  const previousEgg = useRef<boolean | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
 
   useEffect(() => {
     if (!s.hydrated) return;
     const roads = WORLD_PATHS.filter((path) => pathUnlocked(s, path)).map((path) => path.id);
     const species = [...s.unlocked];
+    const stage = s.companion ? stageOfCompanion(s.companion) : null;
+    const hasEgg = Boolean(s.egg);
 
     if (previousRoads.current) {
       const opened = roads.find((id) => !previousRoads.current?.includes(id));
@@ -30,13 +34,31 @@ export function ProgressionCelebration() {
       }
     }
 
+    if (previousStage.current && stage && previousStage.current !== stage.id) {
+      setCelebration({
+        eyebrow: "Bond stage",
+        title: stage.name,
+        copy: `${s.companion?.name ?? "Your companion"} hardened into ${stage.name}. Keep remembers the growth.`,
+      });
+    }
+
+    if (previousEgg.current === false && hasEgg && s.egg) {
+      setCelebration({
+        eyebrow: "Combine afterglow",
+        title: `${SPECIES[s.egg.species].name} egg`,
+        copy: `${s.egg.parentAName} and ${s.egg.parentBName} remain. Warmth only gathers in the coals.`,
+      });
+    }
+
     previousRoads.current = roads;
     previousSpecies.current = species;
-  }, [s.hydrated, s.found.length, s.unlocked.length]);
+    previousStage.current = stage?.id ?? null;
+    previousEgg.current = hasEgg;
+  }, [s.hydrated, s.found.length, s.unlocked.length, s.companion?.id, s.companion?.bondXp, s.egg?.species, s.egg?.parentAName]);
 
   useEffect(() => {
     if (!celebration) return;
-    const timer = window.setTimeout(() => setCelebration(null), 1850);
+    const timer = window.setTimeout(() => setCelebration(null), 2100);
     return () => window.clearTimeout(timer);
   }, [celebration]);
 

@@ -18,6 +18,7 @@ import {
   consecutiveMissed,
   dayKey,
   eggReady,
+  recordRegionEcho,
   freshCompanion,
   freshSave,
   grantBonus,
@@ -119,6 +120,7 @@ function pick<T extends object>(s: T): KindlingSave {
     roster,
     walkedOnce,
     roadEcho,
+    regionEchoes,
   } = s as KindlingSave;
   return {
     v,
@@ -147,6 +149,7 @@ function pick<T extends object>(s: T): KindlingSave {
     roster,
     walkedOnce,
     roadEcho,
+    regionEchoes,
   };
 }
 
@@ -462,6 +465,7 @@ export const useKindling = create<KindlingStore>((set, get) => ({
       });
       journalEntry(s).lines.push(aftermath.journal);
       s.roadEcho = aftermath.roadEcho;
+      recordRegionEcho(s, c.pathId, { text: aftermath.roadEcho, result: "win" });
       if (SPECIES[c.enemy].capturable && !s.unlocked.includes(c.enemy)) {
         s.unlocked.push(c.enemy);
         c.log.push(`${SPECIES[c.enemy].name} will come if you ask.`);
@@ -493,6 +497,7 @@ export const useKindling = create<KindlingStore>((set, get) => ({
       });
       journalEntry(s).lines.push(aftermath.journal);
       s.roadEcho = aftermath.roadEcho;
+      recordRegionEcho(s, c.pathId, { text: aftermath.roadEcho, result: "lose" });
       c.log.push("The path keeps what it wants. You walk home.");
     } else if (depth.chargeContinues) {
       c.pattern = "charging";

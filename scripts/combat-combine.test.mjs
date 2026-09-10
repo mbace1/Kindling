@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const read = (p) => readFile(new URL(`../${p}`, import.meta.url), "utf8");
 
-const [model, store, combat, moves, keep, pack, cinematic, canonical] = await Promise.all([
+const [model, store, combat, moves, keep, pack, cinematic, eggPanel, canonical] = await Promise.all([
   read("src/lib/kindling/model.ts"),
   read("src/lib/kindling/store.ts"),
   read("src/lib/kindling/companion-combat.ts"),
@@ -12,6 +12,7 @@ const [model, store, combat, moves, keep, pack, cinematic, canonical] = await Pr
   read("src/components/companion-responsive.tsx"),
   read("src/components/pack-responsive.tsx"),
   read("src/components/finger-touch-combine.tsx"),
+  read("src/components/egg-warmth-panel.tsx"),
   read("CANONICAL.md"),
 ]);
 
@@ -29,7 +30,9 @@ test("egg warmth still only accumulates from kept care", () => {
   assert.match(model, /s\.kept\s*-\s*s\.egg\.startedKept/);
   assert.doesNotMatch(model, /egg\.required\s*-=/);
   assert.doesNotMatch(model, /startedKept\s*\+=/);
-  assert.match(keep, /Missed days do not cool it/);
+  assert.match(eggPanel, /Missed days do not cool it/);
+  assert.match(eggPanel, /warmth only gathers/i);
+  assert.match(keep, /EggWarmthPanel/);
 });
 
 test("tender-or-older remains the combine gate", () => {
@@ -51,9 +54,10 @@ test("combat names moves and keeps the Strike\/Guard\/Skill triangle", () => {
 test("Keep and Pack treat combat and combine as one firelit game", () => {
   assert.match(keep, /FingerTouchCombine/);
   assert.match(keep, /Fingertip|combine/i);
-  assert.match(pack, /fingertip to fingertip|Fusion energy is still warming/);
+  assert.match(pack, /fingertip to fingertip|Fusion energy is still warming|EggWarmthPanel/);
   assert.match(cinematic, /Fingertip to fingertip/);
   assert.match(cinematic, /neither leaves the fire/);
+  assert.match(cinematic, /warmth only gathers/i);
   assert.doesNotMatch(keep, /you failed|don't forget|you should/i);
   assert.doesNotMatch(pack, /you failed|don't forget|you should/i);
 });
@@ -68,4 +72,11 @@ test("combat still names moves and now carries Nerve commitment", () => {
   assert.match(moves, /Hearth Strike/);
   assert.match(store, /nerveMaxFor|nerve:/);
   assert.match(store, /combatStatsForCompanion/);
+});
+
+test("v20 egg afterglow and lineage copy keep parents", () => {
+  assert.match(eggPanel, /Both remain by the fire/);
+  assert.match(keep, /Neither parent is consumed/);
+  assert.match(keep, /Lineage/);
+  assert.match(cinematic, /Keep holds the coals/);
 });

@@ -17,6 +17,7 @@ import {
   patternAdvice,
 } from "@/lib/kindling/combat-depth";
 import { companionCombatGrowth, combatStatsForCompanion } from "@/lib/kindling/companion-combat";
+import { campRoadEffects } from "@/lib/kindling/camp-construction";
 import { unlockedFindKinds } from "@/lib/kindling/find-progression";
 import { useKindling } from "@/lib/kindling/store";
 import {
@@ -169,6 +170,7 @@ export function JourneyWorldScreen() {
   const findKinds = unlockedFindKinds(s);
   const hasWaymarker = findKinds.has("relic");
   const hasLens = findKinds.has("shard");
+  const roadCamp = campRoadEffects(s);
 
   return (
     <div>
@@ -202,7 +204,19 @@ export function JourneyWorldScreen() {
           <p className="mt-2 text-xs text-mute sm:mt-0 sm:shrink-0 sm:text-right">{progress.cleared} / {progress.total} roads known</p>
         </div>
 
-        {(hasWaymarker || hasLens) ? (
+        {roadCamp.length ? (
+          <div className="rounded-xl border border-fire/20 bg-coal/60 p-3">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-fire">Camp on the road</p>
+            <p className="mt-1 text-xs text-mute">What you built at the fire still changes the path.</p>
+            <div className="mt-2 flex flex-wrap gap-2 text-xs">
+              {roadCamp.map((effect) => (
+                <span key={effect.kind} className="rounded-full border border-fire/30 bg-night/70 px-2.5 py-1 text-fire" title={effect.roadLine}>
+                  {effect.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : (hasWaymarker || hasLens) ? (
           <div className="flex flex-wrap gap-2 text-xs">
             {hasWaymarker ? <span className="rounded-full border border-fire/30 bg-coal px-2.5 py-1 text-fire">Waymarker · finds revealed</span> : null}
             {hasLens ? <span className="rounded-full border border-fire/30 bg-coal px-2.5 py-1 text-fire">Glass Lens · danger revealed</span> : null}
@@ -244,6 +258,11 @@ export function JourneyWorldScreen() {
                   </span>
                   {unlocked && hasWaymarker ? <span className="mt-1 block text-xs text-bone/55">May hold · {findNames}</span> : null}
                   {unlocked && hasLens ? <span className="mt-1 block text-xs text-bone/55">Encounter risk · {Math.round(path.encounter * 100)}%</span> : null}
+                  {unlocked && s.regionEchoes?.[path.id] ? (
+                    <span className="mt-1 block text-xs text-fire/75">
+                      Echo · {s.regionEchoes[path.id].text}
+                    </span>
+                  ) : null}
                 </span>
                 <span className="shrink-0 text-right text-xs">
                   {cleared ? <span className="text-fire">CLEARED</span> : null}
@@ -351,10 +370,17 @@ function CombatWorldScreen() {
                   : combatMove(c.enemy, c.telegraph).telegraph}
             </p>
             <p className="mt-1 text-[11px] text-fire/80">{patternAdvice(pattern, c.telegraph, chargePhase)}</p>
+            {pattern === "charging" ? (
+              <p className="mt-1 text-[11px] font-medium text-bone/75">
+                {chargePhase === "windup"
+                  ? "Winding now · next turn they Charge — Strike interrupts."
+                  : "Charging — Strike cuts the release short, or the heavy lands."}
+              </p>
+            ) : null}
             <p className="mt-2 text-[11px] text-bone/55">Nerve {nerve}/{nerveMax} · Skill spends · Guard restores</p>
           </div>
         ) : (
-          <p className="mt-4 rounded-lg border border-fire/20 bg-coal/75 px-3 py-2 text-sm font-medium text-bone">{c.result === "win" ? "The path opens." : "You walk home. The fire is still there."}</p>
+          <p className="mt-4 rounded-lg border border-fire/20 bg-coal/75 px-3 py-2 text-sm font-medium text-bone">{c.result === "win" ? "The path opens." : "You walk home. Care still waits at the fire — combat never cools it."}</p>
         )}
 
         {c.log.length ? (
