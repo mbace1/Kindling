@@ -1,4 +1,5 @@
 import { SPECIES, eggReady, eggWarmth, portraitSrc, type KindlingSave } from "@/lib/kindling/model";
+import { ashTraitLabel, ashTraitSummary } from "@/lib/kindling/lineage";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -50,6 +51,11 @@ export function EggWarmthPanel({ save, onHatch, compact = false }: Props) {
           <p className="text-xs text-mute">
             From {egg.parentAName} + {egg.parentBName}. Both remain by the fire.
           </p>
+          {egg.trait ? (
+            <p className="mt-1 text-xs text-fire" title={ashTraitSummary(egg.trait) ?? undefined}>
+              Will inherit {ashTraitLabel(egg.trait) ?? egg.trait}
+            </p>
+          ) : null}
         </div>
       </div>
 

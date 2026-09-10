@@ -1,4 +1,5 @@
 import { SPECIES, STAGES, stageOfCompanion, type Companion } from "./model";
+import { ashTraitDef } from "./lineage";
 
 export type CompanionCombatGrowth = {
   rank: number;
@@ -85,13 +86,18 @@ export function combatStatsForCompanion(companion?: Companion | null) {
   if (!companion) return null;
   const base = SPECIES[companion.species].combat;
   const growth = companionCombatGrowth(companion);
-  if (!growth) return { ...base };
+  const ash = ashTraitDef(companion.trait);
+  const hpBonus = (growth?.hpBonus ?? 0) + (ash?.combat.hp ?? 0);
+  const strikeBonus = (growth?.strikeBonus ?? 0) + (ash?.combat.strike ?? 0);
+  const guardBonus = (growth?.guardBonus ?? 0) + (ash?.combat.guard ?? 0);
+  const skillBonus = (growth?.skillBonus ?? 0) + (ash?.combat.skill ?? 0);
+  const speedBonus = (growth?.speedBonus ?? 0) + (ash?.combat.speed ?? 0);
   return {
     ...base,
-    hp: base.hp + growth.hpBonus,
-    strike: base.strike + growth.strikeBonus,
-    guard: base.guard + growth.guardBonus,
-    skill: base.skill + growth.skillBonus,
-    speed: base.speed + growth.speedBonus,
+    hp: base.hp + hpBonus,
+    strike: base.strike + strikeBonus,
+    guard: base.guard + guardBonus,
+    skill: base.skill + skillBonus,
+    speed: base.speed + speedBonus,
   };
 }

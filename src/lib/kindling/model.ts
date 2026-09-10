@@ -62,6 +62,11 @@ export type Companion = {
   born: string;
   bondXp: number;
   trait?: string;
+  /** Hatch parents — living family links for the lineage tree. */
+  parentAId?: string;
+  parentBId?: string;
+  parentAName?: string;
+  parentBName?: string;
 };
 
 export type Ancestor = {
@@ -686,6 +691,10 @@ function normalizedCompanion(raw: unknown, fallbackBondXp = 0): Companion | null
   if (!raw || typeof raw !== "object") return null;
   const c = raw as Partial<Companion>;
   if (!c.id || !c.species || !SPECIES[c.species]) return null;
+  const parentAId = typeof c.parentAId === "string" && c.parentAId.trim() ? c.parentAId.trim() : undefined;
+  const parentBId = typeof c.parentBId === "string" && c.parentBId.trim() ? c.parentBId.trim() : undefined;
+  const parentAName = typeof c.parentAName === "string" && c.parentAName.trim() ? c.parentAName.trim() : undefined;
+  const parentBName = typeof c.parentBName === "string" && c.parentBName.trim() ? c.parentBName.trim() : undefined;
   return {
     id: c.id,
     species: c.species,
@@ -693,6 +702,10 @@ function normalizedCompanion(raw: unknown, fallbackBondXp = 0): Companion | null
     born: c.born || dayKey(),
     bondXp: Number.isFinite(c.bondXp) ? Math.max(0, Number(c.bondXp)) : Math.max(0, fallbackBondXp),
     trait: c.trait,
+    parentAId,
+    parentBId,
+    parentAName,
+    parentBName,
   };
 }
 

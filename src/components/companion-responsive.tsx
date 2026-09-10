@@ -17,6 +17,8 @@ import { CompanionAtlasSprite } from "@/components/ember-atlas-sprite";
 import { EggWarmthPanel } from "@/components/egg-warmth-panel";
 import { FingerTouchCombine } from "@/components/finger-touch-combine";
 import { companionCombatGrowth } from "@/lib/kindling/companion-combat";
+import { ashTraitLabel, ashTraitSummary } from "@/lib/kindling/lineage";
+import { LineageFamilyTree } from "@/components/lineage-family-tree";
 
 function traitEffects(trait: NonNullable<ReturnType<typeof journeyTraitForCompanion>>) {
   const effects: string[] = [];
@@ -87,7 +89,16 @@ export function CompanionResponsive() {
         <h2 className="font-display text-3xl font-semibold">{s.companion.name}</h2>
         <p className="text-sm text-mute">{stage.name} · {s.companion.bondXp} Bond XP</p>
         <p className="mt-1 text-xs text-mute sm:text-sm">{s.encounters.wins} paths held · born {formatDay(s.companion.born)}</p>
-        {s.companion.trait ? <p className="mt-1 text-sm text-fire">Carries {s.companion.trait}</p> : null}
+        {s.companion.trait ? (
+          <p className="mt-1 text-sm text-fire" title={ashTraitSummary(s.companion.trait) ?? undefined}>
+            Carries {ashTraitLabel(s.companion.trait) ?? s.companion.trait}
+            {s.companion.parentAName && s.companion.parentBName
+              ? ` · born of ${s.companion.parentAName} + ${s.companion.parentBName}`
+              : ""}
+          </p>
+        ) : s.companion.parentAName && s.companion.parentBName ? (
+          <p className="mt-1 text-sm text-fire/80">Born of {s.companion.parentAName} + {s.companion.parentBName}</p>
+        ) : null}
       </section>
 
       <form
@@ -243,28 +254,17 @@ export function CompanionResponsive() {
           className="flex min-h-12 w-full items-center justify-between rounded-lg border border-ash bg-stone px-4 text-left sm:hidden"
         >
           <span>
-            <span className="block font-medium">Lineage</span>
-            <span className="block text-xs text-mute">{s.lineage.length ? `${s.lineage.length} remembered` : "None yet"}</span>
+            <span className="block font-medium">Family tree</span>
+            <span className="block text-xs text-mute">{s.lineage.length ? `${s.lineage.length} Kindled · ${s.roster.length} by the fire` : `${s.roster.length} by the fire`}</span>
           </span>
           <ChevronDown className={cn("size-4 text-mute transition-transform", lineageOpen && "rotate-180")} />
         </button>
         <div className={cn("mt-3", !lineageOpen && "max-sm:hidden")}>
-          <h3 className="hidden font-display text-xl sm:block">Lineage</h3>
-          {s.lineage.length === 0 ? (
-            <p className="text-sm text-mute sm:mt-2">No Kindled names yet. Combine leaves parents by the fire; lineage remembers who became Kindling.</p>
-          ) : (
-            <ul className="space-y-2 sm:mt-3">
-              {s.lineage.map((a) => (
-                <li key={a.id} className="flex items-center gap-3 rounded-md border border-ash bg-stone px-3 py-2">
-                  <img src={portraitSrc(a.species)} alt="" className="h-12 w-12 object-contain grayscale" />
-                  <div>
-                    <p className="font-medium">{a.name}</p>
-                    <p className="text-xs text-mute">Kindled {formatDay(a.kindledOn)} · {a.stage} · {a.bondXp} Bond XP{a.trait ? ` · ${a.trait}` : ""}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+          <h3 className="hidden font-display text-xl sm:block">Family tree</h3>
+          <LineageFamilyTree
+            save={s}
+            onSelectLiving={(id) => s.switchCompanion(id)}
+          />
         </div>
       </section>
     </div>

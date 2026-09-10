@@ -110,7 +110,22 @@ try {
   assert.equal(hatched.egg, null, "hatch clears the egg");
   assert.equal(hatched.roster.length, 3, "offspring joins both surviving parents");
   assert.deepEqual(hatched.roster.slice(0, 2).map((m) => m.id), ["ember-a", "moss-b"], "parents remain unchanged in roster order");
-  assert.ok(hatched.roster.some((m) => m.species === "ashling"), "Ashling offspring exists");
+  const child = hatched.roster.find((m) => m.species === "ashling");
+  assert.ok(child, "Ashling offspring exists");
+  assert.notEqual(child.name, "Ashling", "hatched child receives a living name");
+  assert.equal(child.parentAName, "Ember", "child remembers parent A");
+  assert.equal(child.parentBName, "Mossling", "child remembers parent B");
+  assert.ok(child.trait, "child inherits a visible ash trait");
+  assert.equal(hatched.companion.id, child.id, "hatched child becomes the active companion");
+  await eggPage.getByText(/Born of Ember \+ Mossling|Carries /).first().waitFor();
+  const familyToggle = eggPage.getByRole("button", { name: /Family tree/ });
+  if (await familyToggle.count()) {
+    await familyToggle.click();
+  }
+  const family = eggPage.getByLabel("Firelit family tree");
+  await family.waitFor();
+  await family.getByText("By the fire", { exact: true }).waitFor();
+  await family.getByText(/Born of Ember \+ Mossling|Carries /).first().waitFor();
   await eggPage.screenshot({ path: "artifacts/betterment-lineage.png", fullPage: true });
   assert.deepEqual(eggRun.errors, [], `egg flow browser errors: ${eggRun.errors.join(" | ")}`);
   await eggRun.context.close();

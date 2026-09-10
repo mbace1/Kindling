@@ -77,6 +77,6 @@ test("combat still names moves and now carries Nerve commitment", () => {
 test("v20 egg afterglow and lineage copy keep parents", () => {
   assert.match(eggPanel, /Both remain by the fire/);
   assert.match(keep, /Neither parent is consumed/);
-  assert.match(keep, /Lineage/);
+  assert.match(keep, /Family tree|LineageFamilyTree/);
   assert.match(cinematic, /Keep holds the coals/);
 });

@@ -19,6 +19,7 @@ import {
 } from "@/lib/kindling/combat-depth";
 import { companionCombatGrowth, combatStatsForCompanion } from "@/lib/kindling/companion-combat";
 import { campRoadEffects } from "@/lib/kindling/camp-construction";
+import { lineageRoadModifier } from "@/lib/kindling/lineage";
 import {
   rivalForPath,
   rivalStatusLabel,
@@ -197,6 +198,7 @@ export function JourneyWorldScreen() {
   const hasWaymarker = findKinds.has("relic");
   const hasLens = findKinds.has("shard");
   const roadCamp = campRoadEffects(s);
+  const elderWalk = lineageRoadModifier(s);
 
   return (
     <div>
@@ -229,6 +231,14 @@ export function JourneyWorldScreen() {
           <p className="text-sm text-mute">{JOURNEY_FLAMES} Flames · about 90 seconds. Bring something home to open the next region.</p>
           <p className="mt-2 text-xs text-mute sm:mt-0 sm:shrink-0 sm:text-right">{progress.cleared} / {progress.total} roads known</p>
         </div>
+
+        {elderWalk ? (
+          <div className="rounded-xl border border-fire/30 bg-gradient-to-r from-coal/80 to-night/70 p-3" aria-label="Walking with elder">
+            <p className="text-[10px] uppercase tracking-[0.16em] text-fire">Walk with elder</p>
+            <p className="mt-1 text-sm text-bone/85">{elderWalk.summary}</p>
+            <p className="mt-0.5 text-xs text-mute">Lineage steadies the road — warmer rests, softer ambush odds. Never wellness.</p>
+          </div>
+        ) : null}
 
         {roadCamp.length ? (
           <div className="rounded-xl border border-fire/20 bg-coal/60 p-3">

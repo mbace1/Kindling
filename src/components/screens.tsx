@@ -600,14 +600,36 @@ export function CompanionScreen() {
         <p className="mt-8 text-sm text-mute">Combine opens when two companions have reached tender.</p>
       ) : null}
 
-      <h3 className="mt-8 font-display text-xl">Ancestors</h3>
-      {s.lineage.length === 0 ? (
-        <p className="mt-2 text-sm text-mute">No ancestors yet. The fire has only been kept.</p>
+      <h3 className="mt-8 font-display text-xl">Family tree</h3>
+      <p className="mt-1 text-sm text-mute">Living pack, warming egg, Kindled family — not a flat dump.</p>
+      {s.lineage.length === 0 && !s.egg ? (
+        <p className="mt-2 text-sm text-mute">No Kindled names yet. The fire has only been kept.</p>
       ) : (
-        <ul className="mt-3 space-y-2">
+        <ul className="mt-3 space-y-2" aria-label="Firelit family tree">
+          {s.roster.map((m) => (
+            <li key={m.id} className="flex items-center gap-3 rounded-md border border-fire/30 bg-coal px-3 py-2">
+              <img src={portraitSrc(m.species)} alt="" className="h-12 w-12 object-contain" />
+              <div>
+                <p className="font-medium">{m.name}{m.id === s.companion?.id ? " · walking" : ""}</p>
+                <p className="text-xs text-mute">
+                  {m.parentAName && m.parentBName ? `Born of ${m.parentAName} + ${m.parentBName}` : "By the fire"}
+                  {m.trait ? ` · ${m.trait}` : ""}
+                </p>
+              </div>
+            </li>
+          ))}
+          {s.egg ? (
+            <li className="flex items-center gap-3 rounded-md border border-fire/40 bg-night px-3 py-2">
+              <img src={portraitSrc(s.egg.species)} alt="" className="h-12 w-12 object-contain opacity-80" />
+              <div>
+                <p className="font-medium">{SPECIES[s.egg.species].name} egg</p>
+                <p className="text-xs text-mute">From {s.egg.parentAName} + {s.egg.parentBName}{s.egg.trait ? ` · will inherit ${s.egg.trait}` : ""}</p>
+              </div>
+            </li>
+          ) : null}
           {s.lineage.map((a) => (
-            <li key={a.id} className="flex items-center gap-3 rounded-md border border-ash bg-stone px-3 py-2">
-              <img src={portraitSrc(a.species)} alt="" className="h-12 w-12 object-contain grayscale" />
+            <li key={a.id} className="flex items-center gap-3 rounded-md border border-fire/20 bg-stone px-3 py-2">
+              <img src={portraitSrc(a.species)} alt="" className="h-12 w-12 object-contain" style={{ filter: "sepia(0.35) saturate(1.1)" }} />
               <div>
                 <p className="font-medium">{a.name}</p>
                 <p className="text-xs text-mute">
