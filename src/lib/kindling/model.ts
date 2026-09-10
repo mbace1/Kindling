@@ -135,6 +135,14 @@ export type CombatState = {
   /** Wind-up this turn vs release/interrupt next. Null when not charging. */
   chargePhase: ChargePhase | null;
   round: number;
+  /** Named keeper duel id when fighting a road rival. */
+  rivalId: string | null;
+  /** 0-based multi-phase index for rival duels. */
+  rivalPhase: number;
+  /** Total phases in the active rival duel (1 for trash fights). */
+  rivalPhases: number;
+  /** Display name override for named rivals. */
+  rivalName: string | null;
 };
 
 export type WalkState = {
@@ -177,6 +185,8 @@ export type KindlingSave = {
   regionMemories: Record<string, RegionMemory>;
   /** Old Gate opened — next-world beat. World progress; never wellness. */
   oldGateOpened: boolean;
+  /** Per-road named keeper status (looming / challenged / bested). Never wellness. */
+  rivals: Record<string, { status: "looming" | "challenged" | "bested"; updatedAt: number }>;
 };
 
 export type Species = {
@@ -438,6 +448,7 @@ export function freshSave(): KindlingSave {
     regionEchoes: {},
     regionMemories: {},
     oldGateOpened: false,
+    rivals: {},
   };
 }
 
@@ -667,7 +678,7 @@ export function applyRollover(s: KindlingSave) {
   }
   // A finished journey is allowed to wait for the player. Do not discard it on
   // reload: the return is part of the game, and journeys never fail while away.
-  // Missed care may Kindle a companion; it never erases regionMemories / Old Gate.
+  // Missed care may Kindle a companion; it never erases regionMemories / Old Gate / rivals.
   return s;
 }
 
@@ -702,6 +713,10 @@ export function normalizeCombat(raw: unknown): CombatState | null {
         : "windup";
   const nerveMax = Number.isFinite(c.nerveMax) ? Math.max(1, Number(c.nerveMax)) : 3;
   const nerve = Number.isFinite(c.nerve) ? Math.max(0, Math.min(nerveMax, Number(c.nerve))) : nerveMax;
+  const rivalId = typeof c.rivalId === "string" && c.rivalId.trim() ? c.rivalId.trim() : null;
+  const rivalPhases = Number.isFinite(c.rivalPhases) ? Math.max(1, Math.min(6, Number(c.rivalPhases))) : 1;
+  const rivalPhase = Number.isFinite(c.rivalPhase) ? Math.max(0, Math.min(rivalPhases - 1, Number(c.rivalPhase))) : 0;
+  const rivalName = typeof c.rivalName === "string" && c.rivalName.trim() ? c.rivalName.trim() : null;
   return {
     enemy: c.enemy as SpeciesId,
     pathId: typeof c.pathId === "string" ? c.pathId : "road",
@@ -718,7 +733,26 @@ export function normalizeCombat(raw: unknown): CombatState | null {
     chargeVerb: pattern === "charging" ? chargeVerb ?? telegraph : null,
     chargePhase,
     round: Number.isFinite(c.round) ? Math.max(1, Number(c.round)) : 1,
+    rivalId,
+    rivalPhase,
+    rivalPhases,
+    rivalName,
   };
+}
+
+export function normalizeRivals(raw: unknown): KindlingSave["rivals"] {
+  if (!raw || typeof raw !== "object") return {};
+  const out: KindlingSave["rivals"] = {};
+  for (const [pathId, entry] of Object.entries(raw as Record<string, unknown>)) {
+    if (!entry || typeof entry !== "object") continue;
+    const row = entry as { status?: string; updatedAt?: number };
+    if (row.status !== "looming" && row.status !== "challenged" && row.status !== "bested") continue;
+    out[pathId] = {
+      status: row.status,
+      updatedAt: Number.isFinite(row.updatedAt) ? Number(row.updatedAt) : 0,
+    };
+  }
+  return out;
 }
 
 export function normalizeSave(raw: unknown): KindlingSave {
@@ -769,6 +803,7 @@ export function normalizeSave(raw: unknown): KindlingSave {
     regionEchoes: normalizeRegionEchoes(r.regionEchoes),
     regionMemories: normalizeRegionMemories(r.regionMemories),
     oldGateOpened: Boolean(r.oldGateOpened),
+    rivals: normalizeRivals(r.rivals),
     combat: normalizeCombat(r.combat),
   };
 

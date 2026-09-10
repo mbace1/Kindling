@@ -224,8 +224,15 @@ screens honest enough that combat and combine are the higher-leverage work.
 - v19 — charge is a real two-turn wind-up (telegraph → land or Strike-interrupt)
 - v20 — egg warmth afterglow, persistent region echoes, camp-on-the-road, Bond/combine celebration
 - v21 — deeper per-region memory; Old Gate approach / next-world interim beat
+- v22 — named keepers / multi-phase rival duels on the five roads (epic C)
+
+**Epic roadmap (owner order C → B → A):**
+- **C — Boss / named rival duels** — shipped in v22
+- **B — Living lineage** — next: Kindle / combine / roster read as a living family on the road (not only Keep lists)
+- **A — World beyond Gate** — after B: more than interim Gate copy; a next region or travel beat past the threshold
 
 **Next relevant agents work here**, not on reopening R1/R2 unless art arrives:
+- epic B (living lineage), then A (world beyond Gate)
 - dedicated Old Gate plate only when art arrives (interim ships without blocking)
 - keep Strike-interrupt fantasy; never touch wellness on combat loss; no scolding
 - more region content only when the road memory / camp loop still reads clear

@@ -305,8 +305,11 @@ function CombatScreen() {
   return (
     <div className="px-4 pb-28 pt-4">
       <p className="text-xs uppercase tracking-[0.2em] text-mute">On the path</p>
-      <h2 className="font-display text-2xl font-semibold">{enemy.name}</h2>
-      <p className="text-sm text-mute">{enemy.blurb}</p>
+      <h2 className="font-display text-2xl font-semibold">{c.rivalName || enemy.name}</h2>
+      <p className="text-sm text-mute">{c.rivalId ? "Keeper of the road · multi-phase duel." : enemy.blurb}</p>
+      {c.rivalId ? (
+        <p className="mt-1 text-xs text-fire/80">Phase {(c.rivalPhase ?? 0) + 1}/{c.rivalPhases || 1}</p>
+      ) : null}
 
       <div className="mt-5 flex items-end justify-between gap-4">
         <Fighter
@@ -317,7 +320,7 @@ function CombatScreen() {
           align="left"
         />
         <Fighter
-          name={enemy.name}
+          name={c.rivalName || enemy.name}
           src={portraitSrc(c.enemy)}
           hp={c.enemyHp}
           max={c.enemyMax}
@@ -345,6 +348,7 @@ function CombatScreen() {
       {done ? (
         <div className="mt-6 space-y-2">
           {c.result === "win" &&
+          !c.rivalId &&
           SPECIES[c.enemy].capturable &&
           s.roster.length < 6 &&
           !s.roster.some((m) => m.species === c.enemy) ? (

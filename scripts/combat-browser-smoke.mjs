@@ -49,6 +49,7 @@ function seed(combat) {
     encounters: { wins: 0, losses: 0 },
     roster: [ember],
     walkedOnce: true,
+    rivals: {},
   };
 }
 
@@ -155,7 +156,69 @@ try {
   await winRun.context.close();
   activePage = null;
 
-  console.log(JSON.stringify({ ok: true, retreat: true, defeat: true, victory: true, capture: true }, null, 2));
+  const rivalPhaseCombat = {
+    enemy: "mossling",
+    pathId: "ruin",
+    playerHp: 26,
+    playerMax: 26,
+    enemyHp: 1,
+    enemyMax: 26,
+    telegraph: "guard",
+    log: ["Pale Archwarden · Keeper of Birch Ruins holds the road.", "Phase 1 · False openings."],
+    result: null,
+    nerve: 3,
+    nerveMax: 3,
+    pattern: "steady",
+    chargeVerb: null,
+    chargePhase: null,
+    round: 1,
+    rivalId: "pale-archwarden",
+    rivalPhase: 0,
+    rivalPhases: 2,
+    rivalName: "Pale Archwarden",
+  };
+  const phaseRun = await seededPage(browser, seed(rivalPhaseCombat));
+  activePage = phaseRun.page;
+  failureShot = "artifacts/betterment-combat-rival-failure.png";
+  await phaseRun.page.getByRole("button", { name: "Walk" }).click();
+  await phaseRun.page.getByRole("heading", { name: "Pale Archwarden" }).waitFor();
+  await phaseRun.page.getByText(/phase 1\/2/i).waitFor();
+  await phaseRun.page.getByRole("button", { name: "Skill" }).click();
+  await phaseRun.page.getByText(/Phase 2/i).waitFor();
+  const mid = await phaseRun.page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
+  assert.equal(mid.combat.result, null, "phase advance is not a win yet");
+  assert.equal(mid.combat.rivalPhase, 1, "rival advances to phase 2");
+  assert.ok(mid.combat.enemyHp > 0, "phase 2 restores rival HP");
+  assert.deepEqual(phaseRun.errors, [], `rival phase browser errors: ${phaseRun.errors.join(" | ")}`);
+  await phaseRun.context.close();
+  activePage = null;
+
+  const rivalFinale = {
+    ...rivalPhaseCombat,
+    rivalPhase: 1,
+    rivalPhases: 2,
+    enemyHp: 1,
+    enemyMax: 30,
+    log: ["Pale Archwarden · phase 2."],
+  };
+  const finaleRun = await seededPage(browser, { ...seed(rivalFinale), rivals: { ruin: { status: "challenged", updatedAt: Date.now() } } });
+  activePage = finaleRun.page;
+  const rivalBefore = await finaleRun.page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
+  await finaleRun.page.getByRole("button", { name: "Walk" }).click();
+  await finaleRun.page.getByRole("heading", { name: "Pale Archwarden" }).waitFor();
+  await finaleRun.page.getByRole("button", { name: "Skill" }).click();
+  await finaleRun.page.getByText("The path opens.").waitFor();
+  const rivalAfter = await finaleRun.page.evaluate(() => JSON.parse(localStorage.getItem("kindlingState") || "null"));
+  assert.equal(rivalAfter.combat.result, "win", "rival duel completes");
+  assert.equal(rivalAfter.rivals?.ruin?.status, "bested", "rival marked bested");
+  assert.deepEqual(wellness(rivalAfter), wellness(rivalBefore), "rival win cannot change wellness");
+  assert.ok(typeof rivalAfter.roadEcho === "string" && /Pale Archwarden|yield/i.test(rivalAfter.roadEcho), "bested road echo");
+  await finaleRun.page.screenshot({ path: "artifacts/betterment-combat-rival.png", fullPage: true });
+  assert.deepEqual(finaleRun.errors, [], `rival finale browser errors: ${finaleRun.errors.join(" | ")}`);
+  await finaleRun.context.close();
+  activePage = null;
+
+  console.log(JSON.stringify({ ok: true, retreat: true, defeat: true, victory: true, capture: true, rival: true }, null, 2));
 } catch (err) {
   await activePage?.screenshot({ path: failureShot, fullPage: true }).catch(() => undefined);
   throw err;
